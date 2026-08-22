@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "geslaagd.app"
+description = "A sleek Dutch study companion homepage for exam students and first-year bachelor students, explaining how geslaagd.app gathers, reviews, and transforms study information into useful summaries and practice materials."
+version = "1.0.0"
+id = "artifacts/geslaagd-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21090
+
+[services.development]
+run = "pnpm --filter @workspace/geslaagd-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/geslaagd-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/geslaagd-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21090"
+BASE_PATH = "/"

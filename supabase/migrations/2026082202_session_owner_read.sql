@@ -1,0 +1,1 @@
+create policy "users_read_own_session" on public.app_sessions for select to authenticated using (auth.uid() = user_id);

@@ -1,0 +1,9 @@
+import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { Badge } from "@workspace/geslaagd-momentum/components/ui/badge";
+import { Button } from "@workspace/geslaagd-momentum/components/ui/button";
+import { Card } from "@workspace/geslaagd-momentum/components/ui/card";
+import { Prompt, Shell, Topbar } from "./_shared/Frame";
+
+export default function HomepageMobile() {
+  return <Shell className="aurora"><Topbar /><section className="shell py-12"><Badge variant="outline">voor 6 VWO en eerstejaars bachelor</Badge><h1 className="display mt-6 text-5xl font-semibold leading-tight">Van vraag<br /><span className="text-primary">naar grip.</span></h1><p className="mt-6 text-lg text-muted-foreground">Geen eindeloze zoektocht. We maken je onderwerp kleiner en geven je één volgende stap.</p><Button className="mt-7 w-full" size="lg">Begin met je vraag <ArrowRight /></Button><div className="mt-12 rounded-xl border border-primary/30 bg-background/60 p-3 shadow-[var(--momentum-shadow-lift)]"><Prompt compact /></div></section><section className="shell space-y-3 border-y border-border py-7 text-sm"><div className="flex gap-3"><ShieldCheck className="text-primary" /><span><strong>Bronnen zichtbaar</strong><br /><span className="text-muted-foreground">Elke kern krijgt context.</span></span></div><div className="flex gap-3"><Check className="text-primary" /><span><strong>Klaar om te leren</strong><br /><span className="text-muted-foreground">Eén volgende stap die klopt.</span></span></div></section><section className="shell py-12"><p className="meta text-muted-foreground">03 stappen</p><h2 className="display mt-3 text-3xl">Rust in je studiedag.</h2><div className="mt-7 space-y-3">{[["01","Scherp je vraag"],["02","Zie de kern"],["03","Leer verder"]].map(([number, title]) => <Card className="p-5" key={number}><span className="meta text-primary">{number}</span><h3 className="mt-3 font-serif text-lg">{title}</h3></Card>)}</div></section></Shell>;
+}

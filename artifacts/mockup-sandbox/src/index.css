@@ -1,0 +1,14 @@
+@import "@workspace/geslaagd-momentum/styles.css";
+
+@layer base {
+  body { min-width: 320px; }
+}
+
+.mockup-page { min-height: 100vh; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.shell { max-width: 72rem; margin-inline: auto; padding: 1.5rem; }
+.display { font-family: var(--font-serif); letter-spacing: -0.04em; }
+.meta { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; font-size: .7rem; }
+.aurora { background: radial-gradient(circle at 75% 15%, hsl(var(--accent) / .22), transparent 35%), radial-gradient(circle at 20% 10%, hsl(var(--primary) / .22), transparent 36%), hsl(var(--background)); }
+.grid-lines { background-image: linear-gradient(hsl(var(--border) / .28) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / .28) 1px, transparent 1px); background-size: 2rem 2rem; }
+@media (min-width: 48rem) { .shell { padding: 2rem 3rem; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }

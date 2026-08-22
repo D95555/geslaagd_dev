@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/geslaagd-momentum/"
+title = "Geslaagd Momentum"
+description = "A focused, bilingual-ready design system and living style guide for geslaagd.app: a Dutch learning product that turns uncertainty into one credible next step with ink and forest surfaces, warm ivory type, and restrained aurora accents."
+version = "1.0.0"
+id = "artifacts/geslaagd-momentum"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/geslaagd-momentum/" ]
+localPort = 25840
+
+[services.development]
+run = "pnpm --filter @workspace/geslaagd-momentum run dev"
+
+[services.env]
+PORT = "25840"
+BASE_PATH = "/geslaagd-momentum/"

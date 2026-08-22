@@ -1,0 +1,978 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: sessions
+    description: Signed-in session operations
+  - name: admin
+    description: Administrator-only operations
+  - name: study
+    description: Signed-in study environment operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /sessions:
+    post:
+      operationId: registerSession
+      tags: [sessions]
+      summary: Register the current browser session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRegistration"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackedSession"
+  /sessions/heartbeat:
+    post:
+      operationId: heartbeatSession
+      tags: [sessions]
+      summary: Refresh the current browser session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionHeartbeat"
+      responses:
+        "204":
+          description: Updated
+  /events/auth:
+    post:
+      operationId: logAuthEvent
+      tags: [sessions]
+      summary: Log a safe account security event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthEventInput"
+      responses:
+        "204":
+          description: Logged
+  /auth/password-reset-request:
+    post:
+      operationId: requestPasswordReset
+      tags: [sessions]
+      summary: Request a password-reset email without revealing account existence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequestInput"
+      responses:
+        "204":
+          description: Request accepted
+  /admin/sessions:
+    get:
+      operationId: listAdminSessions
+      tags: [admin]
+      summary: List tracked browser sessions
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTrackedSession"
+  /admin/sessions/{sessionId}/revoke:
+    post:
+      operationId: revokeAdminSession
+      tags: [admin]
+      summary: Revoke a selected browser session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Revoked session
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/AdminTrackedSession"
+  /admin/broadcasts:
+    post:
+      operationId: sendAdminBroadcast
+      tags: [admin]
+      summary: Send a live message to signed-in browsers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BroadcastInput"
+      responses:
+        "204":
+          description: Sent
+  /admin/accounts:
+    get:
+      operationId: listAdminAccounts
+      tags: [admin]
+      summary: Search and list accounts
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, active, blocked]
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Accounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccountList"
+  /admin/accounts/{userId}:
+    get:
+      operationId: getAdminAccount
+      tags: [admin]
+      summary: Get an account's full detail for admin review
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Account detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccountDetail"
+    delete:
+      operationId: deleteAdminAccount
+      tags: [admin]
+      summary: Permanently delete an account
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAccountActionInput"
+      responses:
+        "204":
+          description: Deleted
+  /admin/accounts/{userId}/block:
+    post:
+      operationId: blockAdminAccount
+      tags: [admin]
+      summary: Temporarily block an account and revoke its active sessions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAccountActionInput"
+      responses:
+        "200":
+          description: Updated account summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccountSummary"
+  /admin/accounts/{userId}/unblock:
+    post:
+      operationId: unblockAdminAccount
+      tags: [admin]
+      summary: Lift a temporary block on an account
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAccountActionInput"
+      responses:
+        "200":
+          description: Updated account summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccountSummary"
+  /study/catalog:
+    get:
+      operationId: getStudyCatalog
+      tags: [study]
+      summary: Get the study catalog
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subjectId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Study catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyCatalog"
+  /study/spaces:
+    get:
+      operationId: listStudySpaces
+      tags: [study]
+      summary: List the current user's study spaces
+      responses:
+        "200":
+          description: Study spaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudySpace"
+    post:
+      operationId: createStudySpace
+      tags: [study]
+      summary: Create a study space from the catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudySpaceInput"
+      responses:
+        "201":
+          description: Created study space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySpace"
+  /study/spaces/{spaceId}:
+    get:
+      operationId: getStudySpace
+      tags: [study]
+      summary: Get one of the current user's study spaces
+      parameters:
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Study space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySpace"
+    patch:
+      operationId: updateStudySpace
+      tags: [study]
+      summary: Update an existing study space's topic configuration
+      parameters:
+        - name: spaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudySpaceUpdate"
+      responses:
+        "200":
+          description: Updated study space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySpace"
+  /study/subjects/{selectionId}:
+    get:
+      operationId: getStudySubjectDetail
+      tags: [study]
+      summary: Get a chosen subject's detail - results placeholder, recent and all topics
+      parameters:
+        - name: selectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Subject detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySubjectDetail"
+  /study/proposals:
+    post:
+      operationId: createStudyProposal
+      tags: [study]
+      summary: Interpret a free-text study topic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyProposalInput"
+      responses:
+        "201":
+          description: AI proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyProposal"
+  /study/proposals/{proposalId}/confirm:
+    post:
+      operationId: confirmStudyProposal
+      tags: [study]
+      summary: Confirm an AI proposal and create a study space
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyProposalConfirmation"
+      responses:
+        "201":
+          description: Created study space
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySpace"
+  /study/proposals/{proposalId}/reject:
+    post:
+      operationId: rejectStudyProposal
+      tags: [study]
+      summary: Reject an AI proposal
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Rejected
+  /study/selected-subjects:
+    get:
+      operationId: listSelectedStudySubjects
+      tags: [study]
+      summary: List the current user's chosen subjects, in order
+      responses:
+        "200":
+          description: Chosen subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SelectedStudySubject"
+    post:
+      operationId: createSelectedStudySubject
+      tags: [study]
+      summary: Add a subject to the current user's chosen subjects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectedStudySubjectInput"
+      responses:
+        "201":
+          description: Chosen subject
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelectedStudySubject"
+  /study/selected-subjects/order:
+    put:
+      operationId: reorderSelectedStudySubjects
+      tags: [study]
+      summary: Persist the display order of the current user's chosen subjects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderSelectedStudySubjectsInput"
+      responses:
+        "200":
+          description: Reordered subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SelectedStudySubject"
+  /study/selected-subjects/{selectionId}:
+    delete:
+      operationId: deleteSelectedStudySubject
+      tags: [study]
+      summary: Remove a subject from the current user's chosen subjects
+      parameters:
+        - name: selectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Removed
+  /study/preferences:
+    get:
+      operationId: getStudyPreferences
+      tags: [study]
+      summary: Get the current user's study onboarding preferences
+      responses:
+        "200":
+          description: Study preferences or null before onboarding
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/StudyPreferences"
+                  - type: "null"
+    put:
+      operationId: upsertStudyPreferences
+      tags: [study]
+      summary: Save the current user's study onboarding preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudyPreferencesInput"
+      responses:
+        "200":
+          description: Saved preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPreferences"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    SessionRegistration:
+      type: object
+      required: [clientSessionId, deviceLabel]
+      properties:
+        clientSessionId:
+          type: string
+        deviceLabel:
+          type: string
+          minLength: 1
+          maxLength: 160
+    SessionHeartbeat:
+      type: object
+      required: [clientSessionId]
+      properties:
+        clientSessionId:
+          type: string
+        currentPage:
+          type: string
+          maxLength: 200
+    AuthEventInput:
+      type: object
+      required: [event]
+      properties:
+        event:
+          type: string
+          enum: [signup, login, logout, password-reset-request, password-changed]
+        email:
+          type: string
+          format: email
+        userId:
+          type: string
+          format: uuid
+        device:
+          type: string
+          maxLength: 160
+    PasswordResetRequestInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        device:
+          type: string
+          maxLength: 160
+    TrackedSession:
+      type: object
+      required: [clientSessionId, userId, email, deviceLabel, createdAt, lastSeenAt, revokedAt]
+      properties:
+        clientSessionId:
+          type: string
+        userId:
+          type: string
+        email:
+          type: string
+        deviceLabel:
+          type: string
+        createdAt:
+          type: string
+        lastSeenAt:
+          type: string
+        revokedAt:
+          type: ["string", "null"]
+    AdminTrackedSession:
+      type: object
+      required: [clientSessionId, userId, email, deviceLabel, createdAt, lastSeenAt, revokedAt, ipAddress, currentPage]
+      properties:
+        clientSessionId:
+          type: string
+        userId:
+          type: string
+        email:
+          type: string
+        deviceLabel:
+          type: string
+        createdAt:
+          type: string
+        lastSeenAt:
+          type: string
+        revokedAt:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+          description: Latest server-observed IP address for this browser session.
+        currentPage:
+          type: ["string", "null"]
+          description: Latest client-reported route (path only), refreshed on the heartbeat cadence.
+    BroadcastInput:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 70
+        body:
+          type: string
+          minLength: 1
+          maxLength: 320
+    StudySubject:
+      type: object
+      required: [id, name, slug, description, aliases, sortOrder]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        aliases:
+          type: array
+          items: { type: string }
+        sortOrder: { type: integer }
+    StudyBook:
+      type: object
+      required: [id, subjectId, title, publisher, edition, description, sortOrder]
+      properties:
+        id: { type: string }
+        subjectId: { type: string }
+        title: { type: string }
+        publisher: { type: string }
+        edition: { type: string }
+        description: { type: string }
+        sortOrder: { type: integer }
+    StudyChapter:
+      type: object
+      required: [id, bookId, chapterNumber, title, description, topics, sortOrder]
+      properties:
+        id: { type: string }
+        bookId: { type: string }
+        chapterNumber: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        topics:
+          type: array
+          items: { type: string }
+        sortOrder: { type: integer }
+    StudyCatalog:
+      type: object
+      required: [subjects, books, chapters]
+      properties:
+        subjects:
+          type: array
+          items: { $ref: "#/components/schemas/StudySubject" }
+        books:
+          type: array
+          items: { $ref: "#/components/schemas/StudyBook" }
+        chapters:
+          type: array
+          items: { $ref: "#/components/schemas/StudyChapter" }
+    StudySpace:
+      type: object
+      required: [id, title, sourceType, subjectId, bookId, chapterId, originalInput, createdAt, updatedAt, selectedSubjectId, level, subtopics, sources, subjectDescription, exampleTopics, status, lastViewedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        sourceType: { type: string, enum: [catalog, ai] }
+        subjectId: { type: ["string", "null"] }
+        bookId: { type: ["string", "null"] }
+        chapterId: { type: ["string", "null"] }
+        originalInput: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        selectedSubjectId: { type: ["string", "null"], format: uuid }
+        level: { type: ["string", "null"], enum: [basis, gemiddeld, verdieping, null] }
+        subtopics:
+          type: array
+          items: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        subjectDescription: { type: string }
+        exampleTopics:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [draft, active] }
+        lastViewedAt: { type: string }
+    StudySpaceInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        subjectId: { type: ["string", "null"] }
+        bookId: { type: ["string", "null"] }
+        chapterId: { type: ["string", "null"] }
+        selectedSubjectId: { type: ["string", "null"], format: uuid }
+        level: { type: ["string", "null"], enum: [basis, gemiddeld, verdieping, null] }
+        subtopics:
+          type: array
+          maxItems: 8
+          items: { type: string, minLength: 1, maxLength: 80 }
+        sources:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        subjectDescription: { type: string, maxLength: 500 }
+        exampleTopics:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        status: { type: string, enum: [draft, active] }
+    StudySpaceUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        selectedSubjectId: { type: ["string", "null"], format: uuid }
+        level: { type: ["string", "null"], enum: [basis, gemiddeld, verdieping, null] }
+        subtopics:
+          type: array
+          maxItems: 8
+          items: { type: string, minLength: 1, maxLength: 80 }
+        sources:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        subjectDescription: { type: string, maxLength: 500 }
+        exampleTopics:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        status: { type: string, enum: [draft, active] }
+    StudyProposalInput:
+      type: object
+      required: [input]
+      properties:
+        input: { type: string, minLength: 3, maxLength: 500 }
+    StudyProposal:
+      type: object
+      required: [id, originalInput, subjectId, proposedSubject, proposedTopic, rationale, searchTerms, alternatives, clarificationQuestion, confidence, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        originalInput: { type: string }
+        subjectId: { type: ["string", "null"] }
+        proposedSubject: { type: string }
+        proposedTopic: { type: string }
+        rationale: { type: string }
+        searchTerms:
+          type: array
+          items: { type: string }
+        alternatives:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/StudyProposalAlternative"
+        clarificationQuestion: { type: ["string", "null"] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        status: { type: string, enum: [pending, confirmed, rejected] }
+        createdAt: { type: string }
+    StudyProposalConfirmation:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        subjectId: { type: ["string", "null"] }
+        proposedSubject: { type: string, minLength: 1, maxLength: 160 }
+        proposedTopic: { type: string, minLength: 1, maxLength: 160 }
+        selectedSubjectId: { type: ["string", "null"], format: uuid }
+        level: { type: ["string", "null"], enum: [basis, gemiddeld, verdieping, null] }
+        subtopics:
+          type: array
+          maxItems: 8
+          items: { type: string, minLength: 1, maxLength: 80 }
+        sources:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        subjectDescription: { type: string, maxLength: 500 }
+        exampleTopics:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+        status: { type: string, enum: [draft, active] }
+    StudyProposalAlternative:
+      type: object
+      required: [subjectId, proposedSubject, proposedTopic, rationale]
+      properties:
+        subjectId: { type: ["string", "null"] }
+        proposedSubject: { type: string }
+        proposedTopic: { type: string }
+        rationale: { type: string }
+    SelectedStudySubject:
+      type: object
+      required: [id, subjectId, customName, name, sortOrder, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: ["string", "null"] }
+        customName: { type: ["string", "null"] }
+        name: { type: string }
+        sortOrder: { type: integer }
+        createdAt: { type: string }
+    SelectedStudySubjectInput:
+      type: object
+      properties:
+        subjectId: { type: string }
+        customName: { type: string, minLength: 1, maxLength: 80 }
+    ReorderSelectedStudySubjectsInput:
+      type: object
+      required: [orderedIds]
+      properties:
+        orderedIds:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { type: string, format: uuid }
+    StudyPreferencesInput:
+      type: object
+      required: [educationLevel, studyProfile, learningGoals]
+      properties:
+        educationLevel: { type: string, enum: [vwo6, bachelor1] }
+        studyProfile: { type: string, maxLength: 100 }
+        learningGoals:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { type: string, minLength: 1, maxLength: 80 }
+    StudyPreferences:
+      allOf:
+        - $ref: "#/components/schemas/StudyPreferencesInput"
+        - type: object
+          required: [updatedAt]
+          properties:
+            updatedAt: { type: string }
+    StudySubjectResultItem:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: string }
+    StudySubjectResults:
+      type: object
+      required: [isPlaceholder, note, items]
+      properties:
+        isPlaceholder: { type: boolean }
+        note: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StudySubjectResultItem" }
+    StudySubjectDetail:
+      type: object
+      required: [selection, subject, recentTopics, topics, results]
+      properties:
+        selection: { $ref: "#/components/schemas/SelectedStudySubject" }
+        subject:
+          anyOf:
+            - $ref: "#/components/schemas/StudySubject"
+            - type: "null"
+        results: { $ref: "#/components/schemas/StudySubjectResults" }
+        recentTopics:
+          type: array
+          items: { $ref: "#/components/schemas/StudySpace" }
+        topics:
+          type: array
+          items: { $ref: "#/components/schemas/StudySpace" }
+    AdminAccountSummary:
+      type: object
+      required: [userId, email, status, createdAt, lastSignInAt, bannedUntil, sessionCount, lastSeenAt]
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string }
+        status: { type: string, enum: [active, blocked] }
+        createdAt: { type: string }
+        lastSignInAt: { type: ["string", "null"] }
+        bannedUntil: { type: ["string", "null"] }
+        sessionCount: { type: integer }
+        lastSeenAt: { type: ["string", "null"] }
+    AdminAccountList:
+      type: object
+      required: [accounts, total, page, limit]
+      properties:
+        accounts:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAccountSummary" }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+    AdminAccountPreferences:
+      type: object
+      required: [educationLevel, studyProfile, learningGoals, updatedAt]
+      properties:
+        educationLevel: { type: string }
+        studyProfile: { type: string }
+        learningGoals:
+          type: array
+          items: { type: string }
+        updatedAt: { type: string }
+    AdminStudySpaceSummary:
+      type: object
+      required: [id, title, sourceType, status, level, createdAt, updatedAt, lastViewedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        sourceType: { type: string, enum: [catalog, ai] }
+        status: { type: string, enum: [draft, active] }
+        level: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        lastViewedAt: { type: ["string", "null"] }
+    AdminAccountAction:
+      type: object
+      required: [id, actorId, action, reason, result, errorDetail, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorId: { type: string, format: uuid }
+        action: { type: string, enum: [block, unblock, delete] }
+        reason: { type: string }
+        result: { type: string, enum: [success, failed] }
+        errorDetail: { type: ["string", "null"] }
+        createdAt: { type: string }
+    AdminAccountDetail:
+      type: object
+      required: [summary, selectedSubjects, preferences, studySpaces, recentSessions, recentActions]
+      properties:
+        summary: { $ref: "#/components/schemas/AdminAccountSummary" }
+        selectedSubjects:
+          type: array
+          items: { $ref: "#/components/schemas/SelectedStudySubject" }
+        preferences:
+          anyOf:
+            - $ref: "#/components/schemas/AdminAccountPreferences"
+            - type: "null"
+        studySpaces:
+          type: array
+          items: { $ref: "#/components/schemas/AdminStudySpaceSummary" }
+        recentSessions:
+          type: array
+          items: { $ref: "#/components/schemas/AdminTrackedSession" }
+        recentActions:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAccountAction" }
+    AdminAccountActionInput:
+      type: object
+      required: [reason, idempotencyKey]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 160 }
+
