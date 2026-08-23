@@ -55,4 +55,4 @@ APP_ORIGIN = "https://geslaagd.app"
 APP_ALLOWED_ORIGINS = "https://geslaagd.app,https://geslaagd.me,https://geslaagdapp.replit.app"
 
 [objectStorage]
-defaultBucketID = "replit-objstore-598648ea-3d18-4059-a021-f907901f3123"
+defaultBucketID = "replit-objstore-b482b727-d65b-4e78-9c1b-a486870cc663"
