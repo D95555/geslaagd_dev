@@ -24,18 +24,34 @@ import type {
   AdminAccountDetail,
   AdminAccountList,
   AdminAccountSummary,
+  AdminNoteInput,
   AdminTrackedSession,
   AuthEventInput,
   BroadcastInput,
+  CrawlDetail,
+  CrawlRunResult,
+  CrawlSource,
+  CrawlSubject,
+  CrawlSubjectCreateInput,
+  CrawlSubjectRequest,
+  CrawlSummary,
+  DeclineSourceInput,
   GetStudyCatalogParams,
   HealthStatus,
   ListAdminAccountsParams,
+  ListSourcesParams,
   PasswordResetRequestInput,
+  PendingSource,
+  ReconsiderSourceInput,
   ReorderSelectedStudySubjectsInput,
+  RequestSubjectInput,
+  RequestSubjectResult,
+  RunCrawlInput,
   SelectedStudySubject,
   SelectedStudySubjectInput,
   SessionHeartbeat,
   SessionRegistration,
+  StudentSource,
   StudyCatalog,
   StudyPreferences,
   StudyPreferencesInput,
@@ -2143,4 +2159,1264 @@ export const useUpsertStudyPreferences = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpsertStudyPreferencesMutationOptions(options));
     }
+
+export const getCreateCrawlSubjectUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/subjects`
+}
+
+/**
+ * @summary Create and activate a crawl subject directly
+ */
+export const createCrawlSubject = async (crawlSubjectCreateInput: CrawlSubjectCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<CrawlSubject> => {
+
+  return customFetch<CrawlSubject>(getCreateCrawlSubjectUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(crawlSubjectCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCrawlSubjectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCrawlSubject>>, TError,{data: BodyType<CrawlSubjectCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCrawlSubject>>, TError,{data: BodyType<CrawlSubjectCreateInput>}, TContext> => {
+
+const mutationKey = ['createCrawlSubject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCrawlSubject>>, {data: BodyType<CrawlSubjectCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCrawlSubject(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCrawlSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof createCrawlSubject>>>
+    export type CreateCrawlSubjectMutationBody = BodyType<CrawlSubjectCreateInput>
+    export type CreateCrawlSubjectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create and activate a crawl subject directly
+ */
+export const useCreateCrawlSubject = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCrawlSubject>>, TError,{data: BodyType<CrawlSubjectCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCrawlSubject>>,
+        TError,
+        {data: BodyType<CrawlSubjectCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCrawlSubjectMutationOptions(options));
+    }
+
+export const getListCrawlSubjectsUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/subjects`
+}
+
+/**
+ * @summary List all crawl subjects
+ */
+export const listCrawlSubjects = async ( options?: Parameters<typeof customFetch>[1]): Promise<CrawlSubject[]> => {
+
+  return customFetch<CrawlSubject[]>(getListCrawlSubjectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCrawlSubjectsQueryKey = () => {
+    return [
+    `/api/admin/crawl/subjects`
+    ] as const;
+    }
+
+
+export const getListCrawlSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listCrawlSubjects>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCrawlSubjectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCrawlSubjects>>> = ({ signal }) => listCrawlSubjects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCrawlSubjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listCrawlSubjects>>>
+export type ListCrawlSubjectsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all crawl subjects
+ */
+
+export function useListCrawlSubjects<TData = Awaited<ReturnType<typeof listCrawlSubjects>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCrawlSubjectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListCrawlSubjectRequestsUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/subject-requests`
+}
+
+/**
+ * @summary List pending student subject requests
+ */
+export const listCrawlSubjectRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<CrawlSubjectRequest[]> => {
+
+  return customFetch<CrawlSubjectRequest[]>(getListCrawlSubjectRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCrawlSubjectRequestsQueryKey = () => {
+    return [
+    `/api/admin/crawl/subject-requests`
+    ] as const;
+    }
+
+
+export const getListCrawlSubjectRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listCrawlSubjectRequests>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjectRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCrawlSubjectRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCrawlSubjectRequests>>> = ({ signal }) => listCrawlSubjectRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjectRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCrawlSubjectRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listCrawlSubjectRequests>>>
+export type ListCrawlSubjectRequestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List pending student subject requests
+ */
+
+export function useListCrawlSubjectRequests<TData = Awaited<ReturnType<typeof listCrawlSubjectRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawlSubjectRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCrawlSubjectRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getApproveCrawlSubjectRequestUrl = (requestId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subject-requests/${requestId}/approve`
+}
+
+/**
+ * @summary Approve a student subject request
+ */
+export const approveCrawlSubjectRequest = async (requestId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getApproveCrawlSubjectRequestUrl(requestId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getApproveCrawlSubjectRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveCrawlSubjectRequest>>, TError,{requestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveCrawlSubjectRequest>>, TError,{requestId: string}, TContext> => {
+
+const mutationKey = ['approveCrawlSubjectRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveCrawlSubjectRequest>>, {requestId: string}> = (props) => {
+          const {requestId} = props ?? {};
+
+          return  approveCrawlSubjectRequest(requestId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveCrawlSubjectRequestMutationResult = NonNullable<Awaited<ReturnType<typeof approveCrawlSubjectRequest>>>
+
+    export type ApproveCrawlSubjectRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Approve a student subject request
+ */
+export const useApproveCrawlSubjectRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveCrawlSubjectRequest>>, TError,{requestId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveCrawlSubjectRequest>>,
+        TError,
+        {requestId: string},
+        TContext
+      > => {
+      return useMutation(getApproveCrawlSubjectRequestMutationOptions(options));
+    }
+
+export const getDenyCrawlSubjectRequestUrl = (requestId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subject-requests/${requestId}/deny`
+}
+
+/**
+ * @summary Deny a student subject request
+ */
+export const denyCrawlSubjectRequest = async (requestId: string,
+    adminNoteInput: AdminNoteInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDenyCrawlSubjectRequestUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminNoteInput)
+  }
+);}
+
+
+
+
+
+export const getDenyCrawlSubjectRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof denyCrawlSubjectRequest>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof denyCrawlSubjectRequest>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext> => {
+
+const mutationKey = ['denyCrawlSubjectRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof denyCrawlSubjectRequest>>, {requestId: string;data: BodyType<AdminNoteInput>}> = (props) => {
+          const {requestId,data} = props ?? {};
+
+          return  denyCrawlSubjectRequest(requestId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DenyCrawlSubjectRequestMutationResult = NonNullable<Awaited<ReturnType<typeof denyCrawlSubjectRequest>>>
+    export type DenyCrawlSubjectRequestMutationBody = BodyType<AdminNoteInput>
+    export type DenyCrawlSubjectRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Deny a student subject request
+ */
+export const useDenyCrawlSubjectRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof denyCrawlSubjectRequest>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof denyCrawlSubjectRequest>>,
+        TError,
+        {requestId: string;data: BodyType<AdminNoteInput>},
+        TContext
+      > => {
+      return useMutation(getDenyCrawlSubjectRequestMutationOptions(options));
+    }
+
+export const getRequestCrawlSubjectRefinementUrl = (requestId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subject-requests/${requestId}/request-refinement`
+}
+
+/**
+ * @summary Ask a student to refine their subject request
+ */
+export const requestCrawlSubjectRefinement = async (requestId: string,
+    adminNoteInput: AdminNoteInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRequestCrawlSubjectRefinementUrl(requestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminNoteInput)
+  }
+);}
+
+
+
+
+
+export const getRequestCrawlSubjectRefinementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext> => {
+
+const mutationKey = ['requestCrawlSubjectRefinement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>, {requestId: string;data: BodyType<AdminNoteInput>}> = (props) => {
+          const {requestId,data} = props ?? {};
+
+          return  requestCrawlSubjectRefinement(requestId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestCrawlSubjectRefinementMutationResult = NonNullable<Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>>
+    export type RequestCrawlSubjectRefinementMutationBody = BodyType<AdminNoteInput>
+    export type RequestCrawlSubjectRefinementMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Ask a student to refine their subject request
+ */
+export const useRequestCrawlSubjectRefinement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>, TError,{requestId: string;data: BodyType<AdminNoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestCrawlSubjectRefinement>>,
+        TError,
+        {requestId: string;data: BodyType<AdminNoteInput>},
+        TContext
+      > => {
+      return useMutation(getRequestCrawlSubjectRefinementMutationOptions(options));
+    }
+
+export const getRunCrawlUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/run`
+}
+
+/**
+ * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ */
+export const runCrawl = async (runCrawlInput: RunCrawlInput, options?: Parameters<typeof customFetch>[1]): Promise<CrawlRunResult> => {
+
+  return customFetch<CrawlRunResult>(getRunCrawlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(runCrawlInput)
+  }
+);}
+
+
+
+
+
+export const getRunCrawlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runCrawl>>, TError,{data: BodyType<RunCrawlInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runCrawl>>, TError,{data: BodyType<RunCrawlInput>}, TContext> => {
+
+const mutationKey = ['runCrawl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runCrawl>>, {data: BodyType<RunCrawlInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  runCrawl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunCrawlMutationResult = NonNullable<Awaited<ReturnType<typeof runCrawl>>>
+    export type RunCrawlMutationBody = BodyType<RunCrawlInput>
+    export type RunCrawlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ */
+export const useRunCrawl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runCrawl>>, TError,{data: BodyType<RunCrawlInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runCrawl>>,
+        TError,
+        {data: BodyType<RunCrawlInput>},
+        TContext
+      > => {
+      return useMutation(getRunCrawlMutationOptions(options));
+    }
+
+export const getListCrawlsUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/crawls`
+}
+
+/**
+ * @summary List all crawls, most recent first
+ */
+export const listCrawls = async ( options?: Parameters<typeof customFetch>[1]): Promise<CrawlSummary[]> => {
+
+  return customFetch<CrawlSummary[]>(getListCrawlsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCrawlsQueryKey = () => {
+    return [
+    `/api/admin/crawl/crawls`
+    ] as const;
+    }
+
+
+export const getListCrawlsQueryOptions = <TData = Awaited<ReturnType<typeof listCrawls>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCrawlsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCrawls>>> = ({ signal }) => listCrawls({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCrawls>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCrawlsQueryResult = NonNullable<Awaited<ReturnType<typeof listCrawls>>>
+export type ListCrawlsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all crawls, most recent first
+ */
+
+export function useListCrawls<TData = Awaited<ReturnType<typeof listCrawls>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCrawls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCrawlsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCrawlDetailUrl = (crawlId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/crawls/${crawlId}`
+}
+
+/**
+ * @summary Get a crawl's metadata and discovered sources
+ */
+export const getCrawlDetail = async (crawlId: string, options?: Parameters<typeof customFetch>[1]): Promise<CrawlDetail> => {
+
+  return customFetch<CrawlDetail>(getGetCrawlDetailUrl(crawlId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCrawlDetailQueryKey = (crawlId: string,) => {
+    return [
+    `/api/admin/crawl/crawls/${crawlId}`
+    ] as const;
+    }
+
+
+export const getGetCrawlDetailQueryOptions = <TData = Awaited<ReturnType<typeof getCrawlDetail>>, TError = ErrorType<unknown>>(crawlId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCrawlDetailQueryKey(crawlId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCrawlDetail>>> = ({ signal }) => getCrawlDetail(crawlId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: crawlId !== null && crawlId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCrawlDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCrawlDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getCrawlDetail>>>
+export type GetCrawlDetailQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a crawl's metadata and discovered sources
+ */
+
+export function useGetCrawlDetail<TData = Awaited<ReturnType<typeof getCrawlDetail>>, TError = ErrorType<unknown>>(
+ crawlId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCrawlDetailQueryOptions(crawlId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPendingSourcesUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/pending`
+}
+
+/**
+ * @summary List all sources awaiting human review
+ */
+export const listPendingSources = async ( options?: Parameters<typeof customFetch>[1]): Promise<PendingSource[]> => {
+
+  return customFetch<PendingSource[]>(getListPendingSourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPendingSourcesQueryKey = () => {
+    return [
+    `/api/admin/crawl/pending`
+    ] as const;
+    }
+
+
+export const getListPendingSourcesQueryOptions = <TData = Awaited<ReturnType<typeof listPendingSources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingSourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingSources>>> = ({ signal }) => listPendingSources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPendingSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingSources>>>
+export type ListPendingSourcesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all sources awaiting human review
+ */
+
+export function useListPendingSources<TData = Awaited<ReturnType<typeof listPendingSources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPendingSourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAcceptPendingSourceUrl = (sourceId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/sources/${sourceId}/accept`
+}
+
+/**
+ * @summary Manually accept a pending source
+ */
+export const acceptPendingSource = async (sourceId: string, options?: Parameters<typeof customFetch>[1]): Promise<CrawlSource> => {
+
+  return customFetch<CrawlSource>(getAcceptPendingSourceUrl(sourceId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAcceptPendingSourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptPendingSource>>, TError,{sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptPendingSource>>, TError,{sourceId: string}, TContext> => {
+
+const mutationKey = ['acceptPendingSource'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptPendingSource>>, {sourceId: string}> = (props) => {
+          const {sourceId} = props ?? {};
+
+          return  acceptPendingSource(sourceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptPendingSourceMutationResult = NonNullable<Awaited<ReturnType<typeof acceptPendingSource>>>
+
+    export type AcceptPendingSourceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually accept a pending source
+ */
+export const useAcceptPendingSource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptPendingSource>>, TError,{sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptPendingSource>>,
+        TError,
+        {sourceId: string},
+        TContext
+      > => {
+      return useMutation(getAcceptPendingSourceMutationOptions(options));
+    }
+
+export const getDeclinePendingSourceUrl = (sourceId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/sources/${sourceId}/decline`
+}
+
+/**
+ * @summary Manually decline a pending source
+ */
+export const declinePendingSource = async (sourceId: string,
+    declineSourceInput: DeclineSourceInput, options?: Parameters<typeof customFetch>[1]): Promise<CrawlSource> => {
+
+  return customFetch<CrawlSource>(getDeclinePendingSourceUrl(sourceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(declineSourceInput)
+  }
+);}
+
+
+
+
+
+export const getDeclinePendingSourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declinePendingSource>>, TError,{sourceId: string;data: BodyType<DeclineSourceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof declinePendingSource>>, TError,{sourceId: string;data: BodyType<DeclineSourceInput>}, TContext> => {
+
+const mutationKey = ['declinePendingSource'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declinePendingSource>>, {sourceId: string;data: BodyType<DeclineSourceInput>}> = (props) => {
+          const {sourceId,data} = props ?? {};
+
+          return  declinePendingSource(sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeclinePendingSourceMutationResult = NonNullable<Awaited<ReturnType<typeof declinePendingSource>>>
+    export type DeclinePendingSourceMutationBody = BodyType<DeclineSourceInput>
+    export type DeclinePendingSourceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually decline a pending source
+ */
+export const useDeclinePendingSource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declinePendingSource>>, TError,{sourceId: string;data: BodyType<DeclineSourceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof declinePendingSource>>,
+        TError,
+        {sourceId: string;data: BodyType<DeclineSourceInput>},
+        TContext
+      > => {
+      return useMutation(getDeclinePendingSourceMutationOptions(options));
+    }
+
+export const getRescoreSourceUrl = (sourceId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/sources/${sourceId}/rescore`
+}
+
+/**
+ * @summary Re-run AI scoring for a single source
+ */
+export const rescoreSource = async (sourceId: string, options?: Parameters<typeof customFetch>[1]): Promise<CrawlSource> => {
+
+  return customFetch<CrawlSource>(getRescoreSourceUrl(sourceId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRescoreSourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rescoreSource>>, TError,{sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rescoreSource>>, TError,{sourceId: string}, TContext> => {
+
+const mutationKey = ['rescoreSource'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rescoreSource>>, {sourceId: string}> = (props) => {
+          const {sourceId} = props ?? {};
+
+          return  rescoreSource(sourceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RescoreSourceMutationResult = NonNullable<Awaited<ReturnType<typeof rescoreSource>>>
+
+    export type RescoreSourceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Re-run AI scoring for a single source
+ */
+export const useRescoreSource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rescoreSource>>, TError,{sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rescoreSource>>,
+        TError,
+        {sourceId: string},
+        TContext
+      > => {
+      return useMutation(getRescoreSourceMutationOptions(options));
+    }
+
+export const getRequestSourceSubjectUrl = () => {
+
+
+
+
+  return `/api/sources/request-subject`
+}
+
+/**
+ * @summary Ask for a new study subject to be crawled
+ */
+export const requestSourceSubject = async (requestSubjectInput: RequestSubjectInput, options?: Parameters<typeof customFetch>[1]): Promise<RequestSubjectResult> => {
+
+  return customFetch<RequestSubjectResult>(getRequestSourceSubjectUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(requestSubjectInput)
+  }
+);}
+
+
+
+
+
+export const getRequestSourceSubjectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSourceSubject>>, TError,{data: BodyType<RequestSubjectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSourceSubject>>, TError,{data: BodyType<RequestSubjectInput>}, TContext> => {
+
+const mutationKey = ['requestSourceSubject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSourceSubject>>, {data: BodyType<RequestSubjectInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestSourceSubject(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSourceSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof requestSourceSubject>>>
+    export type RequestSourceSubjectMutationBody = BodyType<RequestSubjectInput>
+    export type RequestSourceSubjectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Ask for a new study subject to be crawled
+ */
+export const useRequestSourceSubject = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSourceSubject>>, TError,{data: BodyType<RequestSubjectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSourceSubject>>,
+        TError,
+        {data: BodyType<RequestSubjectInput>},
+        TContext
+      > => {
+      return useMutation(getRequestSourceSubjectMutationOptions(options));
+    }
+
+export const getListMySourceSubjectRequestsUrl = () => {
+
+
+
+
+  return `/api/sources/subject-requests`
+}
+
+/**
+ * @summary List the current student's subject requests
+ */
+export const listMySourceSubjectRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<CrawlSubjectRequest[]> => {
+
+  return customFetch<CrawlSubjectRequest[]>(getListMySourceSubjectRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMySourceSubjectRequestsQueryKey = () => {
+    return [
+    `/api/sources/subject-requests`
+    ] as const;
+    }
+
+
+export const getListMySourceSubjectRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listMySourceSubjectRequests>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySourceSubjectRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMySourceSubjectRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMySourceSubjectRequests>>> = ({ signal }) => listMySourceSubjectRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMySourceSubjectRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMySourceSubjectRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listMySourceSubjectRequests>>>
+export type ListMySourceSubjectRequestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current student's subject requests
+ */
+
+export function useListMySourceSubjectRequests<TData = Awaited<ReturnType<typeof listMySourceSubjectRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySourceSubjectRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMySourceSubjectRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReconsiderSourceUrl = (sourceId: string,) => {
+
+
+
+
+  return `/api/sources/${sourceId}/reconsider`
+}
+
+/**
+ * @summary Request reconsideration of a declined source
+ */
+export const reconsiderSource = async (sourceId: string,
+    reconsiderSourceInput: ReconsiderSourceInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getReconsiderSourceUrl(sourceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reconsiderSourceInput)
+  }
+);}
+
+
+
+
+
+export const getReconsiderSourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconsiderSource>>, TError,{sourceId: string;data: BodyType<ReconsiderSourceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reconsiderSource>>, TError,{sourceId: string;data: BodyType<ReconsiderSourceInput>}, TContext> => {
+
+const mutationKey = ['reconsiderSource'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reconsiderSource>>, {sourceId: string;data: BodyType<ReconsiderSourceInput>}> = (props) => {
+          const {sourceId,data} = props ?? {};
+
+          return  reconsiderSource(sourceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReconsiderSourceMutationResult = NonNullable<Awaited<ReturnType<typeof reconsiderSource>>>
+    export type ReconsiderSourceMutationBody = BodyType<ReconsiderSourceInput>
+    export type ReconsiderSourceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request reconsideration of a declined source
+ */
+export const useReconsiderSource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconsiderSource>>, TError,{sourceId: string;data: BodyType<ReconsiderSourceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reconsiderSource>>,
+        TError,
+        {sourceId: string;data: BodyType<ReconsiderSourceInput>},
+        TContext
+      > => {
+      return useMutation(getReconsiderSourceMutationOptions(options));
+    }
+
+export const getListSourcesUrl = (params?: ListSourcesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sources?${stringifiedParams}` : `/api/sources`
+}
+
+/**
+ * @summary List accepted sources, optionally filtered by subject
+ */
+export const listSources = async (params?: ListSourcesParams, options?: Parameters<typeof customFetch>[1]): Promise<StudentSource[]> => {
+
+  return customFetch<StudentSource[]>(getListSourcesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSourcesQueryKey = (params?: ListSourcesParams,) => {
+    return [
+    `/api/sources`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSourcesQueryOptions = <TData = Awaited<ReturnType<typeof listSources>>, TError = ErrorType<unknown>>(params?: ListSourcesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSourcesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSources>>> = ({ signal }) => listSources(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listSources>>>
+export type ListSourcesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List accepted sources, optionally filtered by subject
+ */
+
+export function useListSources<TData = Awaited<ReturnType<typeof listSources>>, TError = ErrorType<unknown>>(
+ params?: ListSourcesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSourcesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

@@ -144,3 +144,24 @@ export async function logAuthEvent(
 
   await postMessage(channel, text, details.clientMessageId);
 }
+
+export async function logPendingSourceEvent(details: {
+  sourceId: string;
+  sourceUrl: string;
+  sourceTitle?: string | null;
+  subjectName?: string | null;
+  crawlId?: string | null;
+  clientMessageId?: string;
+}): Promise<void> {
+  const channel = await getChannelId("pending-sources");
+  const text = [
+    "🔍 *Bron vereist beoordeling*",
+    `Vak: ${details.subjectName || "onbekend"}`,
+    `Titel: ${details.sourceTitle || "onbekend"}`,
+    `URL: ${details.sourceUrl}`,
+    `Crawl: ${details.crawlId || "onbekend"}`,
+    "→ Bekijk de wachtrij: https://geslaagd.app/beheer/crawl/pending",
+  ].join("\n");
+
+  await postMessage(channel, text, details.clientMessageId);
+}

@@ -13,6 +13,9 @@ import StudyDetailPage from '@/pages/study-detail-page';
 import SubjectDetailPage from '@/pages/subject-detail-page';
 import TopicConfigPage from '@/pages/topic-config-page';
 import AdminPage from '@/pages/admin-page';
+import AdminCrawlPage from '@/pages/admin-crawl-page';
+import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
+import AdminCrawlPendingPage from '@/pages/admin-crawl-pending-page';
 import NotFound from '@/pages/not-found';
 import {
   ArrowUpRight,
@@ -257,6 +260,9 @@ function Router() {
         <Route path="/mijn-leeromgeving/vak/:selectionId">{(params) => <SubjectDetailPage selectionId={params.selectionId} />}</Route>
         <Route path="/mijn-leeromgeving/:spaceId">{(params) => <StudyDetailPage spaceId={params.spaceId} />}</Route>
         <Route path="/beheer" component={AdminPage} />
+        <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
+        <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>
+        <Route path="/beheer/crawl" component={AdminCrawlPage} />
         <Route path="/" component={Home} />
         <Route component={NotFound} />
       </Switch>
@@ -269,9 +275,17 @@ function BroadcastNotice() {
   if (!broadcast) return null;
   return (
     <aside className="broadcast-notice" role="status" aria-live="polite" data-testid="broadcast-notice">
-      <BellRing size={18} aria-hidden="true" />
-      <div><strong>{broadcast.title}</strong><p>{broadcast.body}</p></div>
-      <button onClick={dismissBroadcast} aria-label="Bericht sluiten"><X size={17} /></button>
+      <span className="broadcast-notice-icon" aria-hidden="true">
+        <BellRing size={17} />
+      </span>
+      <div className="broadcast-notice-body">
+        <p className="broadcast-notice-kicker">Bericht van geslaagd.app</p>
+        <strong>{broadcast.title}</strong>
+        <p>{broadcast.body}</p>
+      </div>
+      <button className="broadcast-notice-close" onClick={dismissBroadcast} aria-label="Bericht sluiten">
+        <X size={16} aria-hidden="true" />
+      </button>
     </aside>
   );
 }

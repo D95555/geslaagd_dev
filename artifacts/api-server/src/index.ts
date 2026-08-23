@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startAuthEventOutboxWorker } from "./lib/auth-event-outbox";
 import { startUserNotificationWorker } from "./lib/user-notification-outbox";
+import { startSourceEventOutboxWorker } from "./lib/source-event-outbox";
 
 const rawPort = process.env["PORT"];
 
@@ -26,4 +27,5 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   startAuthEventOutboxWorker();
   startUserNotificationWorker();
+  startSourceEventOutboxWorker();
 });

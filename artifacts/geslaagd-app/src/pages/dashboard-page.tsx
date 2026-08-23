@@ -17,6 +17,7 @@ import {
 } from '@workspace/api-client-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { SourcesSection } from '@/components/study/sources-section';
 import { SubjectsManager } from '@/components/study/subjects-manager';
 import { StudyProposalCard } from '@/components/study/study-proposal-card';
 import { WelcomeCard } from '@/components/study/welcome-card';
@@ -276,6 +277,8 @@ export default function DashboardPage() {
               </button>)}
             </div>}
       </section>
+
+      <SourcesSection />
 
       {spaces.length > 0 && <section className="recent-section">
         <div className="section-title"><div><span>OVERZICHT</span><h2>Verder met een onderwerp</h2></div></div>

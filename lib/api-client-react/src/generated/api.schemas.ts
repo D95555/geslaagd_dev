@@ -594,6 +594,267 @@ export interface AdminAccountActionInput {
   idempotencyKey: string;
 }
 
+export type CrawlSubjectYearLevel = typeof CrawlSubjectYearLevel[keyof typeof CrawlSubjectYearLevel];
+
+
+export const CrawlSubjectYearLevel = {
+  vwo: 'vwo',
+  bachelor1: 'bachelor1',
+} as const;
+
+export type CrawlSubjectStatus = typeof CrawlSubjectStatus[keyof typeof CrawlSubjectStatus];
+
+
+export const CrawlSubjectStatus = {
+  pending: 'pending',
+  active: 'active',
+  denied: 'denied',
+  needs_refinement: 'needs_refinement',
+} as const;
+
+export interface CrawlSubject {
+  id: string;
+  name: string;
+  yearLevel: CrawlSubjectYearLevel;
+  status: CrawlSubjectStatus;
+  /** @nullable */
+  requestedBy: string | null;
+  /** @nullable */
+  approvedBy: string | null;
+  /** @nullable */
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CrawlSubjectCreateInputYearLevel = typeof CrawlSubjectCreateInputYearLevel[keyof typeof CrawlSubjectCreateInputYearLevel];
+
+
+export const CrawlSubjectCreateInputYearLevel = {
+  vwo: 'vwo',
+  bachelor1: 'bachelor1',
+} as const;
+
+export interface CrawlSubjectCreateInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  year_level: CrawlSubjectCreateInputYearLevel;
+}
+
+/**
+ * @nullable
+ */
+export type CrawlSubjectRequestYearLevel = typeof CrawlSubjectRequestYearLevel[keyof typeof CrawlSubjectRequestYearLevel] | null;
+
+
+export const CrawlSubjectRequestYearLevel = {
+  vwo: 'vwo',
+  bachelor1: 'bachelor1',
+} as const;
+
+export type CrawlSubjectRequestStatus = typeof CrawlSubjectRequestStatus[keyof typeof CrawlSubjectRequestStatus];
+
+
+export const CrawlSubjectRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  denied: 'denied',
+  needs_refinement: 'needs_refinement',
+} as const;
+
+export interface CrawlSubjectRequest {
+  id: string;
+  /** @nullable */
+  subjectId: string | null;
+  /** @nullable */
+  subjectName: string | null;
+  /** @nullable */
+  yearLevel: CrawlSubjectRequestYearLevel;
+  studentId: string;
+  status: CrawlSubjectRequestStatus;
+  /** @nullable */
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminNoteInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  adminNote: string;
+}
+
+export interface RunCrawlInput {
+  subjectId: string;
+}
+
+export interface CrawlRunResult {
+  crawlId: string;
+  sourcesFound: number;
+  sourcesAccepted: number;
+  /** @nullable */
+  creditsUsed: number | null;
+  /** @nullable */
+  efficiencyRatio: number | null;
+}
+
+export type CrawlSummaryStatus = typeof CrawlSummaryStatus[keyof typeof CrawlSummaryStatus];
+
+
+export const CrawlSummaryStatus = {
+  running: 'running',
+  complete: 'complete',
+  failed: 'failed',
+} as const;
+
+export interface CrawlSummary {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  status: CrawlSummaryStatus;
+  /** @nullable */
+  sourcesFound: number | null;
+  /** @nullable */
+  sourcesAccepted: number | null;
+  /** @nullable */
+  creditsUsed: number | null;
+  /** @nullable */
+  efficiencyRatio: number | null;
+  createdAt: string;
+  /** @nullable */
+  completedAt: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type CrawlSourceType = typeof CrawlSourceType[keyof typeof CrawlSourceType] | null;
+
+
+export const CrawlSourceType = {
+  article: 'article',
+  book: 'book',
+  pdf: 'pdf',
+  video: 'video',
+  website: 'website',
+} as const;
+
+export type CrawlSourceStatus = typeof CrawlSourceStatus[keyof typeof CrawlSourceStatus];
+
+
+export const CrawlSourceStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface CrawlSource {
+  id: string;
+  url: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  type: CrawlSourceType;
+  /** @nullable */
+  qualityScore: number | null;
+  /** @nullable */
+  confidenceScore: number | null;
+  /** @nullable */
+  aiSummary: string | null;
+  status: CrawlSourceStatus;
+  /** @nullable */
+  declineReason: string | null;
+  /** @nullable */
+  createdAt: string | null;
+}
+
+export type CrawlDetail = CrawlSummary & ({
+  /** @nullable */
+  promptUsed: string | null;
+  /** @nullable */
+  errorDetail: string | null;
+  sources: CrawlSource[];
+});
+
+export type PendingSource = CrawlSource & {
+  subjectNames: string[];
+};
+
+export interface DeclineSourceInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type RequestSubjectInputYearLevel = typeof RequestSubjectInputYearLevel[keyof typeof RequestSubjectInputYearLevel];
+
+
+export const RequestSubjectInputYearLevel = {
+  vwo: 'vwo',
+  bachelor1: 'bachelor1',
+} as const;
+
+export interface RequestSubjectInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  year_level: RequestSubjectInputYearLevel;
+  /** @maxLength 1000 */
+  description?: string;
+}
+
+export interface RequestSubjectResult {
+  requestId: string;
+  subjectId: string;
+}
+
+export interface ReconsiderSourceInput {
+  /** @maxLength 1000 */
+  reason?: string;
+}
+
+/**
+ * @nullable
+ */
+export type StudentSourceType = typeof StudentSourceType[keyof typeof StudentSourceType] | null;
+
+
+export const StudentSourceType = {
+  article: 'article',
+  book: 'book',
+  pdf: 'pdf',
+  video: 'video',
+  website: 'website',
+} as const;
+
+export interface StudentSource {
+  id: string;
+  url: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  type: StudentSourceType;
+  /** @nullable */
+  language: string | null;
+  /** @nullable */
+  releaseDate: string | null;
+  /** @nullable */
+  qualityScore: number | null;
+  /** @nullable */
+  aiSummary: string | null;
+  /** @nullable */
+  createdAt: string | null;
+}
+
 export type ListAdminAccountsParams = {
 /**
  * @maxLength 200
@@ -623,5 +884,9 @@ export const ListAdminAccountsStatus = {
 export type GetStudyCatalogParams = {
 query?: string;
 subjectId?: string;
+};
+
+export type ListSourcesParams = {
+subject?: string;
 };
 

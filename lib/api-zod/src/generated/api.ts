@@ -834,3 +834,346 @@ export const UpsertStudyPreferencesResponse = zod.object({
 }))
 
 
+/**
+ * @summary Create and activate a crawl subject directly
+ */
+export const createCrawlSubjectBodyNameMax = 160;
+
+
+
+export const CreateCrawlSubjectBody = zod.object({
+  "name": zod.string().min(1).max(createCrawlSubjectBodyNameMax),
+  "year_level": zod.enum(['vwo', 'bachelor1'])
+})
+
+export const CreateCrawlSubjectResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
+  "requestedBy": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "adminNote": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List all crawl subjects
+ */
+export const ListCrawlSubjectsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
+  "requestedBy": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "adminNote": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListCrawlSubjectsResponse = zod.array(ListCrawlSubjectsResponseItem)
+
+
+/**
+ * @summary List pending student subject requests
+ */
+export const ListCrawlSubjectRequestsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().nullable(),
+  "subjectName": zod.string().nullable(),
+  "yearLevel": zod.union([zod.literal('vwo'),zod.literal('bachelor1'),zod.literal(null)]).nullable(),
+  "studentId": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'denied', 'needs_refinement']),
+  "adminNote": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListCrawlSubjectRequestsResponse = zod.array(ListCrawlSubjectRequestsResponseItem)
+
+
+/**
+ * @summary Approve a student subject request
+ */
+export const ApproveCrawlSubjectRequestParams = zod.object({
+  "requestId": zod.string().uuid()
+})
+
+export const ApproveCrawlSubjectRequestResponse = zod.unknown()
+
+
+/**
+ * @summary Deny a student subject request
+ */
+export const DenyCrawlSubjectRequestParams = zod.object({
+  "requestId": zod.string().uuid()
+})
+
+export const denyCrawlSubjectRequestBodyAdminNoteMax = 1000;
+
+
+
+export const DenyCrawlSubjectRequestBody = zod.object({
+  "adminNote": zod.string().min(1).max(denyCrawlSubjectRequestBodyAdminNoteMax)
+})
+
+export const DenyCrawlSubjectRequestResponse = zod.unknown()
+
+
+/**
+ * @summary Ask a student to refine their subject request
+ */
+export const RequestCrawlSubjectRefinementParams = zod.object({
+  "requestId": zod.string().uuid()
+})
+
+export const requestCrawlSubjectRefinementBodyAdminNoteMax = 1000;
+
+
+
+export const RequestCrawlSubjectRefinementBody = zod.object({
+  "adminNote": zod.string().min(1).max(requestCrawlSubjectRefinementBodyAdminNoteMax)
+})
+
+export const RequestCrawlSubjectRefinementResponse = zod.unknown()
+
+
+/**
+ * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ */
+export const RunCrawlBody = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const RunCrawlResponse = zod.object({
+  "crawlId": zod.string().uuid(),
+  "sourcesFound": zod.number().int(),
+  "sourcesAccepted": zod.number().int(),
+  "creditsUsed": zod.number().int().nullable(),
+  "efficiencyRatio": zod.number().nullable()
+})
+
+
+/**
+ * @summary List all crawls, most recent first
+ */
+export const ListCrawlsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string(),
+  "subjectName": zod.string(),
+  "status": zod.enum(['running', 'complete', 'failed']),
+  "sourcesFound": zod.number().int().nullable(),
+  "sourcesAccepted": zod.number().int().nullable(),
+  "creditsUsed": zod.number().int().nullable(),
+  "efficiencyRatio": zod.number().nullable(),
+  "createdAt": zod.string(),
+  "completedAt": zod.string().nullable()
+})
+export const ListCrawlsResponse = zod.array(ListCrawlsResponseItem)
+
+
+/**
+ * @summary Get a crawl's metadata and discovered sources
+ */
+export const GetCrawlDetailParams = zod.object({
+  "crawlId": zod.string().uuid()
+})
+
+export const GetCrawlDetailResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string(),
+  "subjectName": zod.string(),
+  "status": zod.enum(['running', 'complete', 'failed']),
+  "sourcesFound": zod.number().int().nullable(),
+  "sourcesAccepted": zod.number().int().nullable(),
+  "creditsUsed": zod.number().int().nullable(),
+  "efficiencyRatio": zod.number().nullable(),
+  "createdAt": zod.string(),
+  "completedAt": zod.string().nullable()
+}).and(zod.object({
+  "promptUsed": zod.string().nullable(),
+  "errorDetail": zod.string().nullable(),
+  "sources": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+}))
+}))
+
+
+/**
+ * @summary List all sources awaiting human review
+ */
+export const ListPendingSourcesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+}).and(zod.object({
+  "subjectNames": zod.array(zod.string())
+}))
+export const ListPendingSourcesResponse = zod.array(ListPendingSourcesResponseItem)
+
+
+/**
+ * @summary Manually accept a pending source
+ */
+export const AcceptPendingSourceParams = zod.object({
+  "sourceId": zod.string().uuid()
+})
+
+export const AcceptPendingSourceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Manually decline a pending source
+ */
+export const DeclinePendingSourceParams = zod.object({
+  "sourceId": zod.string().uuid()
+})
+
+export const declinePendingSourceBodyReasonMax = 1000;
+
+
+
+export const DeclinePendingSourceBody = zod.object({
+  "reason": zod.string().min(1).max(declinePendingSourceBodyReasonMax)
+})
+
+export const DeclinePendingSourceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Re-run AI scoring for a single source
+ */
+export const RescoreSourceParams = zod.object({
+  "sourceId": zod.string().uuid()
+})
+
+export const RescoreSourceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Ask for a new study subject to be crawled
+ */
+export const requestSourceSubjectBodyNameMax = 160;
+
+export const requestSourceSubjectBodyDescriptionMax = 1000;
+
+
+
+export const RequestSourceSubjectBody = zod.object({
+  "name": zod.string().min(1).max(requestSourceSubjectBodyNameMax),
+  "year_level": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().max(requestSourceSubjectBodyDescriptionMax).optional()
+})
+
+export const RequestSourceSubjectResponse = zod.object({
+  "requestId": zod.string().uuid(),
+  "subjectId": zod.string().uuid()
+})
+
+
+/**
+ * @summary List the current student's subject requests
+ */
+export const ListMySourceSubjectRequestsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().nullable(),
+  "subjectName": zod.string().nullable(),
+  "yearLevel": zod.union([zod.literal('vwo'),zod.literal('bachelor1'),zod.literal(null)]).nullable(),
+  "studentId": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'denied', 'needs_refinement']),
+  "adminNote": zod.string().nullable(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListMySourceSubjectRequestsResponse = zod.array(ListMySourceSubjectRequestsResponseItem)
+
+
+/**
+ * @summary Request reconsideration of a declined source
+ */
+export const ReconsiderSourceParams = zod.object({
+  "sourceId": zod.string().uuid()
+})
+
+export const reconsiderSourceBodyReasonMax = 1000;
+
+
+
+export const ReconsiderSourceBody = zod.object({
+  "reason": zod.string().max(reconsiderSourceBodyReasonMax).optional()
+})
+
+export const ReconsiderSourceResponse = zod.void()
+
+
+/**
+ * @summary List accepted sources, optionally filtered by subject
+ */
+export const ListSourcesQueryParams = zod.object({
+  "subject": zod.string().uuid().optional()
+})
+
+export const ListSourcesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "language": zod.string().nullable(),
+  "releaseDate": zod.string().nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+})
+export const ListSourcesResponse = zod.array(ListSourcesResponseItem)
+
+

@@ -16,6 +16,10 @@ tags:
     description: Administrator-only operations
   - name: study
     description: Signed-in study environment operations
+  - name: crawl
+    description: Administrator-only source crawl pipeline operations
+  - name: sources
+    description: Signed-in student source and subject-request operations
 paths:
   /healthz:
     get:
@@ -534,6 +538,310 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StudyPreferences"
+  /admin/crawl/subjects:
+    post:
+      operationId: createCrawlSubject
+      tags: [crawl]
+      summary: Create and activate a crawl subject directly
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CrawlSubjectCreateInput"
+      responses:
+        "201":
+          description: Created subject
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlSubject"
+    get:
+      operationId: listCrawlSubjects
+      tags: [crawl]
+      summary: List all crawl subjects
+      responses:
+        "200":
+          description: Subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CrawlSubject"
+  /admin/crawl/subject-requests:
+    get:
+      operationId: listCrawlSubjectRequests
+      tags: [crawl]
+      summary: List pending student subject requests
+      responses:
+        "200":
+          description: Pending subject requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CrawlSubjectRequest"
+  /admin/crawl/subject-requests/{requestId}/approve:
+    post:
+      operationId: approveCrawlSubjectRequest
+      tags: [crawl]
+      summary: Approve a student subject request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approved
+  /admin/crawl/subject-requests/{requestId}/deny:
+    post:
+      operationId: denyCrawlSubjectRequest
+      tags: [crawl]
+      summary: Deny a student subject request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminNoteInput"
+      responses:
+        "200":
+          description: Denied
+  /admin/crawl/subject-requests/{requestId}/request-refinement:
+    post:
+      operationId: requestCrawlSubjectRefinement
+      tags: [crawl]
+      summary: Ask a student to refine their subject request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminNoteInput"
+      responses:
+        "200":
+          description: Refinement requested
+  /admin/crawl/run:
+    post:
+      operationId: runCrawl
+      tags: [crawl]
+      summary: Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunCrawlInput"
+      responses:
+        "200":
+          description: Completed crawl summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlRunResult"
+  /admin/crawl/crawls:
+    get:
+      operationId: listCrawls
+      tags: [crawl]
+      summary: List all crawls, most recent first
+      responses:
+        "200":
+          description: Crawls
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CrawlSummary"
+  /admin/crawl/crawls/{crawlId}:
+    get:
+      operationId: getCrawlDetail
+      tags: [crawl]
+      summary: Get a crawl's metadata and discovered sources
+      parameters:
+        - name: crawlId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Crawl detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlDetail"
+  /admin/crawl/pending:
+    get:
+      operationId: listPendingSources
+      tags: [crawl]
+      summary: List all sources awaiting human review
+      responses:
+        "200":
+          description: Pending sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PendingSource"
+  /admin/crawl/sources/{sourceId}/accept:
+    post:
+      operationId: acceptPendingSource
+      tags: [crawl]
+      summary: Manually accept a pending source
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Accepted source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlSource"
+  /admin/crawl/sources/{sourceId}/decline:
+    post:
+      operationId: declinePendingSource
+      tags: [crawl]
+      summary: Manually decline a pending source
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineSourceInput"
+      responses:
+        "200":
+          description: Declined source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlSource"
+  /admin/crawl/sources/{sourceId}/rescore:
+    post:
+      operationId: rescoreSource
+      tags: [crawl]
+      summary: Re-run AI scoring for a single source
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Rescored source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrawlSource"
+  /sources/request-subject:
+    post:
+      operationId: requestSourceSubject
+      tags: [sources]
+      summary: Ask for a new study subject to be crawled
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestSubjectInput"
+      responses:
+        "201":
+          description: Subject request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestSubjectResult"
+  /sources/subject-requests:
+    get:
+      operationId: listMySourceSubjectRequests
+      tags: [sources]
+      summary: List the current student's subject requests
+      responses:
+        "200":
+          description: Subject requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CrawlSubjectRequest"
+  /sources/{sourceId}/reconsider:
+    post:
+      operationId: reconsiderSource
+      tags: [sources]
+      summary: Request reconsideration of a declined source
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconsiderSourceInput"
+      responses:
+        "201":
+          description: Reconsideration request submitted
+  /sources:
+    get:
+      operationId: listSources
+      tags: [sources]
+      summary: List accepted sources, optionally filtered by subject
+      parameters:
+        - name: subject
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Accepted sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudentSource"
 components:
   schemas:
     HealthStatus:
@@ -975,4 +1283,138 @@ components:
       properties:
         reason: { type: string, minLength: 1, maxLength: 500 }
         idempotencyKey: { type: string, minLength: 1, maxLength: 160 }
+    CrawlSubject:
+      type: object
+      required: [id, name, yearLevel, status, requestedBy, approvedBy, adminNote, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        yearLevel: { type: string, enum: [vwo, bachelor1] }
+        status: { type: string, enum: [pending, active, denied, needs_refinement] }
+        requestedBy: { type: ["string", "null"] }
+        approvedBy: { type: ["string", "null"] }
+        adminNote: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    CrawlSubjectCreateInput:
+      type: object
+      required: [name, year_level]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        year_level: { type: string, enum: [vwo, bachelor1] }
+    CrawlSubjectRequest:
+      type: object
+      required: [id, subjectId, subjectName, yearLevel, studentId, status, adminNote, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: ["string", "null"] }
+        subjectName: { type: ["string", "null"] }
+        yearLevel: { type: ["string", "null"], enum: [vwo, bachelor1, null] }
+        studentId: { type: string }
+        status: { type: string, enum: [pending, approved, denied, needs_refinement] }
+        adminNote: { type: ["string", "null"] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    AdminNoteInput:
+      type: object
+      required: [adminNote]
+      properties:
+        adminNote: { type: string, minLength: 1, maxLength: 1000 }
+    RunCrawlInput:
+      type: object
+      required: [subjectId]
+      properties:
+        subjectId: { type: string, format: uuid }
+    CrawlRunResult:
+      type: object
+      required: [crawlId, sourcesFound, sourcesAccepted, creditsUsed, efficiencyRatio]
+      properties:
+        crawlId: { type: string, format: uuid }
+        sourcesFound: { type: integer }
+        sourcesAccepted: { type: integer }
+        creditsUsed: { type: ["integer", "null"] }
+        efficiencyRatio: { type: ["number", "null"] }
+    CrawlSummary:
+      type: object
+      required: [id, subjectId, subjectName, status, sourcesFound, sourcesAccepted, creditsUsed, efficiencyRatio, createdAt, completedAt]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: string }
+        subjectName: { type: string }
+        status: { type: string, enum: [running, complete, failed] }
+        sourcesFound: { type: ["integer", "null"] }
+        sourcesAccepted: { type: ["integer", "null"] }
+        creditsUsed: { type: ["integer", "null"] }
+        efficiencyRatio: { type: ["number", "null"] }
+        createdAt: { type: string }
+        completedAt: { type: ["string", "null"] }
+    CrawlSource:
+      type: object
+      required: [id, url, title, type, qualityScore, confidenceScore, aiSummary, status, declineReason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string }
+        title: { type: ["string", "null"] }
+        type: { type: ["string", "null"], enum: [article, book, pdf, video, website, null] }
+        qualityScore: { type: ["integer", "null"] }
+        confidenceScore: { type: ["number", "null"] }
+        aiSummary: { type: ["string", "null"] }
+        status: { type: string, enum: [pending, accepted, declined] }
+        declineReason: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
+    CrawlDetail:
+      allOf:
+        - $ref: "#/components/schemas/CrawlSummary"
+        - type: object
+          required: [promptUsed, errorDetail, sources]
+          properties:
+            promptUsed: { type: ["string", "null"] }
+            errorDetail: { type: ["string", "null"] }
+            sources:
+              type: array
+              items: { $ref: "#/components/schemas/CrawlSource" }
+    PendingSource:
+      allOf:
+        - $ref: "#/components/schemas/CrawlSource"
+        - type: object
+          required: [subjectNames]
+          properties:
+            subjectNames:
+              type: array
+              items: { type: string }
+    DeclineSourceInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    RequestSubjectInput:
+      type: object
+      required: [name, year_level]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        year_level: { type: string, enum: [vwo, bachelor1] }
+        description: { type: string, maxLength: 1000 }
+    RequestSubjectResult:
+      type: object
+      required: [requestId, subjectId]
+      properties:
+        requestId: { type: string, format: uuid }
+        subjectId: { type: string, format: uuid }
+    ReconsiderSourceInput:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 1000 }
+    StudentSource:
+      type: object
+      required: [id, url, title, type, language, releaseDate, qualityScore, aiSummary, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string }
+        title: { type: ["string", "null"] }
+        type: { type: ["string", "null"], enum: [article, book, pdf, video, website, null] }
+        language: { type: ["string", "null"] }
+        releaseDate: { type: ["string", "null"] }
+        qualityScore: { type: ["integer", "null"] }
+        aiSummary: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
 
