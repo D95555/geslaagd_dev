@@ -20,6 +20,16 @@ tags:
     description: Administrator-only source crawl pipeline operations
   - name: sources
     description: Signed-in student source and subject-request operations
+  - name: subjects
+    description: Student-facing subject, chapter and study-content browsing
+  - name: study-chat
+    description: StudyHandler AI chat operations
+  - name: study-exercises
+    description: Exercise and exam operations
+  - name: study-progress
+    description: Progress tracking, weakness detection, exam scheduling and study planning
+  - name: admin-pipeline
+    description: Pipeline task monitoring and content publishing
 paths:
   /healthz:
     get:
@@ -842,6 +852,465 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/StudentSource"
+
+  # ─── subjects ────────────────────────────────────────────────────────────
+  /subjects:
+    get:
+      operationId: listSubjects
+      tags: [subjects]
+      summary: List published subjects
+      responses:
+        "200":
+          description: Published subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubjectSummary"
+  /subjects/{subjectId}:
+    get:
+      operationId: getSubjectDetail
+      tags: [subjects]
+      summary: Subject detail with chapter list
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Subject detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubjectDetail"
+        "404":
+          description: Subject not found or not published
+  /subjects/{subjectId}/select:
+    post:
+      operationId: selectSubject
+      tags: [subjects]
+      summary: Add a subject to the student's study list
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "201":
+          description: Subject added
+  /subjects/{subjectId}/progress:
+    get:
+      operationId: getSubjectProgress
+      tags: [subjects]
+      summary: Progress bar, per-chapter breakdown and weak topics
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentProgress"
+  /subjects/{subjectId}/chapters/{chapterId}/content:
+    get:
+      operationId: getChapterContent
+      tags: [subjects]
+      summary: Chapter summary and key notes
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Chapter content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChapterContent"
+        "404":
+          description: Chapter not found
+  /subjects/{subjectId}/chapters/{chapterId}/mark-read:
+    post:
+      operationId: markChapterRead
+      tags: [subjects]
+      summary: Mark the chapter summary as read
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Marked as read
+
+  # ─── study-exercises ────────────────────────────────────────────────────
+  /subjects/{subjectId}/chapters/{chapterId}/exercises:
+    get:
+      operationId: getChapterExercises
+      tags: [study-exercises]
+      summary: Shuffled exercise selection for this chapter
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Exercise set (no answers included)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseSetPublic"
+  /subjects/{subjectId}/chapters/{chapterId}/exercises/submit:
+    post:
+      operationId: submitChapterExercises
+      tags: [study-exercises]
+      summary: Submit exercise answers and receive a grade
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseSubmission"
+      responses:
+        "200":
+          description: Grade result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeResult"
+  /subjects/{subjectId}/chapters/{chapterId}/exam:
+    get:
+      operationId: getChapterExam
+      tags: [study-exercises]
+      summary: Exam questions for this chapter (no answers included)
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Exam set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseSetPublic"
+        "404":
+          description: This chapter has no exam
+  /subjects/{subjectId}/chapters/{chapterId}/exam/submit:
+    post:
+      operationId: submitChapterExam
+      tags: [study-exercises]
+      summary: Submit exam answers and receive a grade
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseSubmission"
+      responses:
+        "200":
+          description: Grade result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeResult"
+
+  # ─── study-progress ─────────────────────────────────────────────────────
+  /subjects/{subjectId}/weaknesses:
+    get:
+      operationId: getSubjectWeaknesses
+      tags: [study-progress]
+      summary: Weak topics and practice suggestions
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Weak topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeakTopic"
+  /subjects/{subjectId}/exams/schedule:
+    post:
+      operationId: scheduleSubjectExam
+      tags: [study-progress]
+      summary: Set a real exam date and covered chapters
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleExamInput"
+      responses:
+        "201":
+          description: Exam scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentExam"
+  /subjects/{subjectId}/study-plan:
+    get:
+      operationId: getSubjectStudyPlan
+      tags: [study-progress]
+      summary: Today's spaced repetition review plan
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Study plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPlanResponse"
+  /subjects/{subjectId}/questionnaire:
+    get:
+      operationId: getSubjectQuestionnaire
+      tags: [study-progress]
+      summary: Diagnostic self-assessment questionnaire
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Questionnaire
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosticQuestionnaire"
+        "404":
+          description: No questionnaire available yet
+  /subjects/{subjectId}/questionnaire/submit:
+    post:
+      operationId: submitSubjectQuestionnaire
+      tags: [study-progress]
+      summary: Submit self-assessment answers
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionnaireSubmissionInput"
+      responses:
+        "200":
+          description: Stored
+
+  # ─── study-chat ─────────────────────────────────────────────────────────
+  /subjects/{subjectId}/chat:
+    get:
+      operationId: listChatMessages
+      tags: [study-chat]
+      summary: Chat history with StudyHandler (paginated)
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: before
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        "200":
+          description: Chat messages, newest last
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+    post:
+      operationId: sendChatMessage
+      tags: [study-chat]
+      summary: Send a message to StudyHandler
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendChatMessageInput"
+      responses:
+        "200":
+          description: StudyHandler's reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+
+  # ─── admin-pipeline ─────────────────────────────────────────────────────
+  /admin/pipeline/tasks:
+    get:
+      operationId: listPipelineTasks
+      tags: [admin-pipeline]
+      summary: List pipeline tasks, optionally filtered
+      parameters:
+        - name: subjectId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [waiting, ready, running, done, failed] }
+      responses:
+        "200":
+          description: Pipeline tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PipelineTask"
+  /admin/pipeline/tasks/{taskId}/retry:
+    post:
+      operationId: retryPipelineTask
+      tags: [admin-pipeline]
+      summary: Retry a failed pipeline task, optionally overriding its config
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Task requeued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineTask"
+  /admin/pipeline/tasks/{taskId}/cancel:
+    post:
+      operationId: cancelPipelineTask
+      tags: [admin-pipeline]
+      summary: Cancel a stuck pipeline task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Task cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineTask"
+  /admin/subjects/{subjectId}/content:
+    get:
+      operationId: getAdminSubjectContent
+      tags: [admin-pipeline]
+      summary: Preview generated content for a subject before publishing
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Subject content preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSubjectContentPreview"
+  /admin/subjects/{subjectId}/publish:
+    post:
+      operationId: publishSubject
+      tags: [admin-pipeline]
+      summary: Publish a subject whose readiness check passed
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubjectSummary"
+        "409":
+          description: Subject is not ready to publish
+
 components:
   schemas:
     HealthStatus:
@@ -1417,4 +1886,290 @@ components:
         qualityScore: { type: ["integer", "null"] }
         aiSummary: { type: ["string", "null"] }
         createdAt: { type: ["string", "null"] }
+
+    # ─── Study Module ──────────────────────────────────────────────────────
+    Chapter:
+      type: object
+      required: [id, subjectId, position, title, description, isImportant, topicTags, status]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: string, format: uuid }
+        position: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        isImportant: { type: boolean }
+        topicTags: { type: array, items: { type: string } }
+        status: { type: string, enum: [pending, ready] }
+    SubjectSummary:
+      type: object
+      required: [id, name, yearLevel, description, difficultyLevel, publishStatus, chapterCount]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        yearLevel: { type: string, enum: [vwo, bachelor1] }
+        description: { type: ["string", "null"] }
+        difficultyLevel: { type: ["string", "null"] }
+        publishStatus: { type: string, enum: [incomplete, ready, published] }
+        chapterCount: { type: ["integer", "null"] }
+    SubjectDetail:
+      allOf:
+        - $ref: "#/components/schemas/SubjectSummary"
+        - type: object
+          required: [chapters]
+          properties:
+            chapters:
+              type: array
+              items: { $ref: "#/components/schemas/Chapter" }
+    Citation:
+      type: object
+      required: [index, sourceId, title, url]
+      properties:
+        index: { type: integer }
+        sourceId: { type: string }
+        title: { type: string }
+        url: { type: string }
+    SummaryContent:
+      type: object
+      required: [title, body, citations, wordCount]
+      properties:
+        title: { type: string }
+        body: { type: string }
+        citations: { type: array, items: { $ref: "#/components/schemas/Citation" } }
+        wordCount: { type: integer }
+    KeyNotesContent:
+      type: object
+      required: [sections]
+      properties:
+        sections:
+          type: array
+          items:
+            type: object
+            required: [heading, items]
+            properties:
+              heading: { type: string }
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [label, value, topicTag]
+                  properties:
+                    label: { type: string }
+                    value: { type: string }
+                    topicTag: { type: string }
+    ChapterContent:
+      type: object
+      required: [summary, keyNotes]
+      properties:
+        summary: { oneOf: [{ $ref: "#/components/schemas/SummaryContent" }, { type: "null" }] }
+        keyNotes: { oneOf: [{ $ref: "#/components/schemas/KeyNotesContent" }, { type: "null" }] }
+    ExerciseQuestionPublic:
+      type: object
+      required: [index, type, topicTag, pointValue, prompt]
+      properties:
+        index: { type: integer }
+        type: { type: string, enum: [mc, open] }
+        topicTag: { type: string }
+        pointValue: { type: number }
+        prompt: { type: string }
+        options:
+          type: array
+          items:
+            type: object
+            required: [key, text]
+            properties:
+              key: { type: string }
+              text: { type: string }
+    ExerciseSetPublic:
+      type: object
+      required: [questions, totalPoints, estimatedMinutes]
+      properties:
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseQuestionPublic" }
+        totalPoints: { type: number }
+        estimatedMinutes: { type: integer }
+    ExerciseSubmission:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionIndex, answer]
+            properties:
+              questionIndex: { type: integer }
+              answer: { type: string }
+    GradeResult:
+      type: object
+      required: [grade, totalScore, maxScore, passed, perQuestion]
+      properties:
+        grade: { type: number }
+        totalScore: { type: number }
+        maxScore: { type: number }
+        passed: { type: boolean }
+        perQuestion:
+          type: array
+          items:
+            type: object
+            required: [questionIndex, isCorrect, score, maxScore, feedback]
+            properties:
+              questionIndex: { type: integer }
+              isCorrect: { type: boolean }
+              score: { type: number }
+              maxScore: { type: number }
+              feedback: { type: string }
+              correctAnswer: { type: ["string", "null"] }
+    WeakTopic:
+      type: object
+      required: [topicTag, totalAttempted, totalCorrect, successRate]
+      properties:
+        topicTag: { type: string }
+        totalAttempted: { type: integer }
+        totalCorrect: { type: integer }
+        successRate: { type: number }
+    ChapterProgress:
+      type: object
+      required: [chapterId, progress, summaryRead, exerciseBestScore, examBestScore, exerciseAttempts, examAttempts]
+      properties:
+        chapterId: { type: string, format: uuid }
+        progress: { type: number }
+        summaryRead: { type: boolean }
+        exerciseBestScore: { type: ["number", "null"] }
+        examBestScore: { type: ["number", "null"] }
+        exerciseAttempts: { type: integer }
+        examAttempts: { type: integer }
+    StudentProgress:
+      type: object
+      required: [subjectProgress, chapterProgress, weakTopics]
+      properties:
+        subjectProgress: { type: number }
+        chapterProgress:
+          type: array
+          items: { $ref: "#/components/schemas/ChapterProgress" }
+        weakTopics:
+          type: array
+          items: { $ref: "#/components/schemas/WeakTopic" }
+    ScheduleExamInput:
+      type: object
+      required: [examDate, chapterIds]
+      properties:
+        examDate: { type: string, format: date }
+        chapterIds: { type: array, items: { type: string, format: uuid } }
+        spacedRepetitionEnabled: { type: boolean }
+    StudentExam:
+      type: object
+      required: [id, subjectId, examDate, chapterIds, spacedRepetitionEnabled, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: string, format: uuid }
+        examDate: { type: string, format: date }
+        chapterIds: { type: array, items: { type: string, format: uuid } }
+        spacedRepetitionEnabled: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    ReviewTask:
+      type: object
+      required: [chapterId, chapterTitle, topicTags, priority, lastReviewed]
+      properties:
+        chapterId: { type: string, format: uuid }
+        chapterTitle: { type: string }
+        topicTags: { type: array, items: { type: string } }
+        priority: { type: string, enum: [high, medium, low] }
+        lastReviewed: { type: ["string", "null"] }
+    StudyPlanResponse:
+      type: object
+      required: [examDate, reviewTasks]
+      properties:
+        examDate: { type: ["string", "null"] }
+        reviewTasks:
+          type: array
+          items: { $ref: "#/components/schemas/ReviewTask" }
+    DiagnosticQuestionnaire:
+      type: object
+      required: [questions]
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            required: [index, prompt, type, options, chapterIds]
+            properties:
+              index: { type: integer }
+              prompt: { type: string }
+              type: { type: string, enum: [mc] }
+              options:
+                type: array
+                items:
+                  type: object
+                  required: [key, text]
+                  properties:
+                    key: { type: string }
+                    text: { type: string }
+              chapterIds: { type: array, items: { type: string, format: uuid } }
+    QuestionnaireSubmissionInput:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: object
+            required: [questionIndex, optionKey]
+            properties:
+              questionIndex: { type: integer }
+              optionKey: { type: string }
+    ChatMessage:
+      type: object
+      required: [id, role, content, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        role: { type: string, enum: [student, assistant] }
+        content: { type: string }
+        citations:
+          type: ["array", "null"]
+          items: { $ref: "#/components/schemas/Citation" }
+        createdAt: { type: string, format: date-time }
+    SendChatMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 4000 }
+        chapterId: { type: string, format: uuid }
+    PipelineTask:
+      type: object
+      required: [id, subjectId, taskType, status, attempts, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        subjectId: { type: string, format: uuid }
+        chapterId: { type: ["string", "null"], format: uuid }
+        taskType: { type: string }
+        status: { type: string, enum: [waiting, ready, running, done, failed] }
+        attempts: { type: integer }
+        lastError: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminSubjectContentPreview:
+      type: object
+      required: [subject, chapters]
+      properties:
+        subject: { $ref: "#/components/schemas/SubjectDetail" }
+        chapters:
+          type: array
+          items:
+            type: object
+            required: [chapter, content]
+            properties:
+              chapter: { $ref: "#/components/schemas/Chapter" }
+              content:
+                type: array
+                items:
+                  type: object
+                  required: [id, contentType, status, version]
+                  properties:
+                    id: { type: string, format: uuid }
+                    contentType: { type: string }
+                    status: { type: string, enum: [generating, ready, failed] }
+                    version: { type: integer }
+                    content: { type: object, additionalProperties: true }
 

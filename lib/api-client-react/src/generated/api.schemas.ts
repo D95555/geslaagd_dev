@@ -855,6 +855,326 @@ export interface StudentSource {
   createdAt: string | null;
 }
 
+export type ChapterStatus = typeof ChapterStatus[keyof typeof ChapterStatus];
+
+
+export const ChapterStatus = {
+  pending: 'pending',
+  ready: 'ready',
+} as const;
+
+export interface Chapter {
+  id: string;
+  subjectId: string;
+  position: number;
+  title: string;
+  description: string;
+  isImportant: boolean;
+  topicTags: string[];
+  status: ChapterStatus;
+}
+
+export type SubjectSummaryYearLevel = typeof SubjectSummaryYearLevel[keyof typeof SubjectSummaryYearLevel];
+
+
+export const SubjectSummaryYearLevel = {
+  vwo: 'vwo',
+  bachelor1: 'bachelor1',
+} as const;
+
+export type SubjectSummaryPublishStatus = typeof SubjectSummaryPublishStatus[keyof typeof SubjectSummaryPublishStatus];
+
+
+export const SubjectSummaryPublishStatus = {
+  incomplete: 'incomplete',
+  ready: 'ready',
+  published: 'published',
+} as const;
+
+export interface SubjectSummary {
+  id: string;
+  name: string;
+  yearLevel: SubjectSummaryYearLevel;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  difficultyLevel: string | null;
+  publishStatus: SubjectSummaryPublishStatus;
+  /** @nullable */
+  chapterCount: number | null;
+}
+
+export type SubjectDetail = SubjectSummary & {
+  chapters: Chapter[];
+};
+
+export interface Citation {
+  index: number;
+  sourceId: string;
+  title: string;
+  url: string;
+}
+
+export interface SummaryContent {
+  title: string;
+  body: string;
+  citations: Citation[];
+  wordCount: number;
+}
+
+export type KeyNotesContentSectionsItemItemsItem = {
+  label: string;
+  value: string;
+  topicTag: string;
+};
+
+export type KeyNotesContentSectionsItem = {
+  heading: string;
+  items: KeyNotesContentSectionsItemItemsItem[];
+};
+
+export interface KeyNotesContent {
+  sections: KeyNotesContentSectionsItem[];
+}
+
+export interface ChapterContent {
+  summary: SummaryContent | null;
+  keyNotes: KeyNotesContent | null;
+}
+
+export type ExerciseQuestionPublicType = typeof ExerciseQuestionPublicType[keyof typeof ExerciseQuestionPublicType];
+
+
+export const ExerciseQuestionPublicType = {
+  mc: 'mc',
+  open: 'open',
+} as const;
+
+export type ExerciseQuestionPublicOptionsItem = {
+  key: string;
+  text: string;
+};
+
+export interface ExerciseQuestionPublic {
+  index: number;
+  type: ExerciseQuestionPublicType;
+  topicTag: string;
+  pointValue: number;
+  prompt: string;
+  options?: ExerciseQuestionPublicOptionsItem[];
+}
+
+export interface ExerciseSetPublic {
+  questions: ExerciseQuestionPublic[];
+  totalPoints: number;
+  estimatedMinutes: number;
+}
+
+export type ExerciseSubmissionAnswersItem = {
+  questionIndex: number;
+  answer: string;
+};
+
+export interface ExerciseSubmission {
+  answers: ExerciseSubmissionAnswersItem[];
+}
+
+export type GradeResultPerQuestionItem = {
+  questionIndex: number;
+  isCorrect: boolean;
+  score: number;
+  maxScore: number;
+  feedback: string;
+  /** @nullable */
+  correctAnswer?: string | null;
+};
+
+export interface GradeResult {
+  grade: number;
+  totalScore: number;
+  maxScore: number;
+  passed: boolean;
+  perQuestion: GradeResultPerQuestionItem[];
+}
+
+export interface WeakTopic {
+  topicTag: string;
+  totalAttempted: number;
+  totalCorrect: number;
+  successRate: number;
+}
+
+export interface ChapterProgress {
+  chapterId: string;
+  progress: number;
+  summaryRead: boolean;
+  /** @nullable */
+  exerciseBestScore: number | null;
+  /** @nullable */
+  examBestScore: number | null;
+  exerciseAttempts: number;
+  examAttempts: number;
+}
+
+export interface StudentProgress {
+  subjectProgress: number;
+  chapterProgress: ChapterProgress[];
+  weakTopics: WeakTopic[];
+}
+
+export interface ScheduleExamInput {
+  examDate: string;
+  chapterIds: string[];
+  spacedRepetitionEnabled?: boolean;
+}
+
+export interface StudentExam {
+  id: string;
+  subjectId: string;
+  examDate: string;
+  chapterIds: string[];
+  spacedRepetitionEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ReviewTaskPriority = typeof ReviewTaskPriority[keyof typeof ReviewTaskPriority];
+
+
+export const ReviewTaskPriority = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface ReviewTask {
+  chapterId: string;
+  chapterTitle: string;
+  topicTags: string[];
+  priority: ReviewTaskPriority;
+  /** @nullable */
+  lastReviewed: string | null;
+}
+
+export interface StudyPlanResponse {
+  /** @nullable */
+  examDate: string | null;
+  reviewTasks: ReviewTask[];
+}
+
+export type DiagnosticQuestionnaireQuestionsItemType = typeof DiagnosticQuestionnaireQuestionsItemType[keyof typeof DiagnosticQuestionnaireQuestionsItemType];
+
+
+export const DiagnosticQuestionnaireQuestionsItemType = {
+  mc: 'mc',
+} as const;
+
+export type DiagnosticQuestionnaireQuestionsItemOptionsItem = {
+  key: string;
+  text: string;
+};
+
+export type DiagnosticQuestionnaireQuestionsItem = {
+  index: number;
+  prompt: string;
+  type: DiagnosticQuestionnaireQuestionsItemType;
+  options: DiagnosticQuestionnaireQuestionsItemOptionsItem[];
+  chapterIds: string[];
+};
+
+export interface DiagnosticQuestionnaire {
+  questions: DiagnosticQuestionnaireQuestionsItem[];
+}
+
+export type QuestionnaireSubmissionInputAnswersItem = {
+  questionIndex: number;
+  optionKey: string;
+};
+
+export interface QuestionnaireSubmissionInput {
+  answers: QuestionnaireSubmissionInputAnswersItem[];
+}
+
+export type ChatMessageRole = typeof ChatMessageRole[keyof typeof ChatMessageRole];
+
+
+export const ChatMessageRole = {
+  student: 'student',
+  assistant: 'assistant',
+} as const;
+
+export interface ChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  /** @nullable */
+  citations?: Citation[] | null;
+  createdAt: string;
+}
+
+export interface SendChatMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  message: string;
+  chapterId?: string;
+}
+
+export type PipelineTaskStatus = typeof PipelineTaskStatus[keyof typeof PipelineTaskStatus];
+
+
+export const PipelineTaskStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  running: 'running',
+  done: 'done',
+  failed: 'failed',
+} as const;
+
+export interface PipelineTask {
+  id: string;
+  subjectId: string;
+  /** @nullable */
+  chapterId?: string | null;
+  taskType: string;
+  status: PipelineTaskStatus;
+  attempts: number;
+  /** @nullable */
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type AdminSubjectContentPreviewChaptersItemContentItemStatus = typeof AdminSubjectContentPreviewChaptersItemContentItemStatus[keyof typeof AdminSubjectContentPreviewChaptersItemContentItemStatus];
+
+
+export const AdminSubjectContentPreviewChaptersItemContentItemStatus = {
+  generating: 'generating',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+export type AdminSubjectContentPreviewChaptersItemContentItemContent = { [key: string]: unknown };
+
+export type AdminSubjectContentPreviewChaptersItemContentItem = {
+  id: string;
+  contentType: string;
+  status: AdminSubjectContentPreviewChaptersItemContentItemStatus;
+  version: number;
+  content?: AdminSubjectContentPreviewChaptersItemContentItemContent;
+};
+
+export type AdminSubjectContentPreviewChaptersItem = {
+  chapter: Chapter;
+  content: AdminSubjectContentPreviewChaptersItemContentItem[];
+};
+
+export interface AdminSubjectContentPreview {
+  subject: SubjectDetail;
+  chapters: AdminSubjectContentPreviewChaptersItem[];
+}
+
 export type ListAdminAccountsParams = {
 /**
  * @maxLength 200
@@ -888,5 +1208,36 @@ subjectId?: string;
 
 export type ListSourcesParams = {
 subject?: string;
+};
+
+export type ListChatMessagesParams = {
+before?: string;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
+
+export type ListPipelineTasksParams = {
+subjectId?: string;
+status?: ListPipelineTasksStatus;
+};
+
+export type ListPipelineTasksStatus = typeof ListPipelineTasksStatus[keyof typeof ListPipelineTasksStatus];
+
+
+export const ListPipelineTasksStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  running: 'running',
+  done: 'done',
+  failed: 'failed',
+} as const;
+
+export type RetryPipelineTaskBodyConfig = { [key: string]: unknown };
+
+export type RetryPipelineTaskBody = {
+  config?: RetryPipelineTaskBodyConfig;
 };
 

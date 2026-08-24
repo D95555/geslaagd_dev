@@ -1177,3 +1177,532 @@ export const ListSourcesResponseItem = zod.object({
 export const ListSourcesResponse = zod.array(ListSourcesResponseItem)
 
 
+/**
+ * @summary List published subjects
+ */
+export const ListSubjectsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable()
+})
+export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
+
+
+/**
+ * @summary Subject detail with chapter list
+ */
+export const GetSubjectDetailParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetSubjectDetailResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable()
+}).and(zod.object({
+  "chapters": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "position": zod.number().int(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "isImportant": zod.boolean(),
+  "topicTags": zod.array(zod.string()),
+  "status": zod.enum(['pending', 'ready'])
+}))
+}))
+
+
+/**
+ * @summary Add a subject to the student's study list
+ */
+export const SelectSubjectParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const SelectSubjectResponse = zod.void()
+
+
+/**
+ * @summary Progress bar, per-chapter breakdown and weak topics
+ */
+export const GetSubjectProgressParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetSubjectProgressResponse = zod.object({
+  "subjectProgress": zod.number(),
+  "chapterProgress": zod.array(zod.object({
+  "chapterId": zod.string().uuid(),
+  "progress": zod.number(),
+  "summaryRead": zod.boolean(),
+  "exerciseBestScore": zod.number().nullable(),
+  "examBestScore": zod.number().nullable(),
+  "exerciseAttempts": zod.number().int(),
+  "examAttempts": zod.number().int()
+})),
+  "weakTopics": zod.array(zod.object({
+  "topicTag": zod.string(),
+  "totalAttempted": zod.number().int(),
+  "totalCorrect": zod.number().int(),
+  "successRate": zod.number()
+}))
+})
+
+
+/**
+ * @summary Chapter summary and key notes
+ */
+export const GetChapterContentParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const GetChapterContentResponse = zod.object({
+  "summary": zod.union([zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "citations": zod.array(zod.object({
+  "index": zod.number().int(),
+  "sourceId": zod.string(),
+  "title": zod.string(),
+  "url": zod.string()
+})),
+  "wordCount": zod.number().int()
+}),zod.null()]),
+  "keyNotes": zod.union([zod.object({
+  "sections": zod.array(zod.object({
+  "heading": zod.string(),
+  "items": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string(),
+  "topicTag": zod.string()
+}))
+}))
+}),zod.null()])
+})
+
+
+/**
+ * @summary Mark the chapter summary as read
+ */
+export const MarkChapterReadParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const MarkChapterReadResponse = zod.unknown()
+
+
+/**
+ * @summary Shuffled exercise selection for this chapter
+ */
+export const GetChapterExercisesParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const GetChapterExercisesResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "index": zod.number().int(),
+  "type": zod.enum(['mc', 'open']),
+  "topicTag": zod.string(),
+  "pointValue": zod.number(),
+  "prompt": zod.string(),
+  "options": zod.array(zod.object({
+  "key": zod.string(),
+  "text": zod.string()
+})).optional()
+})),
+  "totalPoints": zod.number(),
+  "estimatedMinutes": zod.number().int()
+})
+
+
+/**
+ * @summary Submit exercise answers and receive a grade
+ */
+export const SubmitChapterExercisesParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const SubmitChapterExercisesBody = zod.object({
+  "answers": zod.array(zod.object({
+  "questionIndex": zod.number().int(),
+  "answer": zod.string()
+}))
+})
+
+export const SubmitChapterExercisesResponse = zod.object({
+  "grade": zod.number(),
+  "totalScore": zod.number(),
+  "maxScore": zod.number(),
+  "passed": zod.boolean(),
+  "perQuestion": zod.array(zod.object({
+  "questionIndex": zod.number().int(),
+  "isCorrect": zod.boolean(),
+  "score": zod.number(),
+  "maxScore": zod.number(),
+  "feedback": zod.string(),
+  "correctAnswer": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Exam questions for this chapter (no answers included)
+ */
+export const GetChapterExamParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const GetChapterExamResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "index": zod.number().int(),
+  "type": zod.enum(['mc', 'open']),
+  "topicTag": zod.string(),
+  "pointValue": zod.number(),
+  "prompt": zod.string(),
+  "options": zod.array(zod.object({
+  "key": zod.string(),
+  "text": zod.string()
+})).optional()
+})),
+  "totalPoints": zod.number(),
+  "estimatedMinutes": zod.number().int()
+})
+
+
+/**
+ * @summary Submit exam answers and receive a grade
+ */
+export const SubmitChapterExamParams = zod.object({
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid()
+})
+
+export const SubmitChapterExamBody = zod.object({
+  "answers": zod.array(zod.object({
+  "questionIndex": zod.number().int(),
+  "answer": zod.string()
+}))
+})
+
+export const SubmitChapterExamResponse = zod.object({
+  "grade": zod.number(),
+  "totalScore": zod.number(),
+  "maxScore": zod.number(),
+  "passed": zod.boolean(),
+  "perQuestion": zod.array(zod.object({
+  "questionIndex": zod.number().int(),
+  "isCorrect": zod.boolean(),
+  "score": zod.number(),
+  "maxScore": zod.number(),
+  "feedback": zod.string(),
+  "correctAnswer": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Weak topics and practice suggestions
+ */
+export const GetSubjectWeaknessesParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetSubjectWeaknessesResponseItem = zod.object({
+  "topicTag": zod.string(),
+  "totalAttempted": zod.number().int(),
+  "totalCorrect": zod.number().int(),
+  "successRate": zod.number()
+})
+export const GetSubjectWeaknessesResponse = zod.array(GetSubjectWeaknessesResponseItem)
+
+
+/**
+ * @summary Set a real exam date and covered chapters
+ */
+export const ScheduleSubjectExamParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const ScheduleSubjectExamBody = zod.object({
+  "examDate": zod.coerce.date(),
+  "chapterIds": zod.array(zod.string().uuid()),
+  "spacedRepetitionEnabled": zod.boolean().optional()
+})
+
+export const ScheduleSubjectExamResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "examDate": zod.coerce.date(),
+  "chapterIds": zod.array(zod.string().uuid()),
+  "spacedRepetitionEnabled": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Today's spaced repetition review plan
+ */
+export const GetSubjectStudyPlanParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetSubjectStudyPlanResponse = zod.object({
+  "examDate": zod.string().nullable(),
+  "reviewTasks": zod.array(zod.object({
+  "chapterId": zod.string().uuid(),
+  "chapterTitle": zod.string(),
+  "topicTags": zod.array(zod.string()),
+  "priority": zod.enum(['high', 'medium', 'low']),
+  "lastReviewed": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Diagnostic self-assessment questionnaire
+ */
+export const GetSubjectQuestionnaireParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetSubjectQuestionnaireResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "index": zod.number().int(),
+  "prompt": zod.string(),
+  "type": zod.enum(['mc']),
+  "options": zod.array(zod.object({
+  "key": zod.string(),
+  "text": zod.string()
+})),
+  "chapterIds": zod.array(zod.string().uuid())
+}))
+})
+
+
+/**
+ * @summary Submit self-assessment answers
+ */
+export const SubmitSubjectQuestionnaireParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const SubmitSubjectQuestionnaireBody = zod.object({
+  "answers": zod.array(zod.object({
+  "questionIndex": zod.number().int(),
+  "optionKey": zod.string()
+}))
+})
+
+export const SubmitSubjectQuestionnaireResponse = zod.unknown()
+
+
+/**
+ * @summary Chat history with StudyHandler (paginated)
+ */
+export const ListChatMessagesParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const listChatMessagesQueryLimitMax = 50;
+
+
+
+export const ListChatMessagesQueryParams = zod.object({
+  "before": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().int().min(1).max(listChatMessagesQueryLimitMax).optional()
+})
+
+export const ListChatMessagesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['student', 'assistant']),
+  "content": zod.string(),
+  "citations": zod.array(zod.object({
+  "index": zod.number().int(),
+  "sourceId": zod.string(),
+  "title": zod.string(),
+  "url": zod.string()
+})).nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListChatMessagesResponse = zod.array(ListChatMessagesResponseItem)
+
+
+/**
+ * @summary Send a message to StudyHandler
+ */
+export const SendChatMessageParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const sendChatMessageBodyMessageMax = 4000;
+
+
+
+export const SendChatMessageBody = zod.object({
+  "message": zod.string().min(1).max(sendChatMessageBodyMessageMax),
+  "chapterId": zod.string().uuid().optional()
+})
+
+export const SendChatMessageResponse = zod.object({
+  "id": zod.string().uuid(),
+  "role": zod.enum(['student', 'assistant']),
+  "content": zod.string(),
+  "citations": zod.array(zod.object({
+  "index": zod.number().int(),
+  "sourceId": zod.string(),
+  "title": zod.string(),
+  "url": zod.string()
+})).nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List pipeline tasks, optionally filtered
+ */
+export const ListPipelineTasksQueryParams = zod.object({
+  "subjectId": zod.string().uuid().optional(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']).optional()
+})
+
+export const ListPipelineTasksResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "attempts": zod.number().int(),
+  "lastError": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+export const ListPipelineTasksResponse = zod.array(ListPipelineTasksResponseItem)
+
+
+/**
+ * @summary Retry a failed pipeline task, optionally overriding its config
+ */
+export const RetryPipelineTaskParams = zod.object({
+  "taskId": zod.string().uuid()
+})
+
+export const RetryPipelineTaskBody = zod.object({
+  "config": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+export const RetryPipelineTaskResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "attempts": zod.number().int(),
+  "lastError": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Cancel a stuck pipeline task
+ */
+export const CancelPipelineTaskParams = zod.object({
+  "taskId": zod.string().uuid()
+})
+
+export const CancelPipelineTaskResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "attempts": zod.number().int(),
+  "lastError": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Preview generated content for a subject before publishing
+ */
+export const GetAdminSubjectContentParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetAdminSubjectContentResponse = zod.object({
+  "subject": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable()
+}).and(zod.object({
+  "chapters": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "position": zod.number().int(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "isImportant": zod.boolean(),
+  "topicTags": zod.array(zod.string()),
+  "status": zod.enum(['pending', 'ready'])
+}))
+})),
+  "chapters": zod.array(zod.object({
+  "chapter": zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "position": zod.number().int(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "isImportant": zod.boolean(),
+  "topicTags": zod.array(zod.string()),
+  "status": zod.enum(['pending', 'ready'])
+}),
+  "content": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "contentType": zod.string(),
+  "status": zod.enum(['generating', 'ready', 'failed']),
+  "version": zod.number().int(),
+  "content": zod.record(zod.string(), zod.unknown()).optional()
+}))
+}))
+})
+
+
+/**
+ * @summary Publish a subject whose readiness check passed
+ */
+export const PublishSubjectParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const PublishSubjectResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable()
+})
+
+
