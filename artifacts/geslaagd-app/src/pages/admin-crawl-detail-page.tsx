@@ -19,6 +19,7 @@ import { useAuth } from '@/auth/auth-context';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,10 @@ function barelyMissed(source: CrawlSource): boolean {
 
 export default function AdminCrawlDetailPage({ crawlId }: { crawlId: string }) {
   const [, setLocation] = useLocation();
+  // This page still builds its own chrome instead of using AdminShell (it is
+  // rebuilt in the admin phase); declare the surface theme so it does not show
+  // up as the one light page in a dark admin.
+  useSurfaceTheme('dark');
   const { user, isLoading } = useAuth();
   const [crawl, setCrawl] = useState<CrawlDetail | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');

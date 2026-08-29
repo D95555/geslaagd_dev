@@ -87,11 +87,93 @@ export const tokens = {
       "monospace"
     ]
   },
+  "typeScale": {
+    "display": {
+      "font": "serif",
+      "size": "3rem",
+      "lineHeight": "1.05",
+      "weight": "700",
+      "tracking": "-0.03em"
+    },
+    "heading1": {
+      "font": "serif",
+      "size": "2rem",
+      "lineHeight": "1.15",
+      "weight": "700",
+      "tracking": "-0.02em"
+    },
+    "heading2": {
+      "font": "serif",
+      "size": "1.375rem",
+      "lineHeight": "1.25",
+      "weight": "600",
+      "tracking": "-0.015em"
+    },
+    "heading3": {
+      "font": "serif",
+      "size": "1.0625rem",
+      "lineHeight": "1.35",
+      "weight": "600",
+      "tracking": "-0.01em"
+    },
+    "body": {
+      "font": "sans",
+      "size": "0.9375rem",
+      "lineHeight": "1.55",
+      "weight": "400",
+      "tracking": "0em"
+    },
+    "bodyLong": {
+      "font": "sans",
+      "size": "1.0625rem",
+      "lineHeight": "1.75",
+      "weight": "400",
+      "tracking": "0.003em"
+    },
+    "label": {
+      "font": "sans",
+      "size": "0.8125rem",
+      "lineHeight": "1.4",
+      "weight": "600",
+      "tracking": "0.005em"
+    },
+    "meta": {
+      "font": "mono",
+      "size": "0.75rem",
+      "lineHeight": "1.45",
+      "weight": "400",
+      "tracking": "0.02em"
+    }
+  },
   "radius": "0.75rem",
   "spacing": "0.25rem",
+  "density": {
+    "comfortable": {
+      "gutter": "1.5rem",
+      "sectionGap": "2rem",
+      "blockGap": "1rem",
+      "rowPaddingY": "0.875rem",
+      "rowPaddingX": "1.125rem",
+      "controlHeight": "2.5rem"
+    },
+    "compact": {
+      "gutter": "1rem",
+      "sectionGap": "1.25rem",
+      "blockGap": "0.625rem",
+      "rowPaddingY": "0.5rem",
+      "rowPaddingX": "0.75rem",
+      "controlHeight": "2.125rem"
+    }
+  },
   "elevation": {
-    "soft": "0 10px 30px rgba(3, 18, 13, 0.10)",
-    "lift": "0 22px 54px rgba(3, 18, 13, 0.18)"
+    "light": {
+      "soft": "0 10px 30px rgba(3, 18, 13, 0.10)",
+      "lift": "0 22px 54px rgba(3, 18, 13, 0.18)"
+    },
+    "dark": {
+      "soft": "inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45)",
+      "lift": "inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 24px 60px rgba(0, 0, 0, 0.6)"
+    }
   },
   "motion": {
     "duration": {

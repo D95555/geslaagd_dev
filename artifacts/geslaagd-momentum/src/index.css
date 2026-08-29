@@ -154,6 +154,64 @@
   --spacing: 0.25rem;
   --momentum-shadow-soft: 0 10px 30px rgba(3, 18, 13, 0.10);
   --momentum-shadow-lift: 0 22px 54px rgba(3, 18, 13, 0.18);
+
+  /* Semantic type ramp. Prefer the .type-* classes over raw sizes so hierarchy
+   * stays consistent; these vars exist for cases that need the parts. */
+  --text-display-font: var(--app-font-serif);
+  --text-display-size: 3rem;
+  --text-display-line-height: 1.05;
+  --text-display-weight: 700;
+  --text-display-tracking: -0.03em;
+
+  --text-heading1-font: var(--app-font-serif);
+  --text-heading1-size: 2rem;
+  --text-heading1-line-height: 1.15;
+  --text-heading1-weight: 700;
+  --text-heading1-tracking: -0.02em;
+
+  --text-heading2-font: var(--app-font-serif);
+  --text-heading2-size: 1.375rem;
+  --text-heading2-line-height: 1.25;
+  --text-heading2-weight: 600;
+  --text-heading2-tracking: -0.015em;
+
+  --text-heading3-font: var(--app-font-serif);
+  --text-heading3-size: 1.0625rem;
+  --text-heading3-line-height: 1.35;
+  --text-heading3-weight: 600;
+  --text-heading3-tracking: -0.01em;
+
+  --text-body-font: var(--app-font-sans);
+  --text-body-size: 0.9375rem;
+  --text-body-line-height: 1.55;
+  --text-body-weight: 400;
+  --text-body-tracking: 0em;
+
+  --text-body-long-font: var(--app-font-sans);
+  --text-body-long-size: 1.0625rem;
+  --text-body-long-line-height: 1.75;
+  --text-body-long-weight: 400;
+  --text-body-long-tracking: 0.003em;
+
+  --text-label-font: var(--app-font-sans);
+  --text-label-size: 0.8125rem;
+  --text-label-line-height: 1.4;
+  --text-label-weight: 600;
+  --text-label-tracking: 0.005em;
+
+  --text-meta-font: var(--app-font-mono);
+  --text-meta-size: 0.75rem;
+  --text-meta-line-height: 1.45;
+  --text-meta-weight: 400;
+  --text-meta-tracking: 0.02em;
+
+  /* Comfortable density is the default; .density-compact overrides it. */
+  --density-gutter: 1.5rem;
+  --density-section-gap: 2rem;
+  --density-block-gap: 1rem;
+  --density-row-padding-y: 0.875rem;
+  --density-row-padding-x: 1.125rem;
+  --density-control-height: 2.5rem;
   --momentum-motion-fast: 160ms;
   --momentum-motion-base: 240ms;
   --momentum-motion-slow: 400ms;
@@ -210,6 +268,11 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
+  /* A drop shadow is invisible on deep ink, so dark raises surfaces with a lit
+   * top edge plus a deeper ambient shadow instead. */
+  --momentum-shadow-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --momentum-shadow-lift: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 24px 60px rgba(0, 0, 0, 0.6);
+
   --background: 160 48.4% 6.1%;
   --foreground: 44 48.4% 93.9%;
   --border: 158 24.8% 21.4%;
@@ -260,6 +323,84 @@
 
   --card-border: hsl(var(--card));
   --popover-border: hsl(var(--popover));
+}
+
+/* Admin and other dense surfaces opt in by adding this class to a container. */
+.density-compact {
+  --density-gutter: 1rem;
+  --density-section-gap: 1.25rem;
+  --density-block-gap: 0.625rem;
+  --density-row-padding-y: 0.5rem;
+  --density-row-padding-x: 0.75rem;
+  --density-control-height: 2.125rem;
+}
+
+@layer components {
+  /* Name the role, not the size. Editing a step in tokens.json re-flows every
+   * surface that uses it, which is the point. */
+  .type-display {
+    font-family: var(--text-display-font);
+    font-size: var(--text-display-size);
+    line-height: var(--text-display-line-height);
+    font-weight: var(--text-display-weight);
+    letter-spacing: var(--text-display-tracking);
+  }
+
+  .type-heading1 {
+    font-family: var(--text-heading1-font);
+    font-size: var(--text-heading1-size);
+    line-height: var(--text-heading1-line-height);
+    font-weight: var(--text-heading1-weight);
+    letter-spacing: var(--text-heading1-tracking);
+  }
+
+  .type-heading2 {
+    font-family: var(--text-heading2-font);
+    font-size: var(--text-heading2-size);
+    line-height: var(--text-heading2-line-height);
+    font-weight: var(--text-heading2-weight);
+    letter-spacing: var(--text-heading2-tracking);
+  }
+
+  .type-heading3 {
+    font-family: var(--text-heading3-font);
+    font-size: var(--text-heading3-size);
+    line-height: var(--text-heading3-line-height);
+    font-weight: var(--text-heading3-weight);
+    letter-spacing: var(--text-heading3-tracking);
+  }
+
+  .type-body {
+    font-family: var(--text-body-font);
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-line-height);
+    font-weight: var(--text-body-weight);
+    letter-spacing: var(--text-body-tracking);
+  }
+
+  .type-body-long {
+    font-family: var(--text-body-long-font);
+    font-size: var(--text-body-long-size);
+    line-height: var(--text-body-long-line-height);
+    font-weight: var(--text-body-long-weight);
+    letter-spacing: var(--text-body-long-tracking);
+  }
+
+  .type-label {
+    font-family: var(--text-label-font);
+    font-size: var(--text-label-size);
+    line-height: var(--text-label-line-height);
+    font-weight: var(--text-label-weight);
+    letter-spacing: var(--text-label-tracking);
+  }
+
+  .type-meta {
+    font-family: var(--text-meta-font);
+    font-size: var(--text-meta-size);
+    line-height: var(--text-meta-line-height);
+    font-weight: var(--text-meta-weight);
+    letter-spacing: var(--text-meta-tracking);
+  }
 }
 
 @layer base {

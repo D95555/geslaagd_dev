@@ -5,10 +5,14 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { ProgressBar } from '@/components/study/progress-bar';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
   const { isLoading, user, isAdmin, signOut } = useAuth();
+  // Duplicates the study header instead of using StudyPageShell (folded into
+  // the shell in the student phase); declare the surface theme meanwhile.
+  useSurfaceTheme('dark');
   const [subjects, setSubjects] = useState<SelectedSubject[] | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 

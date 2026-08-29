@@ -1200,25 +1200,27 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 /* ── Console: a real terminal window around the log feed ────────────────── */
-.console-terminal { margin-top: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid #27272a; box-shadow: 0 1px 2px rgb(0 0 0 / .06); }
-.console-terminal-chrome { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #18181b; border-bottom: 1px solid #27272a; }
+/* Themed from tokens rather than fixed greys: on the dark learning surface a
+ * hardcoded near-black panel reads as a hole rather than a terminal. */
+.console-terminal { margin-top: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid hsl(var(--border)); box-shadow: var(--momentum-shadow-soft); }
+.console-terminal-chrome { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: hsl(var(--muted)); border-bottom: 1px solid hsl(var(--border)); }
 .console-terminal-dot { width: 9px; height: 9px; border-radius: 999px; }
-.dot-red { background: #ef4444; }
-.dot-yellow { background: #eab308; }
-.dot-green { background: #22c55e; }
-.console-terminal-title { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: #a1a1aa; font-family: var(--app-font-mono); font-size: .74rem; }
-.console-terminal-screen { max-height: 62vh; overflow-y: auto; padding: 10px; background: #09090b; scroll-behavior: smooth; }
+.dot-red { background: hsl(var(--destructive)); }
+.dot-yellow { background: hsl(var(--chart-4)); }
+.dot-green { background: hsl(var(--primary)); }
+.console-terminal-title { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .74rem; }
+.console-terminal-screen { max-height: 62vh; overflow-y: auto; padding: 10px; background: hsl(var(--sidebar)); scroll-behavior: smooth; }
 .console-terminal-screen .console-list { border: 0; border-radius: 0; padding: 0; background: transparent; }
-.console-terminal-screen .log-line:nth-child(odd) { background: rgb(255 255 255 / .035); }
-.console-terminal-screen .log-time, .console-terminal-screen .log-phase { color: #71717a; }
-.console-terminal-screen .log-message { color: #e4e4e7; }
-.console-terminal-screen .log-warn .log-phase, .console-terminal-screen .log-warn .log-message { color: #fbbf24; }
-.console-terminal-screen .log-error .log-message { color: #f87171; }
-.console-terminal-screen .log-error { border-left-color: #f87171; }
-.console-terminal-screen .log-toggle { color: #a1a1aa; }
-.console-terminal-screen .log-data { background: rgb(255 255 255 / .06); color: #e4e4e7; }
-.console-terminal-screen .console-row:hover { background: rgb(255 255 255 / .06); }
-.console-terminal-status { display: flex; align-items: center; gap: 8px; padding: 24px 10px; color: #a1a1aa; font-family: var(--app-font-mono); font-size: .82rem; }
-.console-cursor { display: block; width: 7px; height: 14px; margin: 6px 0 2px 12px; background: #22c55e; animation: console-blink 1s steps(1) infinite; }
+.console-terminal-screen .log-line:nth-child(odd) { background: hsl(var(--foreground) / .035); }
+.console-terminal-screen .log-time, .console-terminal-screen .log-phase { color: hsl(var(--muted-foreground)); }
+.console-terminal-screen .log-message { color: hsl(var(--foreground)); }
+.console-terminal-screen .log-warn .log-phase, .console-terminal-screen .log-warn .log-message { color: hsl(var(--chart-4)); }
+.console-terminal-screen .log-error .log-message { color: hsl(var(--destructive)); }
+.console-terminal-screen .log-error { border-left-color: hsl(var(--destructive)); }
+.console-terminal-screen .log-toggle { color: hsl(var(--muted-foreground)); }
+.console-terminal-screen .log-data { background: hsl(var(--foreground) / .06); color: hsl(var(--foreground)); }
+.console-terminal-screen .console-row:hover { background: hsl(var(--foreground) / .06); }
+.console-terminal-status { display: flex; align-items: center; gap: 8px; padding: 24px 10px; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .82rem; }
+.console-cursor { display: block; width: 7px; height: 14px; margin: 6px 0 2px 12px; background: hsl(var(--primary)); animation: console-blink 1s steps(1) infinite; }
 @keyframes console-blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .console-cursor { animation: none; } }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, LogOut } from 'lucide-react';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 
 /** The shared student page frame: brand header, sign-out and a back link. */
@@ -15,6 +16,9 @@ export function StudyPageShell({
 }) {
   const [, setLocation] = useLocation();
   const { user, signOut } = useAuth();
+
+  // Deep ink is the learning environment, per the design guidelines.
+  useSurfaceTheme('dark');
 
   const leave = async () => {
     await signOut();

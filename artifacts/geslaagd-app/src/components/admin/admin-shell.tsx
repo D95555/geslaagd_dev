@@ -12,6 +12,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 import { LiveTaskTicker } from '@/components/admin/live-task-ticker';
 
@@ -56,6 +57,9 @@ export function AdminShell({
   const [location, setLocation] = useLocation();
   const { user, signOut } = useAuth();
 
+  // Admin shares the dark learning surface, at a denser spacing scale.
+  useSurfaceTheme('dark');
+
   const leave = async () => {
     await signOut();
     setLocation('/');
@@ -79,7 +83,7 @@ export function AdminShell({
         </div>
       </header>
 
-      <div className="admin-layout">
+      <div className="admin-layout density-compact">
         <nav className="admin-nav" aria-label="Beheernavigatie">
           {NAV.map((item) => {
             const Icon = item.icon;

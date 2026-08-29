@@ -4,6 +4,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Toaster } from '@workspace/geslaagd-momentum/components/ui/toaster';
 import { TooltipProvider } from '@workspace/geslaagd-momentum/components/ui/tooltip';
+import { ThemeProvider } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
 import DashboardPage from '@/pages/dashboard-page';
@@ -314,14 +315,17 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-        </AuthProvider>
-        <Toaster />
-      </TooltipProvider>
+      {/* Paper is the default; the study and admin shells declare themselves dark. */}
+      <ThemeProvider defaultTheme="light">
+        <TooltipProvider>
+          <AuthProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+          </AuthProvider>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

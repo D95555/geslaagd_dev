@@ -139,6 +139,74 @@ function colorEntries(scope, tokens) {
   return out;
 }
 
+/** camelCase token name -> kebab-case CSS custom property segment. */
+function kebab(name) {
+  return name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+}
+
+function typeScaleEntries(tokens) {
+  const out = {};
+  for (const [name, node] of Object.entries(tokens.typography.scale)) {
+    if (name.startsWith("$")) continue;
+    out[name] = resolveValue(node, tokens);
+  }
+  return out;
+}
+
+/** The `--text-<step>-*` custom properties, one group per semantic step. */
+function buildTypeScaleVars(tokens) {
+  return Object.entries(typeScaleEntries(tokens))
+    .map(([name, step]) => {
+      const k = kebab(name);
+      return [
+        `  --text-${k}-font: var(--app-font-${step.font});`,
+        `  --text-${k}-size: ${step.size};`,
+        `  --text-${k}-line-height: ${step.lineHeight};`,
+        `  --text-${k}-weight: ${step.weight};`,
+        `  --text-${k}-tracking: ${step.tracking};`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+/** Matching `.type-<step>` utility classes so markup names the role, not the size. */
+function buildTypeScaleClasses(tokens) {
+  return Object.entries(typeScaleEntries(tokens))
+    .map(([name]) => {
+      const k = kebab(name);
+      return [
+        `  .type-${k} {`,
+        `    font-family: var(--text-${k}-font);`,
+        `    font-size: var(--text-${k}-size);`,
+        `    line-height: var(--text-${k}-line-height);`,
+        `    font-weight: var(--text-${k}-weight);`,
+        `    letter-spacing: var(--text-${k}-tracking);`,
+        `  }`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function densityEntries(scale, tokens) {
+  const out = {};
+  for (const [name, node] of Object.entries(tokens.density[scale])) {
+    if (name.startsWith("$")) continue;
+    out[name] = resolveValue(node, tokens);
+  }
+  return out;
+}
+
+/** `--density-*` custom properties for one density scale. */
+function buildDensityVars(tokens, scale, indent = "  ") {
+  return Object.entries(tokens.density[scale])
+    .filter(([name]) => !name.startsWith("$"))
+    .map(
+      ([name, node]) =>
+        `${indent}--density-${kebab(name)}: ${resolveValue(node, tokens)};`,
+    )
+    .join("\n");
+}
+
 function buildCss(tokens) {
   let css = readFileSync(templatePath, "utf8");
   const replacements = {};
@@ -161,8 +229,16 @@ function buildCss(tokens) {
   );
   replacements.__DS_RADIUS__ = resolveValue(tokens.radius.base, tokens);
   replacements.__DS_SPACING__ = resolveValue(tokens.spacing.base, tokens);
-  replacements.__DS_ELEVATION_SOFT__ = resolveValue(tokens.elevation.soft, tokens);
-  replacements.__DS_ELEVATION_LIFT__ = resolveValue(tokens.elevation.lift, tokens);
+  for (const scope of ["light", "dark"]) {
+    for (const step of ["soft", "lift"]) {
+      replacements[`__DS_ELEVATION_${scope.toUpperCase()}_${step.toUpperCase()}__`] =
+        resolveValue(tokens.elevation[scope][step], tokens);
+    }
+  }
+  replacements.__DS_TYPE_SCALE_VARS__ = buildTypeScaleVars(tokens);
+  replacements.__DS_TYPE_SCALE_CLASSES__ = buildTypeScaleClasses(tokens);
+  replacements.__DS_DENSITY_COMFORTABLE__ = buildDensityVars(tokens, "comfortable");
+  replacements.__DS_DENSITY_COMPACT__ = buildDensityVars(tokens, "compact");
   replacements.__DS_MOTION_FAST__ = resolveValue(tokens.motion.duration.fast, tokens);
   replacements.__DS_MOTION_BASE__ = resolveValue(tokens.motion.duration.base, tokens);
   replacements.__DS_MOTION_SLOW__ = resolveValue(tokens.motion.duration.slow, tokens);
@@ -192,11 +268,22 @@ function buildTs(tokens) {
       serif: resolveValue(tokens.typography.fontFamily.serif, tokens),
       mono: resolveValue(tokens.typography.fontFamily.mono, tokens),
     },
+    typeScale: typeScaleEntries(tokens),
     radius: resolveValue(tokens.radius.base, tokens),
     spacing: resolveValue(tokens.spacing.base, tokens),
+    density: {
+      comfortable: densityEntries("comfortable", tokens),
+      compact: densityEntries("compact", tokens),
+    },
     elevation: {
-      soft: resolveValue(tokens.elevation.soft, tokens),
-      lift: resolveValue(tokens.elevation.lift, tokens),
+      light: {
+        soft: resolveValue(tokens.elevation.light.soft, tokens),
+        lift: resolveValue(tokens.elevation.light.lift, tokens),
+      },
+      dark: {
+        soft: resolveValue(tokens.elevation.dark.soft, tokens),
+        lift: resolveValue(tokens.elevation.dark.lift, tokens),
+      },
     },
     motion: {
       duration: {

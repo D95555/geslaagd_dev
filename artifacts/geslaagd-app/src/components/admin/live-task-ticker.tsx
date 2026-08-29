@@ -48,24 +48,24 @@ export function LiveTaskTicker() {
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 shadow-lg transition-colors hover:bg-zinc-900"
+            className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs text-card-foreground shadow-lg transition-colors hover:bg-muted"
           >
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
             {tasks.length} {tasks.length === 1 ? 'taak' : 'taken'} actief
           </button>
         )}
 
         {expanded && (
-          <div className="w-80 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-100 shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2">
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
+          <div className="w-80 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-3 py-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <div className="flex gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-500/70" />
-                  <span className="h-2 w-2 rounded-full bg-yellow-500/70" />
-                  <span className="h-2 w-2 rounded-full bg-emerald-500/70" />
+                  <span className="h-2 w-2 rounded-full bg-destructive/70" />
+                  <span className="h-2 w-2 rounded-full bg-chart-4/70" />
+                  <span className="h-2 w-2 rounded-full bg-primary/70" />
                 </div>
                 <TerminalSquare size={12} aria-hidden="true" />
                 <span>pijplijn — live</span>
@@ -74,7 +74,7 @@ export function LiveTaskTicker() {
                 type="button"
                 onClick={() => setExpanded(false)}
                 aria-label="Inklappen"
-                className="text-zinc-500 hover:text-zinc-200"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <ChevronDown size={14} />
               </button>
@@ -85,13 +85,13 @@ export function LiveTaskTicker() {
                   <button
                     type="button"
                     onClick={() => setDetailTaskId(task.id)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-900"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted"
                   >
-                    <span className="text-emerald-400">$</span>
-                    <span className="min-w-0 flex-1 truncate text-zinc-100">
+                    <span className="text-primary">$</span>
+                    <span className="min-w-0 flex-1 truncate text-foreground">
                       {taskTypeLabel[task.taskType] ?? task.taskType}
                     </span>
-                    <span className="shrink-0 truncate text-zinc-500">
+                    <span className="shrink-0 truncate text-muted-foreground">
                       {subjectNames[task.subjectId] ?? '—'}
                     </span>
                   </button>

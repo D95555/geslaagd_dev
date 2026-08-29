@@ -152,8 +152,15 @@
   --app-font-mono: __DS_FONT_MONO__;
   --radius: __DS_RADIUS__;
   --spacing: __DS_SPACING__;
-  --momentum-shadow-soft: __DS_ELEVATION_SOFT__;
-  --momentum-shadow-lift: __DS_ELEVATION_LIFT__;
+  --momentum-shadow-soft: __DS_ELEVATION_LIGHT_SOFT__;
+  --momentum-shadow-lift: __DS_ELEVATION_LIGHT_LIFT__;
+
+  /* Semantic type ramp. Prefer the .type-* classes over raw sizes so hierarchy
+   * stays consistent; these vars exist for cases that need the parts. */
+__DS_TYPE_SCALE_VARS__
+
+  /* Comfortable density is the default; .density-compact overrides it. */
+__DS_DENSITY_COMFORTABLE__
   --momentum-motion-fast: __DS_MOTION_FAST__;
   --momentum-motion-base: __DS_MOTION_BASE__;
   --momentum-motion-slow: __DS_MOTION_SLOW__;
@@ -210,6 +217,11 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
+  /* A drop shadow is invisible on deep ink, so dark raises surfaces with a lit
+   * top edge plus a deeper ambient shadow instead. */
+  --momentum-shadow-soft: __DS_ELEVATION_DARK_SOFT__;
+  --momentum-shadow-lift: __DS_ELEVATION_DARK_LIFT__;
+
   --background: __DS_DARK_BACKGROUND__;
   --foreground: __DS_DARK_FOREGROUND__;
   --border: __DS_DARK_BORDER__;
@@ -260,6 +272,17 @@
 
   --card-border: hsl(var(--card));
   --popover-border: hsl(var(--popover));
+}
+
+/* Admin and other dense surfaces opt in by adding this class to a container. */
+.density-compact {
+__DS_DENSITY_COMPACT__
+}
+
+@layer components {
+  /* Name the role, not the size. Editing a step in tokens.json re-flows every
+   * surface that uses it, which is the point. */
+__DS_TYPE_SCALE_CLASSES__
 }
 
 @layer base {
