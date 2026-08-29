@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "start": "node --env-file=.env --enable-source-maps ./dist/index.mjs",
+    "start": "node --env-file-if-exists=.env --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "verify:student": "tsx --env-file=.env verify-student-logic.ts"
+    "verify:student": "tsx --env-file-if-exists=.env verify-student-logic.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
