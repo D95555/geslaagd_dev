@@ -1754,12 +1754,13 @@ components:
         idempotencyKey: { type: string, minLength: 1, maxLength: 160 }
     CrawlSubject:
       type: object
-      required: [id, name, yearLevel, status, requestedBy, approvedBy, adminNote, createdAt, updatedAt]
+      required: [id, name, yearLevel, status, publishStatus, requestedBy, approvedBy, adminNote, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         yearLevel: { type: string, enum: [vwo, bachelor1] }
         status: { type: string, enum: [pending, active, denied, needs_refinement] }
+        publishStatus: { type: string, enum: [incomplete, ready, published] }
         requestedBy: { type: ["string", "null"] }
         approvedBy: { type: ["string", "null"] }
         adminNote: { type: ["string", "null"] }

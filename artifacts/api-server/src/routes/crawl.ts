@@ -39,6 +39,7 @@ function toSubject(row: Row) {
     name: row.name as string,
     yearLevel: row.year_level as "vwo" | "bachelor1",
     status: row.status as "pending" | "active" | "denied" | "needs_refinement",
+    publishStatus: (row.publish_status as "incomplete" | "ready" | "published" | null) ?? "incomplete",
     requestedBy: (row.requested_by as string | null) ?? null,
     approvedBy: (row.approved_by as string | null) ?? null,
     adminNote: (row.admin_note as string | null) ?? null,

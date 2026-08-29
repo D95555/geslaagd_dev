@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, BookOpenText, ChevronRight, GraduationCap, LogOut, Settings2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpenText, ChevronRight, GraduationCap, LogOut, Settings2, ShieldCheck, Sparkles } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   confirmStudyProposal,
@@ -32,7 +32,7 @@ function welcomeDismissedKey(userId: string): string {
 
 export default function DashboardPage() {
   const [, setLocation] = useLocation();
-  const { isLoading, user, signOut } = useAuth();
+  const { isLoading, user, isAdmin, signOut } = useAuth();
   const [spaces, setSpaces] = useState<StudySpace[]>([]);
   const [preferences, setPreferences] = useState<StudyPreferences | null | undefined>(undefined);
   const [selectedSubjects, setSelectedSubjects] = useState<SelectedStudySubject[] | null>(null);
@@ -220,6 +220,11 @@ export default function DashboardPage() {
       </button>
       <div className="dashboard-actions">
         <span>{user.email}</span>
+        {isAdmin && (
+          <button type="button" onClick={() => setLocation('/beheer')} data-testid="button-admin-dashboard">
+            <ShieldCheck size={15} /> Beheer
+          </button>
+        )}
         <button type="button" onClick={leave}><LogOut size={15} /> Uitloggen</button>
       </div>
     </header>

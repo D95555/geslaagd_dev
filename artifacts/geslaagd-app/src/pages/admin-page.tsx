@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { listAdminSessions, revokeAdminSession, sendAdminBroadcast } from '@workspace/api-client-react';
-import { Activity, ArrowLeft, BellRing, ChevronDown, Compass, LogOut, RefreshCw, Send, ShieldAlert, Users, Workflow } from 'lucide-react';
+import { Activity, BellRing, ChevronDown, RefreshCw, Send, Users } from 'lucide-react';
+import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -105,16 +106,13 @@ export default function AdminPage() {
     }
   };
 
-  if (state === 'forbidden') return <main className="admin-denied"><ShieldAlert size={29} /><h1>Geen toegang.</h1><p>Deze omgeving is alleen voor beheerders.</p><Button onClick={() => setLocation('/')}>Terug naar de homepage</Button></main>;
-  return <main className="admin-page">
-    <header className="admin-header"><button className="auth-brand" onClick={() => setLocation('/')}><span className="wordmark-mark" /><span>geslaagd.app</span></button><div><span>beheerdersomgeving</span><Button variant="ghost" onClick={async () => { await signOut(); setLocation('/'); }}><LogOut size={15}/> Uitloggen</Button></div></header>
-    <section className="admin-wrap">
-      <div className="admin-intro"><p className="dashboard-kicker"><ShieldAlert size={15}/> prive beheer</p><h1>Houd de leeromgeving in beweging.</h1><p>Bekijk actieve sessies, stuur een broadcast of zoek een account op.</p></div>
+  if (state === 'forbidden') return <AdminDenied />;
+  return <AdminShell
+      title="Accounts & sessies"
+      intro="Bekijk actieve sessies, stuur een broadcast of zoek een account op."
+      actions={<Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw size={15}/> Verversen</Button>}
+    >
       <div className="admin-stats"><div><Activity size={17}/><strong>{active}</strong><span>nu actief</span></div><div><Users size={17}/><strong>{sessions.length}</strong><span>geregistreerd</span></div></div>
-      <div className="admin-quick-links">
-        <Button variant="outline" className="admin-crawl-link" onClick={() => setLocation('/beheer/crawl')}><Compass size={15}/> Bronnen crawl beheren</Button>
-        <Button variant="outline" className="admin-crawl-link" onClick={() => setLocation('/beheer/pipeline')}><Workflow size={15}/> Contentpijplijn</Button>
-      </div>
       <Tabs defaultValue="monitoring" className="admin-tabs">
         <TabsList className="admin-tabs-list">
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
@@ -178,7 +176,5 @@ export default function AdminPage() {
           <AdminAccountsPanel />
         </TabsContent>
       </Tabs>
-      <Button className="admin-back" variant="ghost" onClick={() => setLocation('/')}><ArrowLeft size={15}/> Terug naar de site</Button>
-    </section>
-  </main>;
+  </AdminShell>;
 }

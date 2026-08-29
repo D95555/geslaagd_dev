@@ -15,6 +15,8 @@ import {
 import { ArrowLeft, Check, Loader2, Play, Plus, ShieldAlert, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useLivePoll } from '@/lib/use-live-poll';
+import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { CrawlCharts } from '@/components/admin/crawl-charts';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
@@ -80,8 +82,9 @@ export default function AdminCrawlPage() {
   const [adminNote, setAdminNote] = useState('');
   const [refining, setRefining] = useState(false);
 
-  const load = async () => {
-    setState('loading');
+  // `silent` keeps background polling from flashing the loading state.
+  const load = async (silent = false) => {
+    if (!silent) setState('loading');
     try {
       const [nextCrawls, nextRequests, subjects] = await Promise.all([
         listCrawls(),
@@ -94,12 +97,15 @@ export default function AdminCrawlPage() {
       setState('ready');
     } catch (error) {
       setState((error as { status?: number }).status === 403 ? 'forbidden' : 'error');
+      throw error;
     }
   };
   useEffect(() => {
-    if (!isLoading && user) void load();
+    if (!isLoading && user) void load().catch(() => undefined);
     else if (!isLoading) setState('forbidden');
   }, [isLoading, user?.id]);
+
+  useLivePoll(() => load(true), { enabled: state === 'ready' });
 
   const openRunDialog = () => {
     setRunSubjectId(activeSubjects[0]?.id ?? '');
@@ -162,34 +168,13 @@ export default function AdminCrawlPage() {
     }
   };
 
-  if (state === 'forbidden') {
-    return (
-      <main className="admin-denied">
-        <ShieldAlert size={29} />
-        <h1>Geen toegang.</h1>
-        <p>Deze omgeving is alleen voor beheerders.</p>
-        <Button onClick={() => setLocation('/beheer')}>Terug naar beheer</Button>
-      </main>
-    );
-  }
+  if (state === 'forbidden') return <AdminDenied />;
 
   return (
-    <main className="admin-page">
-      <header className="admin-header">
-        <button className="auth-brand" onClick={() => setLocation('/beheer')}>
-          <span className="wordmark-mark" /><span>geslaagd.app</span>
-        </button>
-        <div>
-          <span>bronnen crawl</span>
-          <Button variant="ghost" onClick={() => setLocation('/beheer')}><ArrowLeft size={15} /> Terug naar beheer</Button>
-        </div>
-      </header>
-      <section className="admin-wrap">
-        <div className="admin-intro">
-          <p className="dashboard-kicker"><ShieldAlert size={15} /> bronnenpijplijn</p>
-          <h1>Crawl studiebronnen.</h1>
-          <p>Start crawls, keur nieuwe vakken goed en beoordeel gevonden bronnen.</p>
-        </div>
+    <AdminShell
+      title="Vakken & crawls"
+      intro="Start crawls, keur nieuwe vakaanvragen goed en volg wat er is opgehaald."
+    >
 
         <div className="crawl-toolbar">
           <Button onClick={openRunDialog} disabled={activeSubjects.length === 0}><Play size={15} /> Crawl starten</Button>
@@ -267,7 +252,6 @@ export default function AdminCrawlPage() {
             )}
           </TabsContent>
         </Tabs>
-      </section>
 
       <Dialog open={runOpen} onOpenChange={setRunOpen}>
         <DialogContent>
@@ -335,6 +319,6 @@ export default function AdminCrawlPage() {
           )}
         </DialogContent>
       </Dialog>
-    </main>
+    </AdminShell>
   );
 }

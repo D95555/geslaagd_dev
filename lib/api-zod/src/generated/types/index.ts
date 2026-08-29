@@ -43,6 +43,7 @@ export * from './crawlSourceType';
 export * from './crawlSubject';
 export * from './crawlSubjectCreateInput';
 export * from './crawlSubjectCreateInputYearLevel';
+export * from './crawlSubjectPublishStatus';
 export * from './crawlSubjectRequest';
 export * from './crawlSubjectRequestStatus';
 export * from './crawlSubjectRequestYearLevel';

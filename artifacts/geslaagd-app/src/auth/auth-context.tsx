@@ -22,6 +22,7 @@ type AuthContextValue = {
   isLoading: boolean;
   session: Session | null;
   user: User | null;
+  isAdmin: boolean;
   broadcast: { title: string; body: string } | null;
   dismissBroadcast: () => void;
   signOut: () => Promise<void>;
@@ -31,6 +32,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 function hasVerifiedEmail(user: User | null): user is User {
   return Boolean(user?.email_confirmed_at);
+}
+
+/**
+ * Only decides whether admin navigation is shown. The role lives in
+ * app_metadata, which users cannot set themselves, but every admin endpoint
+ * still checks the role server-side — this is never the access control.
+ */
+function isAdminUser(user: User | null): boolean {
+  return user?.app_metadata?.["role"] === "admin";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -161,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       session,
       user,
+      isAdmin: isAdminUser(user),
       broadcast,
       dismissBroadcast: () => setBroadcast(null),
       signOut: async () => {

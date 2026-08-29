@@ -612,11 +612,21 @@ export const CrawlSubjectStatus = {
   needs_refinement: 'needs_refinement',
 } as const;
 
+export type CrawlSubjectPublishStatus = typeof CrawlSubjectPublishStatus[keyof typeof CrawlSubjectPublishStatus];
+
+
+export const CrawlSubjectPublishStatus = {
+  incomplete: 'incomplete',
+  ready: 'ready',
+  published: 'published',
+} as const;
+
 export interface CrawlSubject {
   id: string;
   name: string;
   yearLevel: CrawlSubjectYearLevel;
   status: CrawlSubjectStatus;
+  publishStatus: CrawlSubjectPublishStatus;
   /** @nullable */
   requestedBy: string | null;
   /** @nullable */

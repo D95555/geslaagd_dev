@@ -1042,3 +1042,59 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .spin { animation: none; }
   .study-progress-fill, .chapter-row, .practice-card, .catalog-banner { transition: none; }
 }
+
+/* ── Beheeromgeving: schil met zijmenu ──────────────────────────────────── */
+
+.admin-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; max-width: 1240px; margin: 0 auto; padding: 28px 24px 64px; }
+.admin-header-user { color: hsl(var(--muted-foreground)); font-size: .82rem; }
+
+.admin-nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 24px; align-self: start; }
+.admin-nav-item { display: flex; align-items: flex-start; gap: 11px; width: 100%; padding: 11px 13px; border: 1px solid transparent; border-radius: var(--radius); background: none; color: inherit; text-align: left; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.admin-nav-item:hover { background: hsl(var(--muted)); }
+.admin-nav-item.active { border-color: hsl(var(--border)); background: hsl(var(--card)); }
+.admin-nav-item svg { margin-top: 2px; color: hsl(var(--muted-foreground)); flex-shrink: 0; }
+.admin-nav-item.active svg { color: hsl(var(--primary)); }
+.admin-nav-item span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.admin-nav-item strong { font-size: .88rem; font-weight: 600; }
+.admin-nav-item small { color: hsl(var(--muted-foreground)); font-size: .74rem; line-height: 1.35; }
+
+.admin-content { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.admin-content-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.admin-content-head h1 { margin: 0; font-size: 1.55rem; }
+.admin-content-head p { margin: 6px 0 0; max-width: 62ch; color: hsl(var(--muted-foreground)); font-size: .9rem; line-height: 1.6; }
+.admin-content-actions { display: flex; gap: 8px; }
+
+.admin-block { display: flex; flex-direction: column; gap: 10px; }
+.admin-block h2 { margin: 0; font-size: 1.02rem; }
+
+/* Overzicht: wat vraagt aandacht */
+.attention-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.attention-card { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 18px 20px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); color: inherit; text-align: left; cursor: pointer; transition: border-color .2s ease; }
+.attention-card:hover { border-color: hsl(var(--primary)); }
+.attention-card.urgent { border-color: hsl(var(--destructive)); }
+.attention-card strong { font-size: 1.9rem; line-height: 1; }
+.attention-label { font-size: .88rem; font-weight: 600; }
+.attention-detail { color: hsl(var(--muted-foreground)); font-size: .76rem; line-height: 1.45; }
+
+.recent-tasks { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.recent-tasks li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); font-size: .84rem; }
+.recent-task-type { flex: 1; }
+.recent-task-status { color: hsl(var(--muted-foreground)); font-size: .78rem; }
+.task-dot { width: 8px; height: 8px; border-radius: 999px; background: hsl(var(--muted-foreground)); flex-shrink: 0; }
+.task-dot-done { background: hsl(var(--primary)); }
+.task-dot-failed { background: hsl(var(--destructive)); }
+.task-dot-running { background: hsl(var(--primary)); animation: task-pulse 1.4s ease-in-out infinite; }
+
+@keyframes task-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+@media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; gap: 18px; padding: 20px 16px 48px; }
+  .admin-nav { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .admin-nav-item { flex-direction: column; align-items: flex-start; min-width: 160px; }
+  .admin-nav-item small { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-nav-item, .attention-card { transition: none; }
+  .task-dot-running { animation: none; }
+}

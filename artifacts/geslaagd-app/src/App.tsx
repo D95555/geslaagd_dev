@@ -17,6 +17,7 @@ import AdminCrawlPage from '@/pages/admin-crawl-page';
 import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
 import AdminCrawlPendingPage from '@/pages/admin-crawl-pending-page';
 import AdminPipelinePage from '@/pages/admin-pipeline-page';
+import AdminOverviewPage from '@/pages/admin-overview-page';
 import SubjectCatalogPage from '@/pages/subject-catalog-page';
 import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
@@ -41,7 +42,7 @@ const queryClient = new QueryClient();
 
 function Home() {
   const [, setLocation] = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
 
@@ -53,6 +54,11 @@ function Home() {
   const openLearningArea = () => {
     setIsMenuOpen(false);
     setLocation('/mijn-leeromgeving');
+  };
+
+  const openAdmin = () => {
+    setIsMenuOpen(false);
+    setLocation('/beheer');
   };
 
   const leave = async () => {
@@ -92,6 +98,11 @@ function Home() {
           <div className="nav-actions">
             {user ? (
               <>
+                {isAdmin && (
+                  <button className="nav-login" onClick={openAdmin} data-testid="button-admin-nav">
+                    Beheer
+                  </button>
+                )}
                 <button className="nav-login" onClick={leave} data-testid="button-logout-nav">
                   Uitloggen
                 </button>
@@ -126,6 +137,7 @@ function Home() {
             {user ? (
               <>
                 <button onClick={openLearningArea} data-testid="button-mobile-dashboard">Mijn leeromgeving</button>
+                {isAdmin && <button onClick={openAdmin} data-testid="button-mobile-admin">Beheer</button>}
                 <button onClick={leave} data-testid="button-mobile-logout">Uitloggen</button>
               </>
             ) : (
@@ -273,7 +285,8 @@ function Router() {
         </Route>
         <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
         <Route path="/beheer/pipeline" component={AdminPipelinePage} />
-        <Route path="/beheer" component={AdminPage} />
+        <Route path="/beheer/accounts" component={AdminPage} />
+        <Route path="/beheer" component={AdminOverviewPage} />
         <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
         <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>
         <Route path="/beheer/crawl" component={AdminCrawlPage} />

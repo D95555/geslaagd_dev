@@ -27,9 +27,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/geslaagd-momentum/components/ui/dialog';
-import { ArrowLeft, Loader2, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useLivePoll } from '@/lib/use-live-poll';
 import {
   CrawlConfigForm,
   emptyCrawlConfig,
@@ -37,6 +38,7 @@ import {
   type CrawlConfigDraft,
 } from '@/components/admin/crawl-config-form';
 import { TaskQueue } from '@/components/admin/task-queue';
+import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 
 type StatusFilter = 'all' | PipelineTask['status'];
 
@@ -59,8 +61,10 @@ export default function AdminPipelinePage() {
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState('');
 
-  const load = async () => {
-    setState('loading');
+  // `silent` skips the loading state so background polling updates the task
+  // list in place — this page is watched while the pipeline is running.
+  const load = async (silent = false) => {
+    if (!silent) setState('loading');
     try {
       const [nextTasks, nextSubjects] = await Promise.all([listPipelineTasks(), listCrawlSubjects()]);
       setTasks(nextTasks);
@@ -68,13 +72,16 @@ export default function AdminPipelinePage() {
       setState('ready');
     } catch (error) {
       setState((error as { status?: number }).status === 403 ? 'forbidden' : 'error');
+      throw error;
     }
   };
 
   useEffect(() => {
-    if (!isLoading && user) void load();
+    if (!isLoading && user) void load().catch(() => undefined);
     else if (!isLoading) setState('forbidden');
   }, [isLoading, user?.id]);
+
+  useLivePoll(() => load(true), { enabled: state === 'ready' });
 
   const subjectNames = useMemo(
     () => new Map(subjects.map((subject) => [subject.id, subject.name])),
@@ -154,44 +161,18 @@ export default function AdminPipelinePage() {
     }
   };
 
-  if (state === 'forbidden') {
-    return (
-      <main className="admin-denied">
-        <ShieldAlert size={22} aria-hidden="true" />
-        <h1>Geen toegang</h1>
-        <p>Deze pagina is alleen voor beheerders.</p>
-        <Button onClick={() => setLocation('/')}>Naar de homepage</Button>
-      </main>
-    );
-  }
+  if (state === 'forbidden') return <AdminDenied />;
 
   return (
-    <main className="admin-page">
-      <header className="admin-header">
-        <button className="auth-brand" onClick={() => setLocation('/')} aria-label="Naar geslaagd.app">
-          <span className="wordmark-mark" />
-          <span>geslaagd.app</span>
-        </button>
-        <div className="admin-header-actions">
-          <Button variant="ghost" size="sm" onClick={() => setLocation('/beheer')}>
-            <ArrowLeft size={15} /> Beheer
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void load()}>
-            <RefreshCw size={15} /> Verversen
-          </Button>
-        </div>
-      </header>
-
-      <section className="admin-wrap">
-        <div className="admin-intro">
-          <p className="section-label">pipeline</p>
-          <h1>Contentpijplijn</h1>
-          <p>
-            Volg hoe vakken van aanvraag naar gepubliceerd studiepakket gaan, en grijp in waar een
-            stap vastloopt.
-          </p>
-        </div>
-
+    <AdminShell
+      title="Contentpijplijn"
+      intro="Volg hoe vakken van aanvraag naar gepubliceerd studiepakket gaan, en grijp in waar een stap vastloopt."
+      actions={
+        <Button variant="outline" size="sm" onClick={() => void load().catch(() => undefined)}>
+          <RefreshCw size={15} /> Verversen
+        </Button>
+      }
+    >
         {notice && <p className="admin-notice">{notice}</p>}
 
         <div className="pipeline-filters">
@@ -231,7 +212,7 @@ export default function AdminPipelinePage() {
         ) : state === 'error' ? (
           <div className="study-page-message">
             <p>De pijplijn kon niet worden geladen.</p>
-            <Button onClick={() => void load()}>Opnieuw proberen</Button>
+            <Button onClick={() => void load().catch(() => undefined)}>Opnieuw proberen</Button>
           </div>
         ) : (
           <>
@@ -259,7 +240,6 @@ export default function AdminPipelinePage() {
             </div>
           </>
         )}
-      </section>
 
       <Dialog open={retryTask !== null} onOpenChange={(open) => !open && setRetryTask(null)}>
         <DialogContent>
@@ -331,6 +311,6 @@ export default function AdminPipelinePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </AdminShell>
   );
 }

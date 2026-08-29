@@ -8,6 +8,8 @@ import {
 import { ArrowLeft, Check, Loader2, ShieldAlert, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useLivePoll } from '@/lib/use-live-poll';
+import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
 import {
@@ -28,19 +30,23 @@ export default function AdminCrawlPendingPage() {
   const [declineReason, setDeclineReason] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
-    setState('loading');
+  // `silent` keeps background polling from flashing the loading state.
+  const load = async (silent = false) => {
+    if (!silent) setState('loading');
     try {
       setSources(await listPendingSources());
       setState('ready');
     } catch (error) {
       setState((error as { status?: number }).status === 403 ? 'forbidden' : 'error');
+      throw error;
     }
   };
   useEffect(() => {
-    if (!isLoading && user) void load();
+    if (!isLoading && user) void load().catch(() => undefined);
     else if (!isLoading) setState('forbidden');
   }, [isLoading, user?.id]);
+
+  useLivePoll(() => load(true), { enabled: state === 'ready' });
 
   const accept = async (sourceId: string) => {
     setBusy(true);
@@ -65,34 +71,13 @@ export default function AdminCrawlPendingPage() {
     }
   };
 
-  if (state === 'forbidden') {
-    return (
-      <main className="admin-denied">
-        <ShieldAlert size={29} />
-        <h1>Geen toegang.</h1>
-        <p>Deze omgeving is alleen voor beheerders.</p>
-        <Button onClick={() => setLocation('/beheer')}>Terug naar beheer</Button>
-      </main>
-    );
-  }
+  if (state === 'forbidden') return <AdminDenied />;
 
   return (
-    <main className="admin-page">
-      <header className="admin-header">
-        <button className="auth-brand" onClick={() => setLocation('/beheer/crawl')}>
-          <span className="wordmark-mark" /><span>geslaagd.app</span>
-        </button>
-        <div>
-          <span>wachtrij</span>
-          <Button variant="ghost" onClick={() => setLocation('/beheer/crawl')}><ArrowLeft size={15} /> Terug naar crawls</Button>
-        </div>
-      </header>
-      <section className="admin-wrap">
-        <div className="admin-intro">
-          <p className="dashboard-kicker">handmatige beoordeling</p>
-          <h1>Bronnen in review.</h1>
-          <p>Deze bronnen hebben een lage zekerheidsscore en wachten op jouw beoordeling.</p>
-        </div>
+    <AdminShell
+      title="Bronnen beoordelen"
+      intro="Deze bronnen hebben een lage zekerheidsscore en wachten op jouw oordeel."
+    >
 
         {state === 'loading' ? (
           <p className="admin-empty"><Loader2 className="spin" size={15} /> Wachtrij laden…</p>
@@ -134,7 +119,6 @@ export default function AdminCrawlPendingPage() {
             ))}
           </div>
         )}
-      </section>
 
       <Dialog open={!!declineTarget} onOpenChange={(open) => { if (!open) setDeclineTarget(null); }}>
         <DialogContent>
@@ -150,6 +134,6 @@ export default function AdminCrawlPendingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </AdminShell>
   );
 }

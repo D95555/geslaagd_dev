@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CrawlSubjectPublishStatus } from './crawlSubjectPublishStatus';
 import type { CrawlSubjectStatus } from './crawlSubjectStatus';
 import type { CrawlSubjectYearLevel } from './crawlSubjectYearLevel';
 
@@ -13,6 +14,7 @@ export interface CrawlSubject {
   name: string;
   yearLevel: CrawlSubjectYearLevel;
   status: CrawlSubjectStatus;
+  publishStatus: CrawlSubjectPublishStatus;
   /** @nullable */
   requestedBy: string | null;
   /** @nullable */
