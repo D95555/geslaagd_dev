@@ -1,0 +1,334 @@
+# Overdracht: herontwerp geslaagd.app
+
+Dit document is geschreven voor een Claude-sessie die dit werk overneemt zonder
+de voorgaande conversatie te kennen. Lees dit eerst, in zijn geheel, voordat je
+iets aanraakt. Branch: `claude/repo-replit-sync-vgwk3g`.
+
+## Waar dit vandaan komt
+
+De opdracht begon als "verbeter de UI/UX van de admin-pagina's" en groeide uit
+tot een volledig herontwerp van de site, na twee afgekeurde pogingen. Dat is
+belangrijk om te weten, want het verklaart waarom sommige keuzes zijn zoals ze
+zijn:
+
+1. **Eerste poging** (admin-pagina's): functionele verbeteringen — een gedeeld
+   detail-paneel, een live-taakindicator, een terminal-achtige console. Werkte,
+   maar was geen visuele vernieuwing.
+2. **Tweede poging**: ik verving de design-tokens (typografie, kleur, donker
+   thema) maar liet de *structuur* van elke pagina intact — kop bovenaan, dan
+   een stapel volle-breedte rijen. De gebruiker keurde dit expliciet af: *"Er
+   is letterlijk niks veranderd behalve de kleur, ik wil een andere layout,
+   andere components enz.!"* Dat was terecht: het was een herkleuring, geen
+   herontwerp.
+3. **Derde poging** (waar dit document over gaat): op verzoek van de gebruiker
+   heb ik drie fundamenteel verschillende layout-richtingen als HTML-mockup
+   gepitcht (Notion-achtige "werkbank" met permanente zijbalk, een
+   bento-dashboard, en een lineair "traject"). De gebruiker koos **richting A
+   (de werkbank)**, met Notion/Linear als structuurvoorbeeld en Firecrawl
+   (firecrawl.dev) als afwerkingsniveau — vlak, haarlijnen, precisie, subtiel
+   rasterpatroon.
+
+Het volledige, door de gebruiker goedgekeurde plan staat hieronder verbatim.
+Er bestaat ook een lokale kopie op `~/.claude/plans/de-console-is-goed-vivid-sunrise.md`
+in de omgeving waar dit is geschreven — die kopie reist **niet** mee naar een
+nieuwe sessie/omgeving, vandaar dat de volledige tekst hier staat.
+
+## Vastgestelde richting (uit gesprek met de gebruiker, via expliciete keuzes)
+
+| Vraag | Antwoord |
+|---|---|
+| UI-kit | shadcn/ui behouden + gratis registries erbij (Origin UI, Magic UI) |
+| Layout | **A — werkbank**: permanente zijbalk, middenpaneel, contextkolom |
+| Voorbeeld | Notion/Linear voor structuur, Firecrawl voor afwerking (ook in de app, niet alleen marketing) |
+| Dichtheid | Compacte chrome (zijbalk/navigatie), ruim leesgebied (samenvattingen/uitleg) |
+| Toetsenbord | **Volledig toetsenbord-eerst**: Cmd+K, Cmd+B, j/k, markeren, `?` |
+| Beheer | Mee naar dezelfde schil als de studentomgeving |
+| Thema | Donker voor studie + beheer, licht voor marketing |
+| Proefpagina/goedkeuring | Fase D (pagina's als inhoud) is het volgende goedkeuringsmoment — nog niet bereikt |
+
+**Dit is nog niet in een browser bekeken door de gebruiker.** Alles hieronder
+is geverifieerd op `pnpm typecheck` en `pnpm build`, niet visueel. Zie
+"Hoe visueel te verifiëren" onderaan.
+
+---
+
+## Het volledige goedgekeurde plan (verbatim)
+
+> ### Context
+>
+> De vorige ronde is afgekeurd, en terecht. Ik heb de tokens vervangen
+> (typografie, kleur, dichtheid) en het donkere thema aangezet, maar de
+> *structuur* van elke pagina intact gelaten: kop bovenaan, dan een verticale
+> stapel volle-breedte rijen. Het resultaat was een herkleuring, geen
+> herontwerp.
+>
+> Je hebt richting A gekozen — de werkbank — met Notion en Linear als
+> voorbeeld, en Firecrawl als afwerkingsniveau dat ook in de app mag
+> doorwerken. Dat is een structurele ingreep, geen stijlingreep:
+>
+> - **Nu:** elke pagina rendert zijn eigen schil. Ga je van een vak naar een
+>   hoofdstuk, dan verdwijnt de hoofdstukkenlijst, wordt de hele schil opnieuw
+>   opgebouwd, en haalt de pagina het vak opnieuw op.
+> - **Straks:** één schil die blijft staan. De hoofdstukkenlijst staat
+>   permanent links, de context permanent rechts, en alleen het middenpaneel
+>   wisselt.
+>
+> ### De visuele taal
+>
+> 1. **Vlak, geen schaduwen.** Diepte komt van haarlijnen en achtergrondlagen,
+>    niet van slagschaduw. Elevatie blijft alleen voor wat écht boven de
+>    pagina zweeft: dialogen, sheets, het commandopalet.
+> 2. **Compacte chrome.** Zijbalkrijen naar Linear-niveau (~28-32px). Het
+>    leesgebied gaat de andere kant op: groter lettertype, meer regelafstand.
+> 3. **Rasterachtergrond en precisie.** Firecrawls handtekening is het fijne
+>    raster achter de content en de haarscherpe uitlijning.
+>
+> ### Architectuur
+>
+> **De schil komt buiten de router te staan.**
+> ```
+> AppShell                    ← blijft gemonteerd, bevat zijbalk + contextkolom
+>   RoutedErrorBoundary       ← reset nog steeds per route
+>     Switch                  ← alleen nog paginainhoud
+> ```
+> `RoutedErrorBoundary` hangt aan `location` en hermontageert dus zijn hele
+> subtree bij elke navigatie — daarom moet de schil er expliciet búiten.
+>
+> **Data delen zonder dubbel ophalen.** `QueryClientProvider` staat al
+> gemonteerd maar werd nergens gebruikt. Voor het vak: de gegenereerde
+> `useGetSubjectDetail(subjectId)` uit `@workspace/api-client-react` — schil
+> en pagina roepen dezelfde hook aan en delen de cache.
+>
+> **Drie valkuilen:**
+> - De sidebar-primitive registreert zelf Cmd+B op `window`, zónder
+>   invoerveld-check. Moet afgevangen worden.
+> - Hij schrijft naar een cookie die niemand leest (Next.js-only patroon).
+>   Stand hoort in `localStorage`.
+> - `CommandDialog` rendert geen `DialogTitle` — Radix-toegankelijkheids-
+>   waarschuwing, oplossen met `sr-only` titel.
+>
+> ### Fasering
+>
+> - **Fase A** — Dichtheid en oppervlak herijken (tokens, schaduwen weg,
+>   rasterachtergrond).
+> - **Fase B** — De schil (AppShell, zijbalken, contextkolom-plumbing).
+> - **Fase C** — Toetsenbord (Cmd+K, Cmd+B-fix, j/k, `?`).
+> - **Fase D** — Pagina's in het middenpaneel (inhoud herstructureren,
+>   leestypografie). **Goedkeuringsmoment.**
+> - **Fase E** — Beheer in dezelfde schil (verificatie van alle 8 pagina's).
+> - **Fase F** — Publiek en opruimen (homepage, auth, dode code).
+>
+> ### Verificatie
+>
+> 1. `pnpm typecheck` in de repo-root.
+> 2. `PORT=5173 BASE_PATH=/ pnpm build` in `artifacts/geslaagd-app`.
+> 3. Contrastpoort draait automatisch mee.
+> 4. **Navigatietest die de hele opzet bewijst:** vak → hoofdstuk → ander
+>    hoofdstuk. Zijbalk mag niet knipperen, vak mag maar één keer opgehaald
+>    worden.
+> 5. Toetsenbordtest: Cmd+B, Cmd+K, j/k, `?`, en dat Cmd+B geen tekst afkapt
+>    in een invoerveld.
+> 6. Eindreview in Replit met echte data, niet-gemaximaliseerd venster.
+
+---
+
+## Status: wat is af, wat niet
+
+Voortgang wordt bijgehouden met de sessie-taaklijst (TaskCreate/TaskUpdate) —
+die is **niet zichtbaar voor een nieuwe sessie**. Onderstaande tabel is de
+bron van waarheid.
+
+| Fase | Status | Commit |
+|---|---|---|
+| Fundament (typografie-ramp, donker thema, layout-primitieven) — *voorloper aan dit plan, uit de tweede/afgekeurde poging* | ✅ Af, blijft staan | `50c44ce`, `9aad87a`, `ff42509`, `2a28114`, `108abf2`-voorlopers |
+| **A** — Dichtheid en oppervlak herijken | ✅ Af | `108abf2` |
+| **B** — Persistente AppShell | ✅ Af | `ce5c9a5` |
+| **C** — Toetsenbordlaag | ⬜ Nog niet begonnen | — |
+| **D** — Studentpagina's als inhoud (goedkeuringsmoment) | ⬜ Nog niet begonnen | — |
+| **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
+| **F** — Publiek en opruimen | ⬜ Nog niet begonnen | — |
+
+### Wat fase B concreet heeft opgeleverd
+
+- `artifacts/geslaagd-app/src/components/shell/app-shell.tsx` — `AppShell`,
+  gemonteerd in `App.tsx` rond `RoutedErrorBoundary` (dus buiten de
+  route-reset). Kiest `public`/`study`/`admin` op basis van het pad. Voor
+  `study`/`admin`: shadcn `sidebar`-primitive
+  (`@workspace/geslaagd-momentum/components/ui/sidebar`) met een dunne topbar,
+  paginainhoud, en een contextkolom rechts.
+- `components/shell/study-sidebar.tsx` — primaire navigatie + (binnen een vak)
+  de hoofdstukkenlijst, via `useGetSubjectDetail` — **dezelfde query key** als
+  de pagina zelf gebruikt, dus gedeelde cache, geen dubbele fetch.
+- `components/shell/admin-sidebar.tsx` — de bestaande 7-item beheer-navigatie,
+  nu op de sidebar-primitive. Geen ruimte meer voor de oude label+hint op twee
+  regels — hint zit nu in de hover-tooltip die de primitive al ondersteunt.
+- `components/shell/rail-context.tsx` — `useContextRail(node)` hook waarmee
+  een pagina inhoud in de rechterkolom kan zetten zonder prop-drilling. **Nog
+  niemand gebruikt dit** — dat is precies fase D's werk (voortgang,
+  toetsaftelling, zwakke punten verplaatsen hierheen).
+- `AdminShell` en `StudyPageShell` zijn drastisch verdund: ze renderen alleen
+  nog de paginakop (titel/intro/acties) resp. de terug-knop-wrapper. De
+  eigenlijke chrome (header, nav, uitloggen) zit nu in `AppShell`. **Belangrijk:
+  alle bestaande aanroepen van deze twee componenten in alle paginabestanden
+  zijn ongewijzigd gebleven** — dezelfde props, dus geen van de 8
+  beheerpagina's of studentpagina's hoefde aangepast te worden voor fase B.
+
+### Wat NIET is gedaan (bewust, hoort bij latere fases)
+
+- Geen enkele pagina-inhoud is herstructureerd voor het nieuwe drie-koloms-
+  concept. De contextkolom (voortgang, toetsaftelling, zwakke punten,
+  herhaalplan) staat nog gewoon in de hoofdinhoud, niet in de rail — dat is
+  fase D.
+- Geen toetsenbordlaag (fase C): geen Cmd+K, geen j/k, geen `?`-overzicht. De
+  sidebar-primitive heeft wél zelf al een ingebouwde Cmd/Ctrl+B (zie
+  Waarschuwing hieronder).
+- De 8 beheerpagina's zijn niet individueel doorlopen om te checken of ze goed
+  ogen binnen de nieuwe schil (fase E) — ze zouden moeten werken (props
+  ongewijzigd) maar zijn niet visueel geverifieerd.
+- Homepage (nog steeds ~225 regels inline in `App.tsx` als functie `Home()`)
+  en `auth-page.tsx` zijn niet aangeraakt (fase F).
+
+---
+
+## Belangrijke technische kennis (kost tijd om opnieuw te ontdekken)
+
+### Monorepo en typecheck
+- **Gebruik altijd `pnpm typecheck` vanuit de repo-root**, nooit
+  `pnpm --filter geslaagd-app typecheck` direct — dat slaat de
+  `tsc --build` van de project-references over en geeft misleidende
+  `TS6305`-fouten ("Output file has not been built from source").
+- Root-script: `pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" ... run typecheck`.
+- Design-tokens genereren via `node scripts/build-tokens.mjs` in
+  `artifacts/geslaagd-momentum` (draait ook automatisch in `pretypecheck`),
+  gevolgd door `node scripts/check-contrast.mjs` — dit is een **harde
+  bouwpoort**: WCAG AA 4.5:1 op 12 semantische paren, in licht én donker. Een
+  paletwijziging die hier doorheen faalt, faalt de build.
+
+### Build vereist env-vars
+`artifacts/geslaagd-app`'s `vite.config.ts` gooit een fout als `PORT` en
+`BASE_PATH` niet gezet zijn — ze worden niet automatisch uit een `.env`
+geladen door Vite's config-laag (dat is alleen voor `VITE_`-geprefixte
+variabelen die naar client-code gaan). Gebruik:
+```
+PORT=5173 BASE_PATH=/ pnpm build
+```
+
+### De sidebar-primitive (`@workspace/geslaagd-momentum/components/ui/sidebar`)
+- 23 exports, provider verplicht (`useSidebar` gooit een fout buiten
+  `SidebarProvider`). Volledig bruikbaar in Vite/React 19 ondanks de
+  `"use client"`-directive bovenaan (die is een no-op buiten Next.js).
+- **Cmd/Ctrl+B is al ingebouwd** (`SIDEBAR_KEYBOARD_SHORTCUT = "b"`), maar
+  zonder invoerveld-bescherming — hij vuurt ook als je in een tekstveld typt.
+  Dit is **nog niet gefixt** en hoort bij fase C.
+- Schrijft zijn open/dicht-stand naar een cookie
+  (`sidebar_state`) die **niemand leest** in deze SPA (dat werkt alleen in de
+  Next.js-variant waar de server de cookie leest). Ik heb dit in `AppShell`
+  vervangen door een eigen `localStorage`-hook (`useSidebarOpenState`),
+  gebruikt via de `open`/`onOpenChange`-props van `SidebarProvider`.
+- `CommandDialog` (in `components/ui/command.tsx`, hoort bij fase C) rendert
+  geen `DialogTitle` — geeft een Radix a11y-waarschuwing tenzij je zelf een
+  `sr-only` titel toevoegt.
+
+### Data delen tussen schil en pagina
+`useGetSubjectDetail` (gegenereerd door orval in `@workspace/api-client-react`)
+heeft een subtiele TypeScript-eigenaardigheid: als je `{ query: { enabled } }`
+meegeeft zónder `queryKey`, klaagt TypeScript dat `queryKey` verplicht is in
+het type (ook al vult de runtime-code een default in via
+`queryOptions?.queryKey ?? getGetSubjectDetailQueryKey(subjectId)`). Oplossing
+in `study-sidebar.tsx`: expliciet `queryKey: getGetSubjectDetailQueryKey(subjectId)`
+meegeven — dat is exact dezelfde key als de default, dus de cache blijft
+gedeeld met elke andere aanroep die de hook zonder override gebruikt.
+
+`QueryClientProvider` staat al gemonteerd in `App.tsx` maar werd voor dit
+project nergens gebruikt — alle pagina's deden handmatig
+`useState`+`useEffect`+`await apiCall()`. Dit is bewust beperkt gehouden tot
+wat de schil nodig heeft; er is geen bredere migratie naar react-query gedaan.
+
+### Routing (wouter 3.10)
+- Eén `<Switch>` in `App.tsx`, geen geneste routes in gebruik (wouter
+  ondersteunt wél `nest`, maar dat wordt hier niet benut).
+- Route-parameters komen binnen via de render-prop vorm
+  (`<Route path="...">{(params) => <Page subjectId={params.subjectId} />}</Route>`),
+  niet via `useParams()`.
+- `RoutedErrorBoundary` (in `App.tsx`) hangt aan `useLocation()` als
+  `resetKey` — zijn hele subtree hermontageert dus bij **elke** navigatie. Dit
+  is de reden dat `AppShell` er expliciet buiten moet staan.
+
+### Deze sandbox kan de app niet visueel testen
+Chromium in deze containeromgeving kan geen stabiele verbinding met Supabase
+opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
+`--disable-quic`/`--disable-http2`). **Visuele verificatie moet via Replit.**
+
+---
+
+## Hoe visueel te verifiëren (Replit)
+
+1. Vraag de Replit-agent (app "geslaagd_dev", of zoek via `search_apps`) om
+   `origin/claude/repo-replit-sync-vgwk3g` te fetchen en uit te checken, en
+   **daarna `pnpm install` te draaien** — bij eerdere branch-wissels moest dit
+   expliciet gevraagd worden omdat nieuwe dependencies (bijv. `motion`) anders
+   ontbreken in `node_modules` en de dev-server crasht met
+   `Failed to resolve import "motion/react"`.
+2. Er bestaat al een idempotent dev-adminaccount-script:
+   `pnpm --filter @workspace/scripts run create-dev-admin <email> <wachtwoord>`
+   (bestand: `scripts/src/create-dev-admin.ts`) — creëert of promoveert een
+   Supabase-auth-gebruiker naar `app_metadata.role = "admin"` via de
+   service-role key. Nodig om `/beheer/*` te kunnen bekijken.
+3. Test specifiek de navigatie vak → hoofdstuk → ander hoofdstuk: de zijbalk
+   mag niet knipperen en het netwerktabblad zou het vak maar één keer moeten
+   ophalen.
+4. Test op een **niet-gemaximaliseerd venster** — een eerdere ronde bracht een
+   afgesneden zijbalk en horizontale overflow aan het licht die alleen
+   zichtbaar waren op smallere/niet-gemaximaliseerde vensters.
+
+---
+
+## Aanbevolen vervolgstappen (in volgorde)
+
+1. **Fase C — Toetsenbord.** Nieuw bestand `use-hotkeys.ts` met
+   invoerveld-bescherming (`event.target` check op `INPUT`/`TEXTAREA`/
+   `[contenteditable]` voordat een sneltoets vuurt). Commandopalet op
+   `CommandDialog` uit `@workspace/geslaagd-momentum/components/ui/command`
+   (met `sr-only` `DialogTitle` toegevoegd). De ingebouwde Cmd+B van de
+   sidebar-primitive zelf kán niet uitgeschakeld worden zonder de primitive
+   te forken — overweeg of je hem laat staan (met het risico dat hij in
+   invoervelden vuurt) of een eigen `SidebarProvider`-wrapper bouwt die het
+   event op capture-fase onderschept vóórdat de primitive het ziet.
+
+2. **Fase D — Pagina's als inhoud (het goedkeuringsmoment).** Dit is het
+   werk waar de gebruiker om vroeg en nog niet gezien heeft. Kernvraag per
+   pagina: welk deel van de huidige inhoud hoort in het middenpaneel (het
+   eigenlijke werk: hoofdstuktekst, oefenvragen) en welk deel hoort in de
+   contextkolom via `useContextRail()` (voortgang, toetsaftelling, zwakke
+   punten, herhaalplan)? Begin met `subject-study-page.tsx` en
+   `chapter-page.tsx` — die dragen nu nog hun eigen `PageHeader`+breadcrumbs
+   uit een eerdere (afgekeurde) ronde; met de zijbalk die nu al vaknaam en
+   hoofdstuklijst toont, is een deel van die breadcrumb-info dubbel.
+
+3. **Fase E — Beheer verifiëren.** Loop de 8 `/beheer`-pagina's visueel na in
+   Replit. De schil-integratie zou al moeten werken (props ongewijzigd), dit
+   is vooral controleren of niets er raar uitziet in de compacte
+   dichtheidsschaal.
+
+4. **Fase F — Publiek en opruimen.** Homepage uit `App.tsx` naar een eigen
+   paginabestand, in de Firecrawl-behandeling (rasterlijnen, precisie). Auth-
+   pagina. Daarna dode code: dubbele `.spin`-definitie (`admin-spin` en
+   `study-spin` overschrijven elkaar — zoek naar beide), `framer-motion` uit
+   `geslaagd-app` (0 imports, `motion`-package is de echte), de wees
+   `components/ui/terminal.tsx` (298 regels, nergens geïmporteerd), en de
+   verweesde `hooks/use-mobile.tsx` (duplicaat van
+   `geslaagd-momentum/src/hooks/use-mobile.tsx`, alleen de laatste wordt echt
+   gebruikt, door de sidebar-primitive).
+
+## Werkwijze-afspraken die golden in dit traject
+
+- **Commit na elke fase, direct pushen** — de gebruiker schakelt tussen
+  sessies/omgevingen en wil elke voltooide stap in de git-historie hebben
+  staan, niet alleen lokaal.
+- **`pnpm typecheck` (root) + `PORT=5173 BASE_PATH=/ pnpm build` na élke
+  fase**, voordat je commit. Geen fase is "af" zonder een groene build.
+- De gebruiker reageert scherp op werk dat oppervlakkig oogt ("herkleuring
+  in plaats van herontwerp") — bij twijfel over hoe grondig een verandering
+  moet zijn, kies grondig, en leg uit wat je concreet hebt veranderd (met
+  meetbare voorbeelden: rijhoogtes in px, welke schaduwen weg zijn, etc.) in
+  plaats van alleen "ik heb het herontworpen" te zeggen.
