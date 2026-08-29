@@ -99,11 +99,15 @@ export async function rest<T>(
     },
   });
   if (!response.ok) {
-    console.error("DEBUG supabase rest failure body", await response.clone().text());
     throw new Error(`Supabase request failed (${response.status}).`);
   }
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  // PostgREST returns 201 with an empty body for an insert made without
+  // `Prefer: return=representation` — not just 204 — so an empty body has to
+  // be checked directly rather than assumed to only happen on 204.
+  const text = await response.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export async function restService<T>(path: string, init: RequestInit = {}): Promise<T> {

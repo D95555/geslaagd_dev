@@ -8,6 +8,7 @@ import { runReadinessCheck } from "./pipeline-tasks/readiness-check";
 import { runSourceGathering } from "./pipeline-tasks/source-gathering";
 import { runSourceReview } from "./pipeline-tasks/source-review";
 import { runSummaryGeneration } from "./pipeline-tasks/summary-generation";
+import { loadChapter, loadSubject } from "./pipeline-tasks/context";
 import {
   dependenciesSatisfied,
   patchTask,
@@ -26,6 +27,44 @@ const POLL_INTERVAL_MS = 30_000;
 const LEASE_DURATION_MS = 5 * 60_000;
 /** How many tasks one poll may run; keeps a single tick bounded. */
 const MAX_TASKS_PER_TICK = 3;
+
+/** Dutch, human-readable names for the stdout console. */
+const TASK_LABELS: Record<TaskType, string> = {
+  triage: "Triage",
+  curriculum_design: "Curriculumontwerp",
+  source_gathering: "Bronnen verzamelen",
+  source_review: "Bronbeoordeling",
+  summary_generation: "Samenvatting",
+  key_notes_generation: "Kernpunten",
+  exercise_generation: "Oefenvragen",
+  exam_generation: "Tentamen",
+  questionnaire_generation: "Diagnostische vragenlijst",
+  readiness_check: "Gereedheidscontrole",
+};
+
+/**
+ * A readable, Dutch one-liner for the stdout console plus a reference block (the
+ * row ids) so a log line can be traced back to the object it describes. Name
+ * lookups are best-effort: a task must still log even if the subject/chapter row
+ * cannot be read.
+ */
+async function describeTask(
+  task: PipelineTask,
+): Promise<{ label: string; ref: Record<string, string> }> {
+  const naam = TASK_LABELS[task.taskType] ?? task.taskType;
+  const ref: Record<string, string> = { taskId: task.id, subjectId: task.subjectId };
+  if (task.chapterId) ref.chapterId = task.chapterId;
+  try {
+    const subject = await loadSubject(task.subjectId);
+    if (task.chapterId) {
+      const chapter = await loadChapter(task.chapterId);
+      return { label: `${naam} voor hoofdstuk “${chapter.title}” (${subject.name})`, ref };
+    }
+    return { label: `${naam} voor vak “${subject.name}”`, ref };
+  } catch {
+    return { label: `${naam} (${task.taskType})`, ref };
+  }
+}
 
 const handlers: Record<TaskType, (task: PipelineTask) => Promise<Record<string, unknown>>> = {
   triage: runTriage,
@@ -90,7 +129,11 @@ async function maybeReleaseReadinessCheck(subjectId: string): Promise<void> {
   await patchTask(readiness.id as string, { status: "ready" });
 }
 
-async function recordFailure(task: PipelineTask, error: unknown): Promise<void> {
+async function recordFailure(
+  task: PipelineTask,
+  error: unknown,
+  described: { label: string; ref: Record<string, string> },
+): Promise<void> {
   const message = error instanceof Error ? error.message : String(error);
   const attempts = task.attempts + 1;
   const exhausted = attempts >= task.maxAttempts;
@@ -104,7 +147,10 @@ async function recordFailure(task: PipelineTask, error: unknown): Promise<void> 
     locked_until: exhausted ? null : new Date(Date.now() + backoffMs).toISOString(),
   });
 
-  logger.warn({ taskId: task.id, taskType: task.taskType, attempts, error }, "Pipeline task failed");
+  logger.warn(
+    { ...described.ref, taskType: task.taskType, poging: attempts, van: task.maxAttempts, error },
+    `${described.label} — ${exhausted ? "definitief mislukt" : "mislukt, wordt opnieuw geprobeerd"}: ${message.slice(0, 200)}`,
+  );
 
   if (exhausted) {
     const subjects = await restService<Row[]>(
@@ -131,21 +177,29 @@ async function runTask(task: PipelineTask): Promise<void> {
     return;
   }
 
+  const described = await describeTask(task);
   const startedAt = Date.now();
   await log.info("start", `Taak ${task.taskType} gestart.`, {
     poging: task.attempts + 1,
     van: task.maxAttempts,
   });
+  logger.info(
+    { ...described.ref, taskType: task.taskType, poging: task.attempts + 1, van: task.maxAttempts },
+    `${described.label} — gestart`,
+  );
 
   try {
     const result = await handler(task);
     const seconds = Math.round((Date.now() - startedAt) / 1000);
     await patchTask(task.id, { status: "done", result, locked_until: null, last_error: null });
     await log.info("klaar", `Taak afgerond in ${seconds} seconden.`, result);
-    logger.info({ taskId: task.id, taskType: task.taskType }, "Pipeline task done");
+    logger.info(
+      { ...described.ref, taskType: task.taskType, seconden: seconds },
+      `${described.label} — klaar in ${seconds}s`,
+    );
   } catch (error) {
     await log.error("mislukt", error instanceof Error ? error.message : String(error));
-    await recordFailure(task, error);
+    await recordFailure(task, error, described);
   }
 
   await maybeReleaseReadinessCheck(task.subjectId).catch((error) =>

@@ -4,11 +4,18 @@ import {
   GetChapterContentResponse,
   GetSubjectDetailParams,
   GetSubjectDetailResponse,
+  ListSelectedSubjectsResponse,
   ListSubjectsResponse,
   MarkChapterReadParams,
   SelectSubjectParams,
 } from "@workspace/api-zod";
-import { markSummaryRead } from "../lib/progress";
+import { loadSubjectChapters } from "../lib/pipeline-tasks/context";
+import {
+  computeChapterProgress,
+  computeSubjectProgress,
+  loadProgressForChapters,
+  markSummaryRead,
+} from "../lib/progress";
 import { keyNotesSchema, summarySchema } from "../lib/study-content";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 
@@ -68,6 +75,66 @@ router.get("/subjects", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not list subjects");
     res.status(500).json({ error: "Vakken konden niet worden geladen." });
+  }
+});
+
+/** Overall completion (0-100) for one subject, averaged over its chapters. */
+async function subjectProgressFor(userId: string, subjectId: string): Promise<number> {
+  const chapters = await loadSubjectChapters(subjectId);
+  const progress = await loadProgressForChapters(
+    userId,
+    chapters.map((chapter) => chapter.id),
+  );
+  const perChapter = chapters.map((chapter) => {
+    const row = progress.get(chapter.id);
+    return {
+      progress: computeChapterProgress({
+        summaryRead: row?.summaryRead ?? false,
+        exerciseBestScore: row?.exerciseBestScore ?? null,
+        examBestScore: row?.examBestScore ?? null,
+        hasExam: chapter.isImportant,
+      }),
+    };
+  });
+  return computeSubjectProgress(perChapter);
+}
+
+// Registered before `/subjects/:subjectId` so "selected" is not read as an id.
+router.get("/subjects/selected", async (req, res): Promise<void> => {
+  const identity = await authenticate(req.header("authorization"));
+  if (!identity) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const selections = await restService<Row[]>(
+      `student_selected_subjects?user_id=eq.${identity.user.id}&select=subject_id,created_at&order=created_at.asc`,
+    );
+    const subjectIds = selections.map((row) => row.subject_id as string);
+    if (subjectIds.length === 0) {
+      res.json([]);
+      return;
+    }
+    // Only surface subjects that are still published; a subject an admin has
+    // unpublished simply drops out of the student's list.
+    const subjects = await restService<Row[]>(
+      `crawl_subjects?id=in.(${subjectIds.join(",")})&publish_status=eq.published&select=*`,
+    );
+    const byId = new Map(subjects.map((row) => [row.id as string, row]));
+    const ordered = subjectIds
+      .map((id) => byId.get(id))
+      .filter((row): row is Row => row !== undefined);
+
+    const result = await Promise.all(
+      ordered.map(async (row) => ({
+        ...toSubjectSummary(row),
+        subjectProgress: await subjectProgressFor(identity.user.id, row.id as string),
+      })),
+    );
+    res.json(ListSelectedSubjectsResponse.parse(result));
+  } catch (error) {
+    req.log.warn({ error }, "Could not list selected subjects");
+    res.status(500).json({ error: "Jouw vakken konden niet worden geladen." });
   }
 });
 

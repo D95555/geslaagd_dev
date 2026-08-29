@@ -1,17 +1,12 @@
-import { type FormEvent, type MouseEvent, type ReactNode, useState } from 'react';
+import { type MouseEvent, type ReactNode, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { savePendingTopic } from '@/lib/pending-topic';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
-import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { Toaster } from '@workspace/geslaagd-momentum/components/ui/toaster';
 import { TooltipProvider } from '@workspace/geslaagd-momentum/components/ui/tooltip';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
 import DashboardPage from '@/pages/dashboard-page';
-import StudyDetailPage from '@/pages/study-detail-page';
-import SubjectDetailPage from '@/pages/subject-detail-page';
-import TopicConfigPage from '@/pages/topic-config-page';
 import AdminPage from '@/pages/admin-page';
 import AdminCrawlPage from '@/pages/admin-crawl-page';
 import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
@@ -45,7 +40,6 @@ function Home() {
   const [, setLocation] = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
 
   const openAuth = () => {
     setIsMenuOpen(false);
@@ -68,9 +62,8 @@ function Home() {
     setLocation('/');
   };
 
-  const startFromPrompt = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    savePendingTopic(prompt);
+  const startLearning = () => {
+    setIsMenuOpen(false);
     user ? openLearningArea() : openAuth();
   };
 
@@ -158,22 +151,19 @@ function Home() {
                 Geslaagd maakt lastige leerstof kleiner. Vind de kern, zie waar die vandaan komt en ga met vertrouwen verder.
               </p>
             </div>
-            <div className="prompt-card" aria-label="Start met een onderwerp" data-testid="visual-summary">
-            <form onSubmit={startFromPrompt} data-testid="form-home-prompt">
+            <div className="prompt-card" aria-label="Start met leren" data-testid="visual-summary">
               <div className="prompt-card-heading">
                 <span className="prompt-label">JOUW VOLGENDE STAP</span>
                 <span className="prompt-status"><i /> klaar om te beginnen</span>
               </div>
-              <label htmlFor="home-prompt">Waar wil je vandaag grip op krijgen?</label>
+              <label>Kies een vak en begin met leren.</label>
               <div className="prompt-input-wrap">
-                <Input id="home-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Bijv. erfelijkheid voor mijn toets" data-testid="input-home-prompt" />
-                <Button type="submit" data-testid="button-start-hero">
+                <Button type="button" onClick={startLearning} data-testid="button-start-hero">
                   {user ? 'Open leeromgeving' : 'Begin'} <MoveRight size={17} />
                 </Button>
               </div>
-              <p className="prompt-note">Kies een onderwerp, bekijk de kern en leer stap voor stap.</p>
-            </form>
-            <a className="prompt-discover" href="#werking" onClick={(event) => jumpTo(event, 'werking')} data-testid="link-discover-hero">Zo werkt het <MoveRight size={14} /></a>
+              <p className="prompt-note">Volledige vakken met hoofdstukken, oefenvragen en tentamens.</p>
+              <a className="prompt-discover" href="#werking" onClick={(event) => jumpTo(event, 'werking')} data-testid="link-discover-hero">Zo werkt het <MoveRight size={14} /></a>
             </div>
           </div>
         </section>
@@ -272,11 +262,6 @@ function Router() {
         <Route path="/auth/herstel-wachtwoord" component={PasswordRecoveryPage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/mijn-leeromgeving" component={DashboardPage} />
-        <Route path="/mijn-leeromgeving/onderwerp/nieuw-vanuit-voorstel">{() => <TopicConfigPage fromProposal />}</Route>
-        <Route path="/mijn-leeromgeving/onderwerp/:spaceId/bewerken">{(params) => <TopicConfigPage spaceId={params.spaceId} />}</Route>
-        <Route path="/mijn-leeromgeving/vak/:selectionId/nieuw-onderwerp">{(params) => <TopicConfigPage selectionId={params.selectionId} />}</Route>
-        <Route path="/mijn-leeromgeving/vak/:selectionId">{(params) => <SubjectDetailPage selectionId={params.selectionId} />}</Route>
-        <Route path="/mijn-leeromgeving/:spaceId">{(params) => <StudyDetailPage spaceId={params.spaceId} />}</Route>
         <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
         <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
           {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}

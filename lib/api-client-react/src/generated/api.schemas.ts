@@ -918,6 +918,10 @@ export type SubjectDetail = SubjectSummary & {
   chapters: Chapter[];
 };
 
+export type SelectedSubject = SubjectSummary & {
+  subjectProgress: number;
+};
+
 export interface Citation {
   index: number;
   sourceId: string;

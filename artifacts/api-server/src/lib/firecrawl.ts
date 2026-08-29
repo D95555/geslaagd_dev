@@ -153,6 +153,116 @@ export async function firecrawlSearch(config: CrawlConfig): Promise<FirecrawlSea
   return { results: [...byUrl.values()], creditsUsed };
 }
 
+// ─── Two-phase discovery ────────────────────────────────────────────────────
+//
+// A plain search (no scrapeOptions) returns SERP snippets — url, title and a
+// short description — and bills only the search, not a scrape per result. We
+// score on the snippet first and scrape only the winners, so the pages we
+// reject never cost a scrape credit. This is the same endpoint as searchOnce,
+// deliberately kept separate so the old single-phase firecrawlSearch (used by
+// the legacy admin crawl-run flow) is untouched.
+
+async function discoverOnce(
+  query: string,
+  config: CrawlConfig,
+  excludeDomains: string[],
+): Promise<{ results: FirecrawlSearchResult[]; creditsUsed: number }> {
+  const response = await fetch("https://api.firecrawl.dev/v2/search", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey()}`,
+    },
+    body: JSON.stringify({
+      query,
+      limit: config.limitPerQuery,
+      ...(config.location ? { location: config.location } : {}),
+      ...(config.categories.length ? { categories: config.categories } : {}),
+      ...(config.includeDomains.length ? { includeDomains: config.includeDomains } : {}),
+      ...(excludeDomains.length ? { excludeDomains } : {}),
+      ...(config.tbs ? { tbs: config.tbs } : {}),
+      // No scrapeOptions: snippets only, so nothing is scraped or billed here.
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Firecrawl discover failed (${response.status}).`);
+  }
+  const body = (await response.json()) as {
+    data?: { web?: FirecrawlSearchResult[] };
+    creditsUsed?: number;
+  };
+  return {
+    results: body.data?.web ?? [],
+    creditsUsed: Number(body.creditsUsed ?? 0),
+  };
+}
+
+/** Phase A: gather candidate snippets across every query, deduped by URL. */
+export async function firecrawlDiscover(config: CrawlConfig): Promise<FirecrawlSearchResponse> {
+  const globalExcluded = await getGlobalExcludedDomains();
+  const excludeDomains = [...new Set([...config.excludeDomains, ...globalExcluded])];
+
+  const byUrl = new Map<string, FirecrawlSearchResult>();
+  let creditsUsed = 0;
+
+  for (const query of config.queries) {
+    try {
+      const outcome = await discoverOnce(query, config, excludeDomains);
+      creditsUsed += outcome.creditsUsed;
+      for (const result of outcome.results) {
+        if (!result.url || byUrl.has(result.url)) continue;
+        byUrl.set(result.url, result);
+      }
+    } catch (error) {
+      logger.warn({ error, query }, "Firecrawl discover query failed; continuing");
+    }
+  }
+
+  return { results: [...byUrl.values()], creditsUsed };
+}
+
+/**
+ * Phase B: scrape only the URLs that survived scoring. Failures are per-URL and
+ * non-fatal — a page that will not scrape simply keeps whatever snippet text it
+ * already had. Returns a url→markdown map plus the credits the scrapes cost.
+ */
+export async function firecrawlScrapeUrls(
+  urls: string[],
+): Promise<{ markdownByUrl: Map<string, string>; creditsUsed: number }> {
+  const markdownByUrl = new Map<string, string>();
+  let creditsUsed = 0;
+
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const response = await fetch("https://api.firecrawl.dev/v2/scrape", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey()}`,
+          },
+          body: JSON.stringify({ url, formats: ["markdown"] }),
+        });
+        if (!response.ok) {
+          logger.warn({ url, status: response.status }, "Firecrawl scrape failed; skipping");
+          return;
+        }
+        const body = (await response.json()) as {
+          data?: { markdown?: string };
+          creditsUsed?: number;
+        };
+        creditsUsed += Number(body.creditsUsed ?? 0);
+        const markdown = body.data?.markdown;
+        if (markdown) markdownByUrl.set(url, markdown);
+      } catch (error) {
+        logger.warn({ error, url }, "Firecrawl scrape errored; skipping");
+      }
+    }),
+  );
+
+  return { markdownByUrl, creditsUsed };
+}
+
 // ─── Research index ─────────────────────────────────────────────────────────
 
 export async function firecrawlResearchSearch(

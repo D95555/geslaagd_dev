@@ -1,4 +1,10 @@
-import { firecrawlResearchSearch, firecrawlSearch, type CrawlConfig } from "../firecrawl";
+import {
+  firecrawlDiscover,
+  firecrawlResearchSearch,
+  firecrawlScrapeUrls,
+  type CrawlConfig,
+  type FirecrawlSearchResult,
+} from "../firecrawl";
 import { logger } from "../logger";
 import { determineAcceptance, scoreBatch } from "../source-pipeline";
 import { restService } from "../supabase";
@@ -15,6 +21,34 @@ function batch<T>(items: T[], size: number): T[][] {
     batches.push(items.slice(index, index + size));
   }
   return batches;
+}
+
+/**
+ * Programme/admissions catalog pages (studiekeuze, opleiding, toelating, …) look
+ * plausible to a keyword search but never contain study theory. They are already
+ * scraped-and-billed by the time we see them, so this only spares the scorer and
+ * keeps the review clean — the credit saving lives in the domain blocklist and
+ * two-phase search, not here.
+ */
+function looksLikeProgrammePage(url: string, title: string): boolean {
+  const haystack = `${url} ${title}`.toLowerCase();
+  const markers = [
+    "studiekeuze",
+    "studiekiezer",
+    "opleidingen",
+    "/opleiding/",
+    "toelatingseisen",
+    "toelating",
+    "inschrijven",
+    "aanmelden",
+    "open dag",
+    "opendag",
+    "studieprogramma",
+    "onderwijsaanbod",
+    "vakkenoverzicht",
+    "programme-finder",
+  ];
+  return markers.some((marker) => haystack.includes(marker));
 }
 
 /**
@@ -53,7 +87,8 @@ export async function runSourceGathering(
   const crawlId = (crawlRows[0]?.id as string) ?? null;
 
   try {
-    const { results, creditsUsed } = await firecrawlSearch(config);
+    // Phase A — discover snippets only (no scrape), so declined pages cost nothing.
+    const { results, creditsUsed: discoverCredits } = await firecrawlDiscover(config);
 
     // Academic subjects can additionally pull from the research index.
     const papers = config.useResearchIndex
@@ -75,16 +110,32 @@ export async function runSourceGathering(
       if (source?.url) knownUrls.add(source.url as string);
     }
 
-    const candidates = results.filter((result) => result.url && !knownUrls.has(result.url));
+    const fresh = results.filter((result) => result.url && !knownUrls.has(result.url));
+    const candidates = fresh.filter(
+      (result) => !looksLikeProgrammePage(result.url, result.title ?? ""),
+    );
+    const skippedProgramme = fresh.length - candidates.length;
 
     await log.info(
       "gevonden",
-      `${results.length} resultaten, waarvan ${candidates.length} nieuw voor dit hoofdstuk.`,
-      { alBekend: results.length - candidates.length, credits: creditsUsed, papers: papers.length },
+      `${results.length} resultaten, waarvan ${candidates.length} nieuw en bruikbaar voor dit hoofdstuk.`,
+      {
+        alBekend: results.length - fresh.length,
+        opleidingspaginaOvergeslagen: skippedProgramme,
+        zoekcredits: discoverCredits,
+        papers: papers.length,
+      },
     );
 
+    // Phase A scoring — judge every candidate on its SERP snippet. Nothing has
+    // been scraped yet, so scoreBatch falls back to the description.
+    type Scored = {
+      status: "accepted" | "pending" | "declined";
+      source: Awaited<ReturnType<typeof scoreBatch>>[number];
+      snippet: FirecrawlSearchResult | undefined;
+    };
+    const scoredList: Scored[] = [];
     let accepted = 0;
-    let stored = 0;
 
     for (const group of batch(candidates, 5)) {
       const scored = await scoreBatch(
@@ -94,39 +145,63 @@ export async function runSourceGathering(
       for (const source of scored) {
         const status = determineAcceptance(source.quality_score, source.confidence, accepted);
         if (status === "accepted") accepted += 1;
-
-        const original = group.find((item) => item.url === source.url);
-        const sourceId = await upsertSource({
-          url: source.url,
-          title: source.title,
-          type: source.type,
-          language: source.language,
-          qualityScore: source.quality_score,
-          confidenceScore: source.confidence,
-          aiSummary: source.ai_summary,
+        scoredList.push({
           status,
-          declineReason: status === "declined" ? source.decline_reason : null,
-          contentPreview: original?.markdown?.slice(0, 500) ?? null,
-          fullContent: original?.markdown ?? null,
-          firstCrawlId: crawlId,
+          source,
+          snippet: group.find((item) => item.url === source.url),
         });
-        if (!sourceId) continue;
-
-        await log.info(
-          "beoordeeld",
-          `${status === "accepted" ? "Geaccepteerd" : status === "pending" ? "Twijfel" : "Afgewezen"}: ${source.title}`,
-          {
-            url: source.url,
-            kwaliteit: source.quality_score,
-            zekerheid: source.confidence,
-            ...(source.decline_reason ? { reden: source.decline_reason } : {}),
-          },
-        );
-
-        await linkSourceToSubject(sourceId, task.subjectId);
-        await linkSourceToChapter(sourceId, task.chapterId);
-        stored += 1;
       }
+    }
+
+    // Phase B — scrape only the winners (accepted or pending). Declined pages
+    // keep their snippet text and never cost a scrape credit.
+    const winnerUrls = scoredList
+      .filter((entry) => entry.status !== "declined")
+      .map((entry) => entry.source.url);
+    const { markdownByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(winnerUrls);
+    const creditsUsed = discoverCredits + scrapeCredits;
+
+    await log.info(
+      "gescraped",
+      `${winnerUrls.length} kansrijke bronnen opgehaald; ${candidates.length - winnerUrls.length} afgewezen zonder scrape.`,
+      { scrapecredits: scrapeCredits, gelukt: markdownByUrl.size },
+    );
+
+    let stored = 0;
+
+    for (const { status, source, snippet } of scoredList) {
+      const markdown = markdownByUrl.get(source.url) ?? null;
+      const preview = markdown?.slice(0, 500) ?? snippet?.description ?? null;
+      const sourceId = await upsertSource({
+        url: source.url,
+        title: source.title,
+        type: source.type,
+        language: source.language,
+        qualityScore: source.quality_score,
+        confidenceScore: source.confidence,
+        aiSummary: source.ai_summary,
+        status,
+        declineReason: status === "declined" ? source.decline_reason : null,
+        contentPreview: preview,
+        fullContent: markdown,
+        firstCrawlId: crawlId,
+      });
+      if (!sourceId) continue;
+
+      await log.info(
+        "beoordeeld",
+        `${status === "accepted" ? "Geaccepteerd" : status === "pending" ? "Twijfel" : "Afgewezen"}: ${source.title}`,
+        {
+          url: source.url,
+          kwaliteit: source.quality_score,
+          zekerheid: source.confidence,
+          ...(source.decline_reason ? { reden: source.decline_reason } : {}),
+        },
+      );
+
+      await linkSourceToSubject(sourceId, task.subjectId);
+      await linkSourceToChapter(sourceId, task.chapterId);
+      stored += 1;
     }
 
     for (const paper of papers) {

@@ -102,6 +102,7 @@ export * from './runCrawlInput';
 export * from './scheduleExamInput';
 export * from './selectedStudySubject';
 export * from './selectedStudySubjectInput';
+export * from './selectedSubject';
 export * from './sendChatMessageInput';
 export * from './sessionHeartbeat';
 export * from './sessionRegistration';

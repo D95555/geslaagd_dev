@@ -1195,6 +1195,23 @@ export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
 
 
 /**
+ * @summary Published subjects the student has added, with overall progress
+ */
+export const ListSelectedSubjectsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable()
+}).and(zod.object({
+  "subjectProgress": zod.number()
+}))
+export const ListSelectedSubjectsResponse = zod.array(ListSelectedSubjectsResponseItem)
+
+
+/**
  * @summary Subject detail with chapter list
  */
 export const GetSubjectDetailParams = zod.object({

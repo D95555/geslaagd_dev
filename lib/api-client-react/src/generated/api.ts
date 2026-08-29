@@ -65,6 +65,7 @@ import type {
   ScheduleExamInput,
   SelectedStudySubject,
   SelectedStudySubjectInput,
+  SelectedSubject,
   SendChatMessageInput,
   SessionHeartbeat,
   SessionRegistration,
@@ -3508,6 +3509,83 @@ export function useListSubjects<TData = Awaited<ReturnType<typeof listSubjects>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListSubjectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSelectedSubjectsUrl = () => {
+
+
+
+
+  return `/api/subjects/selected`
+}
+
+/**
+ * @summary Published subjects the student has added, with overall progress
+ */
+export const listSelectedSubjects = async ( options?: Parameters<typeof customFetch>[1]): Promise<SelectedSubject[]> => {
+
+  return customFetch<SelectedSubject[]>(getListSelectedSubjectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSelectedSubjectsQueryKey = () => {
+    return [
+    `/api/subjects/selected`
+    ] as const;
+    }
+
+
+export const getListSelectedSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listSelectedSubjects>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSelectedSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSelectedSubjectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSelectedSubjects>>> = ({ signal }) => listSelectedSubjects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSelectedSubjects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSelectedSubjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listSelectedSubjects>>>
+export type ListSelectedSubjectsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Published subjects the student has added, with overall progress
+ */
+
+export function useListSelectedSubjects<TData = Awaited<ReturnType<typeof listSelectedSubjects>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSelectedSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSelectedSubjectsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

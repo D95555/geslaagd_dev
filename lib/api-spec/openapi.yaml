@@ -868,6 +868,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SubjectSummary"
+  /subjects/selected:
+    get:
+      operationId: listSelectedSubjects
+      tags: [subjects]
+      summary: Published subjects the student has added, with overall progress
+      responses:
+        "200":
+          description: Selected subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SelectedSubject"
   /subjects/{subjectId}:
     get:
       operationId: getSubjectDetail
@@ -1967,6 +1981,13 @@ components:
             chapters:
               type: array
               items: { $ref: "#/components/schemas/Chapter" }
+    SelectedSubject:
+      allOf:
+        - $ref: "#/components/schemas/SubjectSummary"
+        - type: object
+          required: [subjectProgress]
+          properties:
+            subjectProgress: { type: number }
     Citation:
       type: object
       required: [index, sourceId, title, url]
