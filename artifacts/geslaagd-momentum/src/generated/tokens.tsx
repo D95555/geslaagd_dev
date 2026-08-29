@@ -17,7 +17,7 @@ export const tokens = {
       "secondary": "#f1ecfa",
       "secondaryForeground": "#3b1f6b",
       "muted": "#f4f1f9",
-      "mutedForeground": "#6b6178",
+      "mutedForeground": "#5c5368",
       "accent": "#ede9fe",
       "accentForeground": "#4c1d95",
       "destructive": "#b42318",

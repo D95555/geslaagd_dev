@@ -992,15 +992,17 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .weakness-card h3, .review-plan h3 { margin: 0; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); color: hsl(var(--foreground)); }
 .weakness-intro, .review-plan-empty { margin: 8px 0 0; color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
 .weakness-card ul, .review-plan ul { display: flex; flex-direction: column; gap: 4px; margin: 14px 0 0; padding: 0; list-style: none; }
-/* min-width:0 on the text side: without it a long chapter title refuses to
-   shrink and pushes the whole page wider than the viewport. */
-.weakness-card li, .review-plan li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: var(--density-row-padding-y) 0; border-top: 1px solid hsl(var(--border)); }
+/* Stacked, not a row with the action off to the side: at the context rail's
+   280px this component now also has to live in, a row squeezed the title
+   down to a sliver next to a badge+button that refused to shrink, wrapping
+   every word onto its own line. A column has no such competing sibling and
+   works at any width the card ends up at. */
+.weakness-card li, .review-plan li { display: flex; flex-direction: column; gap: 6px; padding: var(--density-row-padding-y) 0; border-top: 1px solid hsl(var(--border)); }
 .weakness-card li > div, .review-plan-body { min-width: 0; }
-.weakness-card li strong, .review-plan li strong { display: block; overflow: hidden; text-overflow: ellipsis; }
 .weakness-card li:first-child, .review-plan li:first-child { border-top: 0; padding-top: 0; }
-.weakness-card li strong, .review-plan li strong { font-size: var(--text-body-size); font-weight: 600; }
+.weakness-card li strong, .review-plan li strong { display: block; font-size: var(--text-body-size); font-weight: 600; }
 .weakness-card li span, .review-plan li span { display: block; margin-top: 2px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
-.review-plan-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.review-plan-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .exam-countdown { display: flex; align-items: center; gap: 14px; color: hsl(var(--primary)); }
 .exam-countdown strong { display: block; color: hsl(var(--foreground)); font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); }
 .exam-countdown span { display: block; margin-top: 2px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
@@ -1026,6 +1028,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   width: 34px; height: 34px; border-radius: 999px;
   background: hsl(var(--muted)); color: hsl(var(--muted-foreground));
 }
+/* An inline SVG keeps its default baseline alignment even inside a
+   flex-centered parent, which reads as "not quite centered" -- block
+   removes that phantom offset. */
+.chapter-icon svg { display: block; }
 .chapter-row:not(:disabled) .chapter-icon { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
 .chapter-body { flex: 1; min-width: 0; }
 .chapter-title {
@@ -1078,10 +1084,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .key-notes section { padding: 0 var(--density-card-padding-x) var(--density-row-padding-y); }
 .key-notes h3 { margin: 0 0 8px; font-family: var(--text-label-font); font-size: var(--text-label-size); font-weight: var(--text-label-weight); letter-spacing: var(--text-label-tracking); color: hsl(var(--muted-foreground)); text-transform: uppercase; }
 .key-notes dl { display: flex; flex-direction: column; gap: 2px; margin: 0; }
-.key-notes dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-top: 1px solid hsl(var(--border)); font-size: var(--text-body-size); }
+.key-notes dl > div { padding: 7px 0; border-top: 1px solid hsl(var(--border)); font-size: var(--text-body-size); }
 .key-notes dl > div:first-child { border-top: 0; }
-.key-notes dt { color: hsl(var(--muted-foreground)); }
-.key-notes dd { margin: 0; font-weight: 500; text-align: right; }
+.key-notes dt { color: hsl(var(--muted-foreground)); font-family: var(--text-label-font); font-size: var(--text-label-size); font-weight: var(--text-label-weight); letter-spacing: var(--text-label-tracking); }
+.key-notes dd { margin: 4px 0 0; font-weight: 500; }
 @media (prefers-reduced-motion: reduce) { .key-notes-trigger svg { transition: none; } }
 
 /* Exercises and exams */
@@ -1152,7 +1158,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   margin: 0; font-family: var(--text-heading3-font); font-weight: var(--text-heading3-weight);
   font-size: var(--text-heading3-size); letter-spacing: var(--text-heading3-tracking); line-height: 1.35;
 }
-.cited-text ul, .cited-text ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 0.4em; }
+/* The app's own base styles reset list-style to none for nav/menu lists;
+   undo that here since these lists are real reading content. */
+.cited-text ul { list-style: disc; margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 0.4em; }
+.cited-text ol { list-style: decimal; margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 0.4em; }
 .cited-text li { line-height: inherit; }
 .cited-text li > p { margin: 0; }
 .cited-text strong { font-weight: 600; }

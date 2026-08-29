@@ -7,7 +7,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
@@ -109,7 +108,6 @@ export function StudySidebarNav({ location }: { location: string }) {
                         {chapter.position}. {chapter.title}
                       </span>
                     </SidebarMenuButton>
-                    {chapter.isImportant && <SidebarMenuBadge>Tentamen</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 );
               })}

@@ -44,7 +44,7 @@ nieuwe sessie/omgeving, vandaar dat de volledige tekst hier staat.
 | Toetsenbord | **Volledig toetsenbord-eerst**: Cmd+K, Cmd+B, j/k, markeren, `?` |
 | Beheer | Mee naar dezelfde schil als de studentomgeving |
 | Thema | ~~Donker voor studie + beheer, licht voor marketing~~ **Herzien, zie hieronder: licht + paars/wit overal, geen donker thema meer in gebruik.** |
-| Proefpagina/goedkeuring | Fase D (pagina's als inhoud) — **eerste visuele feedback binnen, zie "Eerste visuele feedbackronde" hieronder.** |
+| Proefpagina/goedkeuring | Fase D (pagina's als inhoud) — **twee feedbackrondes verwerkt (zie hieronder), nog niet definitief goedgekeurd.** |
 
 ### Eerste visuele feedbackronde (na fase D's eerste twee pagina's, in Replit)
 
@@ -92,6 +92,73 @@ gewijzigd — dit **overschrijft** de eerdere thema-keuze uit de tabel hierboven
 **Nog niet opnieuw visueel bekeken na deze ronde.** Geverifieerd met
 `pnpm typecheck` (root, inclusief de contrastpoort) en
 `PORT=5173 BASE_PATH=/ pnpm build`. Zie "Hoe visueel te verifiëren" onderaan.
+
+### Tweede feedbackronde: grondige controle na screenshots
+
+De gebruiker heeft opnieuw gekeken (na sync) en met screenshots drie
+concrete problemen aangewezen: tekst die "te groot"/rommelig oogt op de
+vak-pagina, te weinig contrast, en niet-gecentreerde hoofdstuk-iconen —met
+de expliciete vraag om **grondig alles na te lopen** vóórdat verder gegaan
+wordt. Omdat schatten op basis van een screenshot al één keer een bug had
+gemist (de `dl`-layout in de rail, precies het risico dat in de vorige ronde
+al benoemd was), is dit keer **empirisch getest**: de gecompileerde CSS-bundle
+plus een losse HTML-reproductie van de exacte DOM-structuur, gerenderd en
+gescreenshot met Playwright/Chromium in deze sandbox (dat werkt prima voor
+statische opmaak — het is specifiek de *live Supabase-verbinding* die hier
+niet werkt, niet Chromium zelf). Dat leverde vier bevestigde, concrete bugs
+op, elk met een screenshot-voor/na geverifieerde fix:
+
+1. **De rail-tekst was echt kapot, niet alleen "weinig contrast".**
+   `.review-plan li`/`.weakness-card li` waren een flex-rij met de titel
+   links en een `flex-shrink: 0`-blok (badge + knop) rechts — prima in de
+   brede hoofdkolom waar dit vandaan kwam, maar in de 280px-rail duwde het
+   niet-krimpende actieblok de titel terug tot een reepje van ~40px, waarna
+   Chromium woord-voor-woord (soms letter-voor-letter) ellipsissen ging
+   toevoegen. Reproduceerbaar gemaakt, en opgelost door de rij te laten
+   stapelen (`flex-direction: column`) in plaats van naast elkaar te zetten —
+   werkt daardoor sowieso op elke breedte, dus ook op de bredere
+   `study-plan-page.tsx` waar `ReviewPlan` ook nog wordt gebruikt.
+2. **`.cited-text ul`/`ol` toonden geen bullets/nummers.** Tailwind's eigen
+   preflight-reset (`ol, ul { list-style: none }`, onderdeel van
+   `@import "tailwindcss"`) gold ook voor markdown-lijsten in
+   hoofdstuksamenvattingen — ze zagen er daardoor uit als losse, niet-
+   ingesprongen alinea's zonder duidelijke lijst-structuur, wat een groot deel
+   van het "rommelige/te grote tekst"-gevoel verklaart bij content met veel
+   opsommingen. Hersteld met expliciete `list-style: disc`/`decimal`.
+3. **`.key-notes dl`** (kernpunten/formules) zette label en waarde naast
+   elkaar met `justify-content: space-between` — bij een korte term en een
+   lange definitie in de smalle rail oogde dat gedrongen. Nu gestapeld:
+   label boven, waarde eronder — consistenter met de rest van de rail-kaarten
+   en leesbaarder bij lange definities.
+4. **`.chapter-icon svg`** (het ronde icoon-badge uit de vorige ronde) miste
+   `display: block`, waardoor de inline-SVG zijn standaard baseline-uitlijning
+   behield en net niet perfect gecentreerd oogde binnen de cirkel.
+5. **Sidebar: `SidebarMenuBadge` met de tekst "Tentamen"** overlapte de
+   hoofdstuktitel in de compacte zijbalk. De primitive positioneert deze badge
+   `absolute right-1` — bedoeld voor een korte teller (bijv. "3"), niet voor
+   een woord van 7 tekens naast een titel die zelf al de volle breedte
+   gebruikt. Er is geen automatische ruimte-reservering voor deze combinatie.
+   Verwijderd uit de zijbalk (stond al **wél** correct, niet-overlappend, in
+   de rijkere `ChapterList` in het middenpaneel — dat blijft de plek waar dit
+   zichtbaar is).
+6. **`mutedForeground` verdiept** (`#6b6178` → `#5c5368`) voor meer marge
+   boven de WCAG-AA-ondergrens: deze kleur wordt op tekst tot 12px gebruikt
+   (badges, tijdstempels, hoofdstukpercentages), waar een ratio net boven
+   4.5:1 nog dun aanvoelt. Alle 12 gate-paren opnieuw gecontroleerd na de
+   wijziging (blijven ruim boven 4.5:1).
+
+Los hiervan: de eigenlijke `--text-body-long-size` (17px) is **niet**
+verkleind — na de screenshot-analyse leek de gebruikers "te grote tekst"-
+klacht vooral te komen van de kapotte lijst-opmaak en de rail-ramp (punt 1+2
+hierboven), niet van de letterlijke lettergrootte, en die is bovendien een
+bewuste fase-A-keuze. Als het na deze fixes nog steeds te groot aanvoelt,
+is dat de eerstvolgende kandidaat om aan te passen.
+
+**Methode voor een volgende sessie:** een geïsoleerde HTML-reproductie
+(compiled CSS uit `dist/public/assets/*.css` + handgeschreven markup met
+dezelfde classNamen) via Playwright renderen en screenshotten, in plaats van
+puur op basis van een screenshot-beschrijving te redeneren over CSS-gedrag —
+dat is deze keer wat de fix van de vorige ronde miste.
 
 ---
 
@@ -419,10 +486,25 @@ wat de schil nodig heeft; er is geen bredere migratie naar react-query gedaan.
   `resetKey` — zijn hele subtree hermontageert dus bij **elke** navigatie. Dit
   is de reden dat `AppShell` er expliciet buiten moet staan.
 
-### Deze sandbox kan de app niet visueel testen
+### Deze sandbox kan de live app niet visueel testen, maar wél losse opmaak
 Chromium in deze containeromgeving kan geen stabiele verbinding met Supabase
 opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
-`--disable-quic`/`--disable-http2`). **Visuele verificatie moet via Replit.**
+`--disable-quic`/`--disable-http2`). **Eindverificatie met echte data moet
+via Replit.**
+
+Dat betekent niet dat je hier blind moet gokken op CSS-gedrag. Chromium zelf
+werkt hier prima voor **statische opmaak zonder netwerkverkeer**:
+Playwright is voorgeïnstalleerd (`/opt/pw-browsers/chromium-*/chrome-linux/
+chrome`, package op `/opt/node22/lib/node_modules/playwright`, niet in de
+`node_modules` van dit project zelf). Bij twijfel over hoe een CSS-regel zich
+gedraagt (vooral flex/grid in een smalle rail, of iets met tekst-wrapping):
+bouw een losse HTML-reproductie met de gecompileerde bundel
+(`artifacts/geslaagd-app/dist/public/assets/*.css`, na `pnpm build`) en
+handgeschreven markup met dezelfde classNamen/DOM-structuur, en screenshot
+die met een klein Playwright-scriptje. Dat is precies hoe de bugs uit de
+tweede feedbackronde (de kapotte rail-lijst, ontbrekende lijst-markers) zijn
+gevonden én de fix geverifieerd, in plaats van erop te vertrouwen dat de CSS
+wel zou kloppen.
 
 ---
 
@@ -461,12 +543,22 @@ opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
    uit op 280px breed (met name de kernpunten-tabel bij lange labels/waarden),
    en knippert de rail niet bij het wisselen tussen lezen/oefenen/tentamen
    binnen hetzelfde hoofdstuk?
-7. **Eerste feedbackronde verifiëren (nog niet gezien):** geen rasterpatroon
-   meer zichtbaar; licht + paars/wit overal (ook marketing/homepage — niet
-   alleen studie/beheer); een hoofdstuksamenvatting met opmaak (koppen, vet,
+7. **Eerste feedbackronde verifiëren:** geen rasterpatroon meer zichtbaar;
+   licht + paars/wit overal (ook marketing/homepage — niet alleen
+   studie/beheer); een hoofdstuksamenvatting met opmaak (koppen, vet,
    tabellen) toont nu echt geformatteerde tekst in plaats van rauwe
    `##`/`**`/`|`-tekens; de hoofdstukrijen op de vak-hub hebben een ronde
    icoon-badge en een grotere/andere titelstijl.
+8. **Tweede feedbackronde verifiëren (nog niet gezien):** in de rail van een
+   vak met een herhaalplan — is elke taak nu titel/tags bovenaan met de
+   actie-knoppen op hun eigen regel eronder (niet meer een rij die uit elkaar
+   valt)? Een hoofdstuksamenvatting met een genummerde of opsommingslijst
+   toont nu echt nummers/bullets. De kernpunten-tabel in de rail toont label
+   boven, waarde eronder (niet meer naast elkaar). De ronde icoon-badges bij
+   hoofdstukken ogen gecentreerd. Kleine meta-tekst (percentages, badges) is
+   iets donkerder dan de vorige ronde. De "Tentamen"-badge in de compacte
+   zijbalk is weg (staat nog wel, correct, in de hoofdstukkenlijst in het
+   middenpaneel).
 
 ---
 
