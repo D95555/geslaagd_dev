@@ -402,7 +402,7 @@ bron van waarheid.
 | **C** — Toetsenbordlaag | ✅ Af | `e54e765` |
 | **D** — Studentpagina's als inhoud (goedkeuringsmoment) | 🟡 Twee kernpagina's af, nog niet visueel goedgekeurd | `b41888f` |
 | **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
-| **F** — Publiek en opruimen | 🟡 Homepage opnieuw ontworpen, nog niet visueel goedgekeurd; auth-pagina en dode-code-opruiming nog niet gedaan | zie onderstaande commit |
+| **F** — Publiek en opruimen | 🟡 Homepage opnieuw ontworpen, nog niet visueel goedgekeurd; auth-pagina en dode-code-opruiming nog niet gedaan | `83ef907` |
 
 ### Wat fase B concreet heeft opgeleverd
 
