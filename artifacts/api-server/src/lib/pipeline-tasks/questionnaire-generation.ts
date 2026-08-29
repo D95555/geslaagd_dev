@@ -1,4 +1,4 @@
-import { callStrongJson, STRONG_MODEL } from "../ai";
+import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { questionnaireSchema } from "../study-content";
 import { loadSubject, loadSubjectChapters, saveStudyContent } from "./context";
 import type { PipelineTask } from "./task-store";
@@ -32,7 +32,7 @@ export async function runQuestionnaireGeneration(
   if (chapters.length === 0) throw new Error("Subject has no chapters to build a questionnaire on.");
 
   const parsed = questionnaireSchema.safeParse(
-    await callStrongJson({
+    await callJsonForTask("questionnaire_generation", {
       system: SYSTEM_PROMPT,
       user: [
         `Vak: ${subject.name}`,
@@ -64,7 +64,7 @@ export async function runQuestionnaireGeneration(
     chapterId: null,
     contentType: "diagnostic_questionnaire",
     content: { questions },
-    model: STRONG_MODEL,
+    model: modelNameFor(MODEL_BY_TASK.questionnaire_generation),
   });
 
   return { questions: questions.length };

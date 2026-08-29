@@ -1,9 +1,8 @@
-import { callStrongJson, STRONG_MODEL } from "../ai";
+import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { normaliseBank, questionBankSchema } from "../study-content";
 import {
-  formatSourcesForPrompt,
   loadChapter,
-  loadChapterSources,
+  loadChapterSummaryText,
   loadSubject,
   refreshChapterStatus,
   saveStudyContent,
@@ -15,11 +14,17 @@ export function questionBankRules(count: string, points: string): string[] {
   return [
     `Maak ${count} vragen.`,
     "",
+    "Je krijgt de volledige samenvatting van het hoofdstuk. Dat is exact wat de",
+    "student heeft gelezen. Toets ALLEEN wat daarin staat — geen stof van buiten.",
+    "",
     "Eisen:",
     "- Mix van meerkeuze (mc) en open vragen, ongeveer 60% mc en 40% open",
+    "- Verdeel de vragen over ALLE onderwerpen van het hoofdstuk, niet alleen",
+    "  de makkelijkste — elk onderwerp komt minstens één keer aan bod",
     "- Elke vraag heeft een topicTag uit de opgegeven onderwerpen",
     "- Elke vraag heeft een pointValue",
     "- MC-vragen: 4 opties met keys A/B/C/D en precies 1 correcte correctKey",
+    "- Foute MC-opties moeten plausibel zijn, geen onzin-antwoorden",
     "- Open vragen: een rubric met modelAnswer, acceptableAlternatives,",
     "  commonMistakes (mistake, deduction, feedback) en maxScore",
     "- Varieer in moeilijkheidsgraad (makkelijk → moeilijk)",
@@ -43,6 +48,7 @@ const SYSTEM_PROMPT = [
   ...questionBankRules("een oefenset van 15-20", "40-60"),
 ].join("\n");
 
+/** Derived from the chapter summary so questions test what was actually taught. */
 export async function runExerciseGeneration(
   task: PipelineTask,
 ): Promise<Record<string, unknown>> {
@@ -50,18 +56,21 @@ export async function runExerciseGeneration(
 
   const subject = await loadSubject(task.subjectId);
   const chapter = await loadChapter(task.chapterId);
-  const sources = await loadChapterSources(task.chapterId, { charLimit: 8_000 });
+  const summary = await loadChapterSummaryText(task.chapterId);
+  if (!summary) {
+    throw new Error("Exercises need the chapter summary, which is not ready yet.");
+  }
 
   const parsed = questionBankSchema.safeParse(
-    await callStrongJson({
+    await callJsonForTask("exercise_generation", {
       system: SYSTEM_PROMPT,
       user: [
         `Vak: ${subject.name}`,
         `Hoofdstuk: ${chapter.title}`,
         `Onderwerpen: ${chapter.topicTags.join(", ")}`,
         "",
-        "Bronnen:",
-        formatSourcesForPrompt(sources),
+        "Samenvatting die de student heeft gelezen:",
+        summary,
       ].join("\n"),
       maxTokens: 16_000,
     }),
@@ -76,7 +85,7 @@ export async function runExerciseGeneration(
     chapterId: task.chapterId,
     contentType: "exercise_bank",
     content: bank,
-    model: STRONG_MODEL,
+    model: modelNameFor(MODEL_BY_TASK.exercise_generation),
   });
   await refreshChapterStatus(task.chapterId);
 

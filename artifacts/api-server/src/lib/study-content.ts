@@ -3,6 +3,24 @@ import { z } from "zod";
 
 /** Shapes stored in study_content.content, per content_type. */
 
+/**
+ * Optional prose from a model. `.default()` only fills in a missing key, but
+ * models routinely send an explicit `null` for a field that does not apply —
+ * this accepts both and falls back to the given text.
+ */
+export const modelText = (fallback = "") =>
+  z
+    .string()
+    .nullish()
+    .transform((value) => value ?? fallback);
+
+/** Same tolerance for list fields a model may return as null. */
+export const modelList = <T extends z.ZodTypeAny>(item: T) =>
+  z
+    .array(item)
+    .nullish()
+    .transform((value) => value ?? []);
+
 export const citationSchema = z.object({
   index: z.number().int(),
   sourceId: z.string(),
@@ -12,9 +30,9 @@ export const citationSchema = z.object({
 export type Citation = z.infer<typeof citationSchema>;
 
 export const summarySchema = z.object({
-  title: z.string(),
-  body: z.string(),
-  citations: z.array(citationSchema).default([]),
+  title: modelText(),
+  body: modelText(),
+  citations: modelList(citationSchema),
   wordCount: z.number().int().nonnegative().default(0),
 });
 export type SummaryContent = z.infer<typeof summarySchema>;
@@ -23,16 +41,14 @@ export const keyNotesSchema = z.object({
   sections: z
     .array(
       z.object({
-        heading: z.string(),
-        items: z
-          .array(
-            z.object({
-              label: z.string(),
-              value: z.string(),
-              topicTag: z.string().default(""),
-            }),
-          )
-          .default([]),
+        heading: modelText(),
+        items: modelList(
+          z.object({
+            label: modelText(),
+            value: modelText(),
+            topicTag: modelText(),
+          }),
+        ),
       }),
     )
     .default([]),
@@ -42,24 +58,22 @@ export type KeyNotesContent = z.infer<typeof keyNotesSchema>;
 export const questionSchema = z.object({
   index: z.number().int(),
   type: z.enum(["mc", "open"]),
-  topicTag: z.string().default(""),
+  topicTag: modelText(),
   pointValue: z.number().default(1),
-  prompt: z.string(),
+  prompt: modelText(),
   options: z.array(z.object({ key: z.string(), text: z.string() })).optional(),
   correctKey: z.string().optional(),
   rubric: z
     .object({
-      modelAnswer: z.string().default(""),
-      acceptableAlternatives: z.array(z.string()).default([]),
-      commonMistakes: z
-        .array(
-          z.object({
-            mistake: z.string(),
-            deduction: z.number().default(0),
-            feedback: z.string().default(""),
-          }),
-        )
-        .default([]),
+      modelAnswer: modelText(),
+      acceptableAlternatives: modelList(z.string()),
+      commonMistakes: modelList(
+        z.object({
+          mistake: modelText(),
+          deduction: z.number().default(0),
+          feedback: modelText(),
+        }),
+      ),
       maxScore: z.number().default(1),
     })
     .optional(),
@@ -92,10 +106,10 @@ export const questionnaireSchema = z.object({
     .array(
       z.object({
         index: z.number().int(),
-        prompt: z.string(),
+        prompt: modelText(),
         type: z.literal("mc").default("mc"),
-        options: z.array(z.object({ key: z.string(), text: z.string() })).default([]),
-        chapterIds: z.array(z.string()).default([]),
+        options: modelList(z.object({ key: z.string(), text: modelText() })),
+        chapterIds: modelList(z.string()),
       }),
     )
     .default([]),

@@ -1,10 +1,47 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
-/** Curriculum design, source review and all study-content generation. */
+/** Deep reasoning: curriculum structure, the summaries students read, exams. */
 export const STRONG_MODEL = "claude-sonnet-4-6";
-/** Triage, source scoring, grading and StudyHandler chat. */
+/** Everything high-volume or derivative — an order of magnitude cheaper. */
 export const FAST_MODEL = "gpt-5.6-luna";
+
+/**
+ * Which tier each pipeline step runs on, in one place so the balance between
+ * cost and quality can be shifted per task without touching handler code.
+ *
+ * The strong model earns its cost where an error propagates: the chapter plan
+ * shapes the whole subject, the summary is the student's only reading material,
+ * and exam questions decide grades. Everything else is derived from a summary
+ * that has already been written well.
+ */
+export type ModelTier = "strong" | "fast";
+
+export const MODEL_BY_TASK = {
+  triage: "fast",
+  curriculum_design: "strong",
+  source_gathering: "fast",
+  source_review: "fast",
+  summary_generation: "strong",
+  key_notes_generation: "fast",
+  exercise_generation: "fast",
+  exam_generation: "strong",
+  questionnaire_generation: "fast",
+  grading: "fast",
+  chat: "fast",
+} as const satisfies Record<string, ModelTier>;
+
+export function modelNameFor(tier: ModelTier): string {
+  return tier === "strong" ? STRONG_MODEL : FAST_MODEL;
+}
+
+/** Runs a JSON prompt on whichever tier the task is configured for. */
+export async function callJsonForTask(
+  task: keyof typeof MODEL_BY_TASK,
+  input: { system: string; user: string; maxTokens?: number },
+): Promise<unknown> {
+  return MODEL_BY_TASK[task] === "strong" ? callStrongJson(input) : callFastJson(input);
+}
 
 // Identity-linked Anthropic keys must name the workspace they act on; regular
 // keys ignore the header, so it is only sent when configured.

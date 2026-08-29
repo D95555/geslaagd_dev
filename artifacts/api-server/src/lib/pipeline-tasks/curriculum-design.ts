@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { callStrongJson, STRONG_MODEL } from "../ai";
+import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
+import { modelList, modelText } from "../study-content";
 import { defaultCrawlConfig, firecrawlSearch, type CrawlConfig } from "../firecrawl";
 import { logger } from "../logger";
 import { restService } from "../supabase";
@@ -10,39 +11,35 @@ import { createTask, type PipelineTask } from "./task-store";
 type Row = Record<string, unknown>;
 
 const curriculumSchema = z.object({
-  description: z.string(),
-  difficultyLevel: z.string(),
+  description: modelText(),
+  difficultyLevel: modelText("VWO"),
   chapters: z
     .array(
       z.object({
         position: z.number().int(),
-        title: z.string(),
-        description: z.string().default(""),
-        topicTags: z.array(z.string()).default([]),
-        isImportant: z.boolean().default(false),
-        foundSources: z
-          .array(
-            z.object({
-              url: z.string(),
-              title: z.string().default(""),
-              relevanceNote: z.string().default(""),
-            }),
-          )
-          .default([]),
+        title: modelText(),
+        description: modelText(),
+        topicTags: modelList(z.string()),
+        isImportant: z.boolean().nullish().transform((value) => value ?? false),
+        foundSources: modelList(
+          z.object({
+            url: z.string(),
+            title: modelText(),
+            relevanceNote: modelText(),
+          }),
+        ),
       }),
     )
     .min(1),
-  crawlConfigs: z
-    .array(
-      z.object({
-        chapterPosition: z.number().int(),
-        queries: z.array(z.string()).default([]),
-        categories: z.array(z.string()).default([]),
-        includeDomains: z.array(z.string()).default([]),
-        useResearchIndex: z.boolean().default(false),
-      }),
-    )
-    .default([]),
+  crawlConfigs: modelList(
+    z.object({
+      chapterPosition: z.number().int(),
+      queries: modelList(z.string()),
+      categories: modelList(z.string()),
+      includeDomains: modelList(z.string()),
+      useResearchIndex: z.boolean().nullish().transform((value) => value ?? false),
+    }),
+  ),
 });
 
 const SYSTEM_PROMPT = [
@@ -51,11 +48,17 @@ const SYSTEM_PROMPT = [
   "",
   "Opdracht:",
   "1. Onderzoek dit vak grondig. Gebruik de zoekresultaten hieronder.",
-  "2. Maak een lijst van 10-12 hoofdstukken die samen het volledige vak dekken.",
+  "2. Maak een lijst van 10-16 hoofdstukken die samen het volledige vak dekken.",
+  "   Elk hoofdstuk wordt één samenvatting die de student in plaats van een boek",
+  "   leest. Past de theorie van een onderwerp niet in één behapbaar hoofdstuk,",
+  "   SPLITS het dan in twee hoofdstukken. Liever meer, kleinere hoofdstukken dan",
+  "   één hoofdstuk waarin theorie moet worden weggelaten.",
   "3. Voor elk hoofdstuk:",
   "   - Een duidelijke titel",
   "   - Een korte beschrijving (1-2 zinnen)",
-  "   - 3-6 topicTags (voor het bijhouden van sterke/zwakke punten)",
+  "   - 3-6 topicTags: de theorieonderdelen die het hoofdstuk MOET behandelen.",
+  "     Deze lijst is bindend — de samenvatting krijgt één sectie per topicTag,",
+  "     dus benoem hier alles wat de student van dit hoofdstuk moet kennen.",
   "   - Of het een 'belangrijk' hoofdstuk is (krijgt een tentamen)",
   "   - Eventuele bronnen die je in de zoekresultaten vond, met URL en een korte",
   "     notitie over hoe de bron relevant is voor dit hoofdstuk",
@@ -112,7 +115,7 @@ export async function runCurriculumDesign(
   const research = await researchSubject(subject.name, subject.yearLevel);
 
   const parsed = curriculumSchema.safeParse(
-    await callStrongJson({
+    await callJsonForTask("curriculum_design", {
       system: SYSTEM_PROMPT,
       user: [
         `Vak: ${subject.name}`,
@@ -220,6 +223,6 @@ export async function runCurriculumDesign(
   return {
     chapters: created.length,
     difficultyLevel: design.difficultyLevel,
-    model: STRONG_MODEL,
+    model: modelNameFor(MODEL_BY_TASK.curriculum_design),
   };
 }

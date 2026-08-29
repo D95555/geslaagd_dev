@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { callFastJson } from "./ai";
 import { logger } from "./logger";
-import { maxScoreFor, pointsToGrade, type Question } from "./study-content";
+import { maxScoreFor, modelText, pointsToGrade, type Question } from "./study-content";
 
 export type SubmittedAnswer = { questionIndex: number; answer: string };
 
@@ -32,8 +32,8 @@ const aiGradeSchema = z.object({
         questionIndex: z.number().int(),
         score: z.number(),
         maxScore: z.number().optional(),
-        feedback: z.string().default(""),
-        correctAnswer: z.string().nullable().default(null),
+        feedback: modelText(),
+        correctAnswer: z.string().nullish().transform((value) => value ?? null),
       }),
     )
     .default([]),

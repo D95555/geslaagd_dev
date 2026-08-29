@@ -1,9 +1,8 @@
-import { callStrongJson, STRONG_MODEL } from "../ai";
+import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { normaliseBank, questionBankSchema } from "../study-content";
 import {
-  formatSourcesForPrompt,
   loadChapter,
-  loadChapterSources,
+  loadChapterSummaryText,
   loadSubject,
   refreshChapterStatus,
   saveStudyContent,
@@ -27,10 +26,13 @@ export async function runExamGeneration(task: PipelineTask): Promise<Record<stri
 
   const subject = await loadSubject(task.subjectId);
   const chapter = await loadChapter(task.chapterId);
-  const sources = await loadChapterSources(task.chapterId, { charLimit: 8_000 });
+  const summary = await loadChapterSummaryText(task.chapterId);
+  if (!summary) {
+    throw new Error("The exam needs the chapter summary, which is not ready yet.");
+  }
 
   const parsed = questionBankSchema.safeParse(
-    await callStrongJson({
+    await callJsonForTask("exam_generation", {
       system: SYSTEM_PROMPT,
       user: [
         `Vak: ${subject.name}`,
@@ -38,8 +40,8 @@ export async function runExamGeneration(task: PipelineTask): Promise<Record<stri
         `Beschrijving: ${chapter.description}`,
         `Onderwerpen: ${chapter.topicTags.join(", ")}`,
         "",
-        "Bronnen:",
-        formatSourcesForPrompt(sources),
+        "Samenvatting die de student heeft gelezen:",
+        summary,
       ].join("\n"),
       maxTokens: 24_000,
     }),
@@ -54,7 +56,7 @@ export async function runExamGeneration(task: PipelineTask): Promise<Record<stri
     chapterId: task.chapterId,
     contentType: "exam",
     content: bank,
-    model: STRONG_MODEL,
+    model: modelNameFor(MODEL_BY_TASK.exam_generation),
   });
 
   await saveStudyContent({
@@ -73,7 +75,7 @@ export async function runExamGeneration(task: PipelineTask): Promise<Record<stri
         formula: "grade = (points / maxPoints) * 9 + 1",
       },
     },
-    model: STRONG_MODEL,
+    model: modelNameFor(MODEL_BY_TASK.exam_generation),
   });
 
   await refreshChapterStatus(task.chapterId);

@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { callStrongJson, STRONG_MODEL } from "../ai";
+import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { defaultCrawlConfig } from "../firecrawl";
+import { modelList } from "../study-content";
 import { loadChapter, loadChapterSources, loadSubject } from "./context";
 import { setChapterSourceRelevance, setSourceStatus } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
@@ -13,12 +14,14 @@ const reviewSchema = z.object({
       z.object({
         sourceId: z.string(),
         keep: z.boolean(),
-        relevanceNote: z.string().default(""),
-        rejectReason: z.string().nullable().default(null),
+        // The model leaves these null for the branch that does not apply —
+        // a rejected source has no relevance note, a kept one no reason.
+        relevanceNote: z.string().nullish().transform((note) => note ?? ""),
+        rejectReason: z.string().nullish().transform((reason) => reason ?? null),
       }),
     )
     .default([]),
-  gapQueries: z.array(z.string()).default([]),
+  gapQueries: modelList(z.string()),
 });
 
 const SYSTEM_PROMPT = [
@@ -41,8 +44,8 @@ const SYSTEM_PROMPT = [
 ].join("\n");
 
 /**
- * Phase 4 — the strong model curates what the scorer let through, then either
- * orders one more targeted crawl to fill gaps or opens content generation.
+ * Phase 4 — curates what the scorer let through, then either orders one more
+ * targeted crawl to fill gaps or opens content generation for the chapter.
  */
 export async function runSourceReview(task: PipelineTask): Promise<Record<string, unknown>> {
   if (!task.chapterId) throw new Error("source_review requires a chapter.");
@@ -59,7 +62,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
 
   if (candidates.length > 0) {
     const parsed = reviewSchema.safeParse(
-      await callStrongJson({
+      await callJsonForTask("source_review", {
         system: SYSTEM_PROMPT,
         user: [
           `Vak: ${subject.name}`,
@@ -117,15 +120,27 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
         gapRound: gapRound + 1,
       } as unknown as Record<string, unknown>,
     });
-    return { chapter: chapter.title, kept, gapQueries: gapQueries.length, model: STRONG_MODEL };
+    return { chapter: chapter.title, kept, gapQueries: gapQueries.length, model: modelNameFor(MODEL_BY_TASK.source_review) };
   }
 
-  for (const taskType of ["summary_generation", "key_notes_generation", "exercise_generation"] as const) {
+  // The summary is written from the sources; everything else is derived from
+  // the summary, so those tasks wait on it. They are queued as 'ready' with a
+  // dependency — the worker skips them until the summary is done.
+  const summary = await createTask({
+    subjectId: task.subjectId,
+    chapterId: task.chapterId,
+    taskType: "summary_generation",
+    status: "ready",
+  });
+
+  const derived = ["key_notes_generation", "exercise_generation"] as const;
+  for (const taskType of derived) {
     await createTask({
       subjectId: task.subjectId,
       chapterId: task.chapterId,
       taskType,
       status: "ready",
+      dependsOn: [summary.id],
     });
   }
   if (chapter.isImportant) {
@@ -134,8 +149,9 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
       chapterId: task.chapterId,
       taskType: "exam_generation",
       status: "ready",
+      dependsOn: [summary.id],
     });
   }
 
-  return { chapter: chapter.title, kept, gapQueries: 0, model: STRONG_MODEL };
+  return { chapter: chapter.title, kept, gapQueries: 0, model: modelNameFor(MODEL_BY_TASK.source_review) };
 }

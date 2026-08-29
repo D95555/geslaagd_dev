@@ -83,9 +83,12 @@ export async function loadSubjectChapters(subjectId: string): Promise<ChapterCon
  */
 export async function loadChapterSources(
   chapterId: string,
-  options: { onlyAccepted?: boolean; charLimit?: number } = {},
+  options: { onlyAccepted?: boolean; charLimit?: number; maxSources?: number } = {},
 ): Promise<SourceContext[]> {
-  const { onlyAccepted = true, charLimit = 12_000 } = options;
+  // Prompts carry a handful of sources, not everything a crawl found: a chapter
+  // can accumulate 20+ pages, and sending them all was by far the largest cost
+  // in the pipeline for no measurable gain in quality.
+  const { onlyAccepted = true, charLimit = 3_000, maxSources = 5 } = options;
   const rows = await restService<Row[]>(
     `chapter_sources?chapter_id=eq.${chapterId}` +
       "&select=relevance_note,sources(id,url,title,status,full_content,content_preview,ai_summary)",
@@ -111,7 +114,26 @@ export async function loadChapterSources(
       content: body.slice(0, charLimit),
     });
   }
-  return sources;
+  // Richest sources first, so the cap keeps the most substantial material.
+  return sources
+    .sort((a, b) => b.content.length - a.content.length)
+    .slice(0, maxSources);
+}
+
+/**
+ * The generated summary for a chapter. Key notes, exercises and exams are
+ * derived from this rather than re-reading the raw sources: the summary is the
+ * only material the student actually studies, so questions drawn from it test
+ * what was really taught — and the prompt shrinks from tens of thousands of
+ * tokens of scraped pages to a few thousand of curated text.
+ */
+export async function loadChapterSummaryText(chapterId: string): Promise<string | null> {
+  const rows = await restService<Row[]>(
+    `study_content?chapter_id=eq.${chapterId}&content_type=eq.summary&status=eq.ready&select=content`,
+  );
+  const content = rows[0]?.content as { body?: string; title?: string } | undefined;
+  const body = content?.body?.trim();
+  return body ? body : null;
 }
 
 /** Renders sources as the numbered [Bron N] block the content prompts expect. */
