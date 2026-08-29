@@ -8,10 +8,12 @@ import {
   type PipelineTask,
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { NumberTicker } from '@/components/ui/number-ticker';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
+import { TaskDetailSheet } from '@/components/admin/task-detail';
 import { useLivePoll } from '@/lib/use-live-poll';
 
 type Attention = {
@@ -29,6 +31,7 @@ export default function AdminOverviewPage() {
   const [subjects, setSubjects] = useState<CrawlSubject[]>([]);
   const [tasks, setTasks] = useState<PipelineTask[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
   // `silent` keeps the spinner away during background polling, so the page
   // updates in place instead of flashing every few seconds.
@@ -131,7 +134,10 @@ export default function AdminOverviewPage() {
                   className={item.urgent && item.count > 0 ? 'attention-card urgent' : 'attention-card'}
                   onClick={() => setLocation(item.href)}
                 >
-                  <strong>{item.count}</strong>
+                  <NumberTicker
+                    value={item.count}
+                    className="attention-count text-inherit tracking-normal dark:text-inherit"
+                  />
                   <span className="attention-label">{item.label}</span>
                   <span className="attention-detail">{item.detail}</span>
                 </button>
@@ -171,9 +177,11 @@ export default function AdminOverviewPage() {
               <ul className="recent-tasks">
                 {tasks.slice(0, 8).map((task) => (
                   <li key={task.id}>
-                    <span className={`task-dot task-dot-${task.status}`} aria-hidden="true" />
-                    <span className="recent-task-type">{task.taskType}</span>
-                    <span className="recent-task-status">{task.status}</span>
+                    <button type="button" onClick={() => setDetailTaskId(task.id)}>
+                      <span className={`task-dot task-dot-${task.status}`} aria-hidden="true" />
+                      <span className="recent-task-type">{task.taskType}</span>
+                      <span className="recent-task-status">{task.status}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -181,6 +189,8 @@ export default function AdminOverviewPage() {
           </section>
         </>
       )}
+
+      <TaskDetailSheet taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
     </AdminShell>
   );
 }

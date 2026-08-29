@@ -4,16 +4,10 @@ import {
   type PipelineTaskDetail,
   type PipelineLogEntry,
 } from '@workspace/api-client-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@workspace/geslaagd-momentum/components/ui/dialog';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { useLivePoll } from '@/lib/use-live-poll';
+import { DetailSheet } from '@/components/admin/detail-sheet';
 
 export const taskTypeLabel: Record<string, string> = {
   triage: 'Beoordeling aanvraag',
@@ -59,7 +53,8 @@ export function LogLine({ entry }: { entry: PipelineLogEntry }) {
   );
 }
 
-export function TaskDetailDialog({
+/** The one place a pipeline task's full story (status, logs, config, result) is shown. */
+export function TaskDetailSheet({
   taskId,
   onClose,
 }: {
@@ -93,90 +88,86 @@ export function TaskDetailDialog({
   });
 
   return (
-    <Dialog open={taskId !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="task-detail-dialog">
-        <DialogHeader>
-          <DialogTitle>
-            {detail ? (taskTypeLabel[detail.taskType] ?? detail.taskType) : 'Taakdetails'}
-          </DialogTitle>
-          <DialogDescription>
-            {detail
-              ? [detail.subjectName, detail.chapterTitle].filter(Boolean).join(' · ') ||
-                'Taak zonder hoofdstuk'
-              : 'Laden…'}
-          </DialogDescription>
-        </DialogHeader>
+    <DetailSheet
+      open={taskId !== null}
+      onClose={onClose}
+      title={detail ? (taskTypeLabel[detail.taskType] ?? detail.taskType) : 'Taakdetails'}
+      description={
+        detail
+          ? [detail.subjectName, detail.chapterTitle].filter(Boolean).join(' · ') ||
+            'Taak zonder hoofdstuk'
+          : 'Laden…'
+      }
+    >
+      {state === 'loading' && (
+        <p className="study-loading">
+          <Loader2 className="spin" size={16} aria-hidden="true" /> Details laden…
+        </p>
+      )}
 
-        {state === 'loading' && (
-          <p className="study-loading">
-            <Loader2 className="spin" size={16} aria-hidden="true" /> Details laden…
-          </p>
-        )}
+      {state === 'error' && <p className="admin-empty">Details konden niet worden geladen.</p>}
 
-        {state === 'error' && <p className="admin-empty">Details konden niet worden geladen.</p>}
-
-        {state === 'ready' && detail && (
-          <div className="task-detail">
-            <div className="task-detail-meta">
-              <Badge
-                variant={
-                  detail.status === 'failed'
-                    ? 'destructive'
-                    : detail.status === 'done'
-                      ? 'secondary'
-                      : 'outline'
-                }
-              >
-                {detail.status}
-              </Badge>
-              <span>Poging {detail.attempts}</span>
-              <span>{new Date(detail.createdAt).toLocaleString('nl-NL')}</span>
-            </div>
-
-            {detail.summary && (
-              <section className="task-detail-block">
-                <h3>Conclusie</h3>
-                <p className="task-summary">{detail.summary}</p>
-              </section>
-            )}
-
-            {detail.lastError && (
-              <section className="task-detail-block">
-                <h3>Fout</h3>
-                <pre className="log-data log-error-detail">{detail.lastError}</pre>
-              </section>
-            )}
-
-            <section className="task-detail-block">
-              <h3>Verloop</h3>
-              {detail.logs.length === 0 ? (
-                <p className="admin-empty">
-                  Nog geen logregels. Taken die vóór deze versie draaiden hebben geen logboek.
-                </p>
-              ) : (
-                <ul className="log-list">
-                  {detail.logs.map((entry) => (
-                    <LogLine key={entry.id} entry={entry} />
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {detail.config && (
-              <details className="task-detail-raw">
-                <summary>Instellingen</summary>
-                <pre className="log-data">{JSON.stringify(detail.config, null, 2)}</pre>
-              </details>
-            )}
-            {detail.result && (
-              <details className="task-detail-raw">
-                <summary>Resultaat</summary>
-                <pre className="log-data">{JSON.stringify(detail.result, null, 2)}</pre>
-              </details>
-            )}
+      {state === 'ready' && detail && (
+        <div className="task-detail">
+          <div className="task-detail-meta">
+            <Badge
+              variant={
+                detail.status === 'failed'
+                  ? 'destructive'
+                  : detail.status === 'done'
+                    ? 'secondary'
+                    : 'outline'
+              }
+            >
+              {detail.status}
+            </Badge>
+            <span>Poging {detail.attempts}</span>
+            <span>{new Date(detail.createdAt).toLocaleString('nl-NL')}</span>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+          {detail.summary && (
+            <section className="task-detail-block">
+              <h3>Conclusie</h3>
+              <p className="task-summary">{detail.summary}</p>
+            </section>
+          )}
+
+          {detail.lastError && (
+            <section className="task-detail-block">
+              <h3>Fout</h3>
+              <pre className="log-data log-error-detail">{detail.lastError}</pre>
+            </section>
+          )}
+
+          <section className="task-detail-block">
+            <h3>Verloop</h3>
+            {detail.logs.length === 0 ? (
+              <p className="admin-empty">
+                Nog geen logregels. Taken die vóór deze versie draaiden hebben geen logboek.
+              </p>
+            ) : (
+              <ul className="log-list">
+                {detail.logs.map((entry) => (
+                  <LogLine key={entry.id} entry={entry} />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {detail.config && (
+            <details className="task-detail-raw">
+              <summary>Instellingen</summary>
+              <pre className="log-data">{JSON.stringify(detail.config, null, 2)}</pre>
+            </details>
+          )}
+          {detail.result && (
+            <details className="task-detail-raw">
+              <summary>Resultaat</summary>
+              <pre className="log-data">{JSON.stringify(detail.result, null, 2)}</pre>
+            </details>
+          )}
+        </div>
+      )}
+    </DetailSheet>
   );
 }

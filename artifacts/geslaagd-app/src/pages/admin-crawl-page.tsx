@@ -18,6 +18,7 @@ import { useAuth } from '@/auth/auth-context';
 import { useLivePoll } from '@/lib/use-live-poll';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { CrawlCharts } from '@/components/admin/crawl-charts';
+import { DetailSheet } from '@/components/admin/detail-sheet';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
@@ -78,6 +79,7 @@ export default function AdminCrawlPage() {
   const [newSubjectYearLevel, setNewSubjectYearLevel] = useState<'havo_vwo_bovenbouw' | 'universitair'>('havo_vwo_bovenbouw');
   const [creating, setCreating] = useState(false);
 
+  const [detailRequest, setDetailRequest] = useState<CrawlSubjectRequest | null>(null);
   const [refinement, setRefinement] = useState<RefinementAction | null>(null);
   const [adminNote, setAdminNote] = useState('');
   const [refining, setRefining] = useState(false);
@@ -145,6 +147,7 @@ export default function AdminCrawlPage() {
 
   const approve = async (requestId: string) => {
     await approveCrawlSubjectRequest(requestId);
+    setDetailRequest(null);
     await load();
   };
 
@@ -162,6 +165,7 @@ export default function AdminCrawlPage() {
         await requestCrawlSubjectRefinement(refinement.requestId, { adminNote: adminNote.trim() });
       }
       setRefinement(null);
+      setDetailRequest(null);
       await load();
     } finally {
       setRefining(false);
@@ -232,10 +236,10 @@ export default function AdminCrawlPage() {
               <div className="account-list">
                 {subjectRequests.map((request) => (
                   <div key={request.id} className="account-row request-row">
-                    <div>
+                    <button type="button" className="request-row-summary" onClick={() => setDetailRequest(request)}>
                       <strong>{request.subjectName ?? 'Onbekend vak'}</strong>
                       <span>{request.yearLevel === 'universitair' ? 'Universitair' : 'HAVO/VWO Bovenbouw'} · aangevraagd {fmtDateTime(request.createdAt)}</span>
-                    </div>
+                    </button>
                     <div className="request-row-actions">
                       <Badge variant="secondary">{requestStatusLabel[request.status]}</Badge>
                       {request.status === 'pending' && (
@@ -252,6 +256,47 @@ export default function AdminCrawlPage() {
             )}
           </TabsContent>
         </Tabs>
+
+      <DetailSheet
+        open={detailRequest !== null}
+        onClose={() => setDetailRequest(null)}
+        title={detailRequest?.subjectName ?? 'Onbekend vak'}
+        description={
+          detailRequest
+            ? `${detailRequest.yearLevel === 'universitair' ? 'Universitair' : 'HAVO/VWO Bovenbouw'} · aangevraagd ${fmtDateTime(detailRequest.createdAt)}`
+            : undefined
+        }
+        footer={
+          detailRequest?.status === 'pending' && (
+            <div className="request-row-actions">
+              <Button variant="outline" onClick={() => void approve(detailRequest.id)}><Check size={14} /> Goedkeuren</Button>
+              <Button variant="outline" onClick={() => openRefinement(detailRequest.id, 'refine')}>Aanpassing vragen</Button>
+              <Button variant="outline" onClick={() => openRefinement(detailRequest.id, 'deny')}><X size={14} /> Afwijzen</Button>
+            </div>
+          )
+        }
+      >
+        {detailRequest && (
+          <div className="verkenner-card">
+            <Badge variant="secondary">{requestStatusLabel[detailRequest.status]}</Badge>
+            {detailRequest.description && (
+              <p><strong>Beschrijving</strong><br />{detailRequest.description}</p>
+            )}
+            {detailRequest.emphasis && (
+              <p><strong>Nadruk</strong><br />{detailRequest.emphasis}</p>
+            )}
+            {detailRequest.preferredSourceTypes && (
+              <p><strong>Gewenste brontypes</strong><br />{detailRequest.preferredSourceTypes}</p>
+            )}
+            {detailRequest.adminNote && (
+              <p><strong>Toelichting aan student</strong><br />{detailRequest.adminNote}</p>
+            )}
+            {!detailRequest.description && !detailRequest.emphasis && !detailRequest.preferredSourceTypes && (
+              <p className="study-hint">De student gaf verder geen toelichting bij deze aanvraag.</p>
+            )}
+          </div>
+        )}
+      </DetailSheet>
 
       <Dialog open={runOpen} onOpenChange={setRunOpen}>
         <DialogContent>

@@ -15,10 +15,10 @@ import { Loader2, Search } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { InlineEditableTitle } from '@/components/admin/verkenner/inline-editable-title';
-import { OBJECT_TYPE_META, type VerkennerObjectType } from '@/components/admin/verkenner/object-type-meta';
+import { OBJECT_TYPE_META } from '@/components/admin/verkenner/object-type-meta';
 import { DecisionCard } from '@/components/admin/verkenner/decision-card';
 import { CurriculumTree } from '@/components/admin/verkenner/curriculum-tree';
-import { ObjectPanel } from '@/components/admin/verkenner/object-panel';
+import { ObjectPanel, type VerkennerPanelTarget } from '@/components/admin/verkenner/object-panel';
 
 export default function AdminVerkennerPage() {
   const { user, isLoading } = useAuth();
@@ -34,9 +34,7 @@ export default function AdminVerkennerPage() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupBusy, setLookupBusy] = useState(false);
 
-  const [panelObject, setPanelObject] = useState<{ type: Exclude<VerkennerObjectType, 'subject'>; id: string } | null>(
-    null,
-  );
+  const [panelObject, setPanelObject] = useState<VerkennerPanelTarget | null>(null);
 
   const loadSubjects = async (q?: string) => {
     try {
@@ -204,7 +202,7 @@ export default function AdminVerkennerPage() {
                 {detail.crawls.length > 0 && (
                   <div className="verkenner-card">
                     <h3>Crawls</h3>
-                    <ul className="verkenner-flat-list">
+                    <ul className="verkenner-flat-list verkenner-scroll-list">
                       {detail.crawls.map((crawl) => (
                         <li key={crawl.id}>
                           <button type="button" onClick={() => setPanelObject({ type: 'crawl', id: crawl.id })}>
@@ -219,7 +217,7 @@ export default function AdminVerkennerPage() {
                 {detail.tasks.length > 0 && (
                   <div className="verkenner-card">
                     <h3>Taken</h3>
-                    <ul className="verkenner-flat-list">
+                    <ul className="verkenner-flat-list verkenner-scroll-list">
                       {detail.tasks.map((task) => (
                         <li key={task.id}>
                           <button type="button" onClick={() => setPanelObject({ type: 'task', id: task.id })}>
@@ -233,12 +231,10 @@ export default function AdminVerkennerPage() {
               </>
             )}
           </section>
-
-          {panelObject && (
-            <ObjectPanel type={panelObject.type} id={panelObject.id} onClose={() => setPanelObject(null)} />
-          )}
         </div>
       )}
+
+      <ObjectPanel object={panelObject} onClose={() => setPanelObject(null)} />
     </AdminShell>
   );
 }

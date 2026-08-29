@@ -5,13 +5,27 @@ import {
   listPendingSources,
   type PendingSource,
 } from '@workspace/api-client-react';
-import { ArrowLeft, Check, Loader2, ShieldAlert, X } from 'lucide-react';
+import { ArrowLeft, Check, CircleHelp, Loader2, ShieldAlert, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { useLivePoll } from '@/lib/use-live-poll';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
+import { Progress } from '@workspace/geslaagd-momentum/components/ui/progress';
+
+/** The pipeline sends a source here specifically when the scorer was under this threshold. */
+const CONFIDENCE_REVIEW_THRESHOLD = 0.65;
+
+function QualityDots({ score }: { score: number | null }) {
+  return (
+    <span className="source-quality-dots" aria-label={score !== null ? `Kwaliteitsscore ${score} van 5` : 'Kwaliteitsscore onbekend'}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={score !== null && n <= score ? 'source-quality-dot filled' : 'source-quality-dot'} />
+      ))}
+    </span>
+  );
+}
 import {
   Dialog,
   DialogContent,
@@ -97,12 +111,36 @@ export default function AdminCrawlPendingPage() {
                 </div>
                 <div className="source-row-meta">
                   <span>{source.type ?? 'onbekend type'}</span>
-                  <span>Score: {source.qualityScore ?? '—'}</span>
-                  <span>Zekerheid: {source.confidenceScore !== null ? Math.round(source.confidenceScore * 100) + '%' : '—'}</span>
                   {source.subjectNames.length > 0 && <span>Vakken: {source.subjectNames.join(', ')}</span>}
                 </div>
+
+                <div className="source-uncertainty">
+                  <div className="source-uncertainty-metric">
+                    <span className="source-uncertainty-label">Kwaliteit</span>
+                    <QualityDots score={source.qualityScore} />
+                    <span className="source-uncertainty-value">{source.qualityScore ?? '—'}/5</span>
+                  </div>
+                  <div className="source-uncertainty-metric">
+                    <span className="source-uncertainty-label">Zekerheid</span>
+                    <Progress
+                      value={source.confidenceScore !== null ? Math.round(source.confidenceScore * 100) : 0}
+                      className="source-confidence-bar"
+                    />
+                    <span className="source-uncertainty-value">
+                      {source.confidenceScore !== null ? `${Math.round(source.confidenceScore * 100)}%` : '—'}
+                    </span>
+                  </div>
+                  <p className="source-uncertainty-note">
+                    <CircleHelp size={13} aria-hidden="true" />
+                    De AI-scorer was voor deze bron minder dan {Math.round(CONFIDENCE_REVIEW_THRESHOLD * 100)}%
+                    zeker van de kwaliteitsscore — daarom staat hij in de wachtrij voor jouw oordeel in
+                    plaats van automatisch te worden geaccepteerd of afgewezen.
+                  </p>
+                </div>
+
                 {source.aiSummary && (
                   <p className="source-summary">
+                    <strong>Waarom deze bron: </strong>
                     {expanded === source.id || source.aiSummary.length <= 160 ? source.aiSummary : `${source.aiSummary.slice(0, 160)}…`}
                     {source.aiSummary.length > 160 && (
                       <button type="button" onClick={() => setExpanded(expanded === source.id ? null : source.id)}>

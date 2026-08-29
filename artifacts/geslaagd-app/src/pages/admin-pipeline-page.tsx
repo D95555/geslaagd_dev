@@ -38,7 +38,7 @@ import {
   type CrawlConfigDraft,
 } from '@/components/admin/crawl-config-form';
 import { TaskQueue } from '@/components/admin/task-queue';
-import { TaskDetailDialog } from '@/components/admin/task-detail';
+import { TaskDetailSheet } from '@/components/admin/task-detail';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 
 type StatusFilter = 'all' | PipelineTask['status'];
@@ -314,7 +314,7 @@ export default function AdminPipelinePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <TaskDetailDialog taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
+      <TaskDetailSheet taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
     </AdminShell>
   );
 }

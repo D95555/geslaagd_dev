@@ -76,6 +76,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
-    "@workspace/geslaagd-momentum": "workspace:*"
+    "@workspace/geslaagd-momentum": "workspace:*",
+    "motion": "^13.1.1"
   }
 }

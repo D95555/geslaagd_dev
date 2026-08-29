@@ -1,56 +1,44 @@
 import { useMemo } from 'react';
 import type { CrawlSummary } from '@workspace/api-client-react';
+import {
+  CartesianGrid,
+  Line,
+  LineChart as RechartsLineChart,
+  XAxis,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@workspace/geslaagd-momentum/components/ui/chart';
 
 /**
- * Dependency-free SVG charts for the crawl dashboard. Both charts pair colour
- * with a text/table alternative so meaning never rests on colour alone, and
- * both render the underlying numbers in a visually-hidden table for
- * screen readers.
+ * Real, hoverable charts for the crawl dashboard, built on the design
+ * system's Recharts wrapper so a hover shows the actual crawl (subject +
+ * date) behind each point instead of relying on the browser's native,
+ * delayed SVG tooltip.
  */
 
-type Point = { label: string; value: number; caption: string };
+type Point = { label: string; value: number; subject: string; date: string };
 
 function fmtShortDate(value: string): string {
   return new Date(value).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
-}
-
-function buildPath(values: number[], width: number, height: number, pad: number): string {
-  if (values.length === 0) return '';
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const stepX = values.length > 1 ? (width - pad * 2) / (values.length - 1) : 0;
-  return values
-    .map((value, index) => {
-      const x = pad + index * stepX;
-      const y = height - pad - ((value - min) / span) * (height - pad * 2);
-      return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
 }
 
 function LineChart({
   title,
   hint,
   points,
-  stroke,
+  config,
   formatValue,
 }: {
   title: string;
   hint: string;
   points: Point[];
-  stroke: string;
+  config: ChartConfig;
   formatValue: (value: number) => string;
 }) {
-  const width = 520;
-  const height = 170;
-  const pad = 26;
-  const values = points.map((point) => point.value);
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const stepX = values.length > 1 ? (width - pad * 2) / (values.length - 1) : 0;
-
   if (points.length === 0) {
     return (
       <section className="crawl-chart">
@@ -69,54 +57,34 @@ function LineChart({
         <h3>{title}</h3>
         <p>{hint}</p>
       </div>
-      <div className="crawl-chart-body">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="img"
-          aria-label={`${title}. ${hint}. Laagste waarde ${formatValue(min)}, hoogste waarde ${formatValue(max)}.`}
-          preserveAspectRatio="none"
-        >
-          {[0, 0.5, 1].map((fraction) => (
-            <line
-              key={fraction}
-              x1={pad}
-              x2={width - pad}
-              y1={height - pad - fraction * (height - pad * 2)}
-              y2={height - pad - fraction * (height - pad * 2)}
-              className="crawl-chart-grid"
-            />
-          ))}
-          <path d={buildPath(values, width, height, pad)} fill="none" stroke={stroke} strokeWidth={2} />
-          {points.map((point, index) => {
-            const x = pad + index * stepX;
-            const y = height - pad - ((point.value - min) / span) * (height - pad * 2);
-            return (
-              <g key={`${point.label}-${index}`}>
-                <circle cx={x} cy={y} r={3.5} fill={stroke} />
-                <title>{`${point.caption}: ${formatValue(point.value)}`}</title>
-              </g>
-            );
-          })}
-        </svg>
-        <div className="crawl-chart-axis">
-          <span>{formatValue(min)}</span>
-          <span>{formatValue(max)}</span>
-        </div>
-      </div>
-      <table className="visually-hidden">
-        <caption>{title}</caption>
-        <thead>
-          <tr><th scope="col">Crawl</th><th scope="col">Waarde</th></tr>
-        </thead>
-        <tbody>
-          {points.map((point, index) => (
-            <tr key={`${point.label}-row-${index}`}>
-              <th scope="row">{point.caption}</th>
-              <td>{formatValue(point.value)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ChartContainer config={config} className="crawl-chart-body">
+        <RechartsLineChart data={points} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                hideLabel
+                formatter={(value) => (
+                  <span>
+                    {formatValue(Number(value))}
+                  </span>
+                )}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.subject ?? ''}
+              />
+            }
+          />
+          <Line
+            dataKey="value"
+            type="monotone"
+            stroke="var(--color-value)"
+            strokeWidth={2}
+            dot={{ r: 3.5, fill: 'var(--color-value)' }}
+            activeDot={{ r: 5 }}
+          />
+        </RechartsLineChart>
+      </ChartContainer>
     </section>
   );
 }
@@ -138,8 +106,9 @@ export function CrawlCharts({ crawls }: { crawls: CrawlSummary[] }) {
         .filter((crawl) => (crawl.sourcesFound ?? 0) > 0)
         .map((crawl) => ({
           label: crawl.id,
-          value: ((crawl.sourcesAccepted ?? 0) / (crawl.sourcesFound ?? 1)) * 100,
-          caption: `${crawl.subjectName} · ${fmtShortDate(crawl.createdAt)}`,
+          value: Math.round(((crawl.sourcesAccepted ?? 0) / (crawl.sourcesFound ?? 1)) * 100),
+          subject: crawl.subjectName,
+          date: fmtShortDate(crawl.createdAt),
         })),
     [completed],
   );
@@ -150,8 +119,9 @@ export function CrawlCharts({ crawls }: { crawls: CrawlSummary[] }) {
         .filter((crawl) => (crawl.creditsUsed ?? 0) > 0 && (crawl.sourcesAccepted ?? 0) > 0)
         .map((crawl) => ({
           label: crawl.id,
-          value: (crawl.creditsUsed ?? 0) / (crawl.sourcesAccepted ?? 1),
-          caption: `${crawl.subjectName} · ${fmtShortDate(crawl.createdAt)}`,
+          value: Number(((crawl.creditsUsed ?? 0) / (crawl.sourcesAccepted ?? 1)).toFixed(1)),
+          subject: crawl.subjectName,
+          date: fmtShortDate(crawl.createdAt),
         })),
     [completed],
   );
@@ -162,14 +132,14 @@ export function CrawlCharts({ crawls }: { crawls: CrawlSummary[] }) {
         title="Acceptatiegraad per crawl"
         hint="Welk deel van de gevonden bronnen de kwaliteitsdrempel haalt."
         points={acceptanceRate}
-        stroke="hsl(var(--chart-1))"
+        config={{ value: { label: 'Acceptatie', color: 'hsl(var(--chart-1))' } }}
         formatValue={(value) => `${Math.round(value)}%`}
       />
       <LineChart
         title="Credits per geaccepteerde bron"
         hint="Lager is beter: hoeveel Firecrawl-credits één bruikbare bron kost."
         points={creditsPerSource}
-        stroke="hsl(var(--chart-3))"
+        config={{ value: { label: 'Credits', color: 'hsl(var(--chart-3))' } }}
         formatValue={(value) => value.toFixed(1)}
       />
     </div>

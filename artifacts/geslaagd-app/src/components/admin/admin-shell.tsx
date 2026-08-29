@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { useAuth } from '@/auth/auth-context';
+import { LiveTaskTicker } from '@/components/admin/live-task-ticker';
 
 type NavItem = {
   href: string;
@@ -113,6 +114,8 @@ export function AdminShell({
           {children}
         </section>
       </div>
+
+      <LiveTaskTicker />
     </main>
   );
 }

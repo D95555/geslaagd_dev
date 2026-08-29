@@ -4,28 +4,33 @@ import {
   type VerkennerObjectDetailResponse,
 } from '@workspace/api-client-react';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
-import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { LogLine, taskTypeLabel } from '@/components/admin/task-detail';
+import { DetailSheet } from '@/components/admin/detail-sheet';
 import { CONTENT_TYPE_LABEL, OBJECT_TYPE_META, type VerkennerObjectType } from './object-type-meta';
 
+export type VerkennerPanelTarget = { type: Exclude<VerkennerObjectType, 'subject'>; id: string };
+
 export function ObjectPanel({
-  type,
-  id,
+  object,
   onClose,
 }: {
-  type: Exclude<VerkennerObjectType, 'subject'>;
-  id: string;
+  object: VerkennerPanelTarget | null;
   onClose: () => void;
 }) {
   const [detail, setDetail] = useState<VerkennerObjectDetailResponse | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  // Kept so the sheet still shows content while it slides shut, instead of
+  // going blank the instant `object` is cleared.
+  const [lastTarget, setLastTarget] = useState<VerkennerPanelTarget | null>(null);
 
   useEffect(() => {
+    if (!object) return;
+    setLastTarget(object);
     let cancelled = false;
     setState('loading');
     setDetail(null);
-    getVerkennerObject(type, id)
+    getVerkennerObject(object.type, object.id)
       .then((result) => {
         if (!cancelled) {
           setDetail(result);
@@ -38,23 +43,25 @@ export function ObjectPanel({
     return () => {
       cancelled = true;
     };
-  }, [type, id]);
+  }, [object?.type, object?.id]);
 
-  const meta = OBJECT_TYPE_META[type];
+  const target = object ?? lastTarget;
+  if (!target) return null;
+
+  const meta = OBJECT_TYPE_META[target.type];
   const Icon = meta.icon;
 
   return (
-    <aside className="verkenner-object-panel" aria-label="Objectdetail">
-      <header className="verkenner-object-panel-head">
-        <span className={meta.accent}>
-          <Icon size={16} aria-hidden="true" />
+    <DetailSheet
+      open={object !== null}
+      onClose={onClose}
+      title={
+        <>
+          <Icon size={16} aria-hidden="true" className={meta.accent} />
           {meta.label}
-        </span>
-        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Sluiten">
-          <X size={16} />
-        </Button>
-      </header>
-
+        </>
+      }
+    >
       {state === 'loading' && (
         <p className="study-loading">
           <Loader2 className="spin" size={16} aria-hidden="true" /> Laden…
@@ -63,8 +70,8 @@ export function ObjectPanel({
       {state === 'error' && <p className="admin-notice is-error">Object kon niet worden geladen.</p>}
 
       {state === 'ready' && detail && (
-        <div className="verkenner-object-panel-body">
-          {type === 'content' && (
+        <div className="grid gap-3">
+          {target.type === 'content' && (
             <>
               <p>
                 <strong>{CONTENT_TYPE_LABEL[detail.contentType ?? ''] ?? detail.contentType}</strong>{' '}
@@ -85,7 +92,7 @@ export function ObjectPanel({
             </>
           )}
 
-          {type === 'source' && (
+          {target.type === 'source' && (
             <>
               <p>
                 <a href={detail.sourceUrl ?? '#'} target="_blank" rel="noreferrer">
@@ -107,7 +114,7 @@ export function ObjectPanel({
             </>
           )}
 
-          {type === 'crawl' && detail.crawl && (
+          {target.type === 'crawl' && detail.crawl && (
             <>
               <p>
                 <Badge variant={detail.crawl.status === 'complete' ? 'secondary' : 'destructive'}>
@@ -122,7 +129,7 @@ export function ObjectPanel({
             </>
           )}
 
-          {type === 'task' && detail.task && (
+          {target.type === 'task' && detail.task && (
             <>
               <p>
                 {taskTypeLabel[detail.task.taskType] ?? detail.task.taskType}{' '}
@@ -135,7 +142,7 @@ export function ObjectPanel({
             </>
           )}
 
-          {type === 'chapter' && (
+          {target.type === 'chapter' && (
             <>
               <p>{detail.chapterDescription}</p>
               <p className="study-hint">
@@ -156,6 +163,6 @@ export function ObjectPanel({
           )}
         </div>
       )}
-    </aside>
+    </DetailSheet>
   );
 }
