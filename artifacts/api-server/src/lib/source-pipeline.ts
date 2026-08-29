@@ -1,17 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
+
+import { callFastText, FAST_MODEL, openai } from "./ai";
 import { z } from "zod";
 import { logger } from "./logger";
 import { restService } from "./supabase";
 import { enqueuePendingSourceEvent } from "./source-event-outbox";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
 
 const RAW_STORAGE_DIR = path.join(process.cwd(), "crawl-raw");
 
@@ -116,17 +111,16 @@ async function generateCrawlPrompt(
     "Generate the optimal Firecrawl search query for this subject.",
   ].join("\n");
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 300,
+  // Writing one search string does not need the expensive model.
+  const query = await callFastText({
     system: systemPrompt,
     messages: [{ role: "user", content: userMessage }],
+    maxTokens: 300,
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const query = textBlock && "text" in textBlock ? textBlock.text.trim() : "";
-  if (!query) throw new Error("Claude returned an empty Firecrawl query.");
-  return query;
+  const trimmed = query.trim();
+  if (!trimmed) throw new Error("The model returned an empty Firecrawl query.");
+  return trimmed;
 }
 
 // ─── Firecrawl search ───────────────────────────────────────────────────────
@@ -210,7 +204,7 @@ export async function scoreBatch(
   ].join("\n");
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-5.6-luna",
+    model: FAST_MODEL,
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: systemPrompt },

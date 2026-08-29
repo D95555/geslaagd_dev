@@ -19,12 +19,15 @@ export type ModelTier = "strong" | "fast";
 
 export const MODEL_BY_TASK = {
   triage: "fast",
+  // Sets the chapter breakdown and the topic tags per chapter — one call per
+  // subject, and everything downstream is shaped by it.
   curriculum_design: "strong",
   source_gathering: "fast",
   source_review: "fast",
-  summary_generation: "strong",
+  summary_generation: "fast",
   key_notes_generation: "fast",
   exercise_generation: "fast",
+  // Exam questions decide grades, so these are worth the stronger model.
   exam_generation: "strong",
   questionnaire_generation: "fast",
   grading: "fast",
