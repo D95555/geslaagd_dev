@@ -436,4 +436,90 @@ router.get("/admin/verkenner/objects/:type/:id", async (req, res): Promise<void>
   }
 });
 
+router.get("/admin/verkenner/lookup", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const query = LookupVerkennerObjectQueryParams.safeParse(req.query);
+  if (!query.success || !query.data.q?.trim()) {
+    res.status(400).json({ error: "q is verplicht." });
+    return;
+  }
+  const q = query.data.q.trim();
+  try {
+    if (UUID_RE.test(q)) {
+      const subject = await restService<Row[]>(`crawl_subjects?id=eq.${q}&select=id`);
+      if (subject[0]) {
+        res.json(LookupVerkennerObjectResponse.parse({ type: "subject", id: q, subjectId: q }));
+        return;
+      }
+      const chapter = await restService<Row[]>(`chapters?id=eq.${q}&select=id,subject_id`);
+      if (chapter[0]) {
+        res.json(
+          LookupVerkennerObjectResponse.parse({ type: "chapter", id: q, subjectId: chapter[0].subject_id as string }),
+        );
+        return;
+      }
+      const content = await restService<Row[]>(`study_content?id=eq.${q}&select=id,subject_id`);
+      if (content[0]) {
+        res.json(
+          LookupVerkennerObjectResponse.parse({ type: "content", id: q, subjectId: content[0].subject_id as string }),
+        );
+        return;
+      }
+      const crawl = await restService<Row[]>(`crawls?id=eq.${q}&select=id,subject_id`);
+      if (crawl[0]) {
+        res.json(
+          LookupVerkennerObjectResponse.parse({ type: "crawl", id: q, subjectId: crawl[0].subject_id as string }),
+        );
+        return;
+      }
+      const task = await restService<Row[]>(`pipeline_tasks?id=eq.${q}&select=id,subject_id`);
+      if (task[0]) {
+        res.json(
+          LookupVerkennerObjectResponse.parse({ type: "task", id: q, subjectId: task[0].subject_id as string }),
+        );
+        return;
+      }
+      const source = await restService<Row[]>(`sources?id=eq.${q}&select=id`);
+      if (source[0]) {
+        const link = await restService<Row[]>(`source_subjects?source_id=eq.${q}&select=subject_id&limit=1`);
+        if (link[0]) {
+          res.json(
+            LookupVerkennerObjectResponse.parse({
+              type: "source",
+              id: q,
+              subjectId: link[0].subject_id as string,
+            }),
+          );
+          return;
+        }
+      }
+    } else {
+      const source = await restService<Row[]>(`sources?url=eq.${encodeURIComponent(q)}&select=id`);
+      if (source[0]) {
+        const link = await restService<Row[]>(
+          `source_subjects?source_id=eq.${source[0].id}&select=subject_id&limit=1`,
+        );
+        if (link[0]) {
+          res.json(
+            LookupVerkennerObjectResponse.parse({
+              type: "source",
+              id: source[0].id as string,
+              subjectId: link[0].subject_id as string,
+            }),
+          );
+          return;
+        }
+      }
+    }
+    res.status(404).json({ error: "Niets gevonden voor deze zoekterm." });
+  } catch (error) {
+    req.log.warn({ error }, "Could not resolve Verkenner lookup");
+    res.status(500).json({ error: "Zoeken is mislukt." });
+  }
+});
+
 export default router;
