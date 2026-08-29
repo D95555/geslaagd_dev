@@ -579,6 +579,145 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CrawlSubject"
+  /admin/verkenner/subjects:
+    get:
+      operationId: listVerkennerSubjects
+      tags: [admin-verkenner]
+      summary: Search subjects for the Verkenner
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching subjects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListVerkennerSubjectsResponse"
+        "403":
+          description: Forbidden
+  /admin/verkenner/subjects/{subjectId}:
+    get:
+      operationId: getVerkennerSubject
+      tags: [admin-verkenner]
+      summary: Full object graph for one subject
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Subject graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerkennerSubjectDetailResponse"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    patch:
+      operationId: updateVerkennerSubjectTitle
+      tags: [admin-verkenner]
+      summary: Rename a subject
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVerkennerSubjectTitleInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerkennerSubjectSummary"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/verkenner/chapters/{chapterId}:
+    patch:
+      operationId: updateVerkennerChapterTitle
+      tags: [admin-verkenner]
+      summary: Rename a chapter
+      parameters:
+        - name: chapterId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVerkennerChapterTitleInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chapter"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/verkenner/objects/{type}/{id}:
+    get:
+      operationId: getVerkennerObject
+      tags: [admin-verkenner]
+      summary: Detail for one object plus its linked tasks and logs
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [chapter, content, source, crawl, task] }
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Object detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerkennerObjectDetailResponse"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/verkenner/lookup:
+    get:
+      operationId: lookupVerkennerObject
+      tags: [admin-verkenner]
+      summary: Resolve any object id or source URL to its type and parent subject
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Resolved object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerkennerLookupResponse"
+        "403":
+          description: Forbidden
+        "404":
+          description: No matching object
   /admin/crawl/subject-requests:
     get:
       operationId: listCrawlSubjectRequests
@@ -2283,4 +2422,162 @@ components:
                     status: { type: string, enum: [generating, ready, failed] }
                     version: { type: integer }
                     content: { type: object, additionalProperties: true }
+    VerkennerSubjectSummary:
+      type: object
+      required: [id, name, yearLevel, status, publishStatus, chapterCount, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        yearLevel: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
+        status: { type: string, enum: [pending, active, denied, needs_refinement] }
+        publishStatus: { type: string, enum: [incomplete, ready, published] }
+        chapterCount: { type: ["integer", "null"] }
+        createdAt: { type: string }
+    ListVerkennerSubjectsResponse:
+      type: object
+      required: [subjects]
+      properties:
+        subjects:
+          type: array
+          items: { $ref: "#/components/schemas/VerkennerSubjectSummary" }
+    VerkennerDecision:
+      type: object
+      properties:
+        taskId: { type: ["string", "null"], format: uuid }
+        approved: { type: ["boolean", "null"] }
+        reason: { type: ["string", "null"] }
+        suggestions: { type: ["string", "null"] }
+        model: { type: ["string", "null"] }
+        summary: { type: ["string", "null"] }
+        requestStatus: { type: ["string", "null"], enum: [pending, approved, denied, needs_refinement, null] }
+        requestAdminNote: { type: ["string", "null"] }
+    VerkennerContentSummary:
+      type: object
+      required: [id, contentType, version, status]
+      properties:
+        id: { type: string, format: uuid }
+        contentType: { type: string }
+        version: { type: integer }
+        status: { type: string, enum: [generating, ready, failed] }
+    VerkennerChapterSummary:
+      type: object
+      required: [chapter, content, sourceCount]
+      properties:
+        chapter: { $ref: "#/components/schemas/Chapter" }
+        content:
+          type: array
+          items: { $ref: "#/components/schemas/VerkennerContentSummary" }
+        sourceCount: { type: integer }
+    VerkennerTaskSummary:
+      type: object
+      required: [id, taskType, status, summary]
+      properties:
+        id: { type: string, format: uuid }
+        taskType: { type: string }
+        status: { type: string, enum: [waiting, ready, running, done, failed] }
+        summary: { type: ["string", "null"] }
+    VerkennerSubjectDetail:
+      type: object
+      required: [id, name, yearLevel, status, publishStatus, description, difficultyLevel, adminNote, requestedBy]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        yearLevel: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
+        status: { type: string, enum: [pending, active, denied, needs_refinement] }
+        publishStatus: { type: string, enum: [incomplete, ready, published] }
+        description: { type: ["string", "null"] }
+        difficultyLevel: { type: ["string", "null"] }
+        adminNote: { type: ["string", "null"] }
+        requestedBy: { type: ["string", "null"] }
+    VerkennerSubjectDetailResponse:
+      type: object
+      required: [subject, decision, chapters, subjectContent, crawls, tasks]
+      properties:
+        subject: { $ref: "#/components/schemas/VerkennerSubjectDetail" }
+        decision: { $ref: "#/components/schemas/VerkennerDecision" }
+        chapters:
+          type: array
+          items: { $ref: "#/components/schemas/VerkennerChapterSummary" }
+        subjectContent:
+          type: array
+          items: { $ref: "#/components/schemas/VerkennerContentSummary" }
+        crawls:
+          type: array
+          items: { $ref: "#/components/schemas/CrawlSummary" }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/VerkennerTaskSummary" }
+    VerkennerObjectDetailResponse:
+      type: object
+      required: [type, id, logs]
+      properties:
+        type: { type: string, enum: [chapter, content, source, crawl, task] }
+        id: { type: string, format: uuid }
+        logs:
+          type: array
+          items: { $ref: "#/components/schemas/PipelineLogEntry" }
+        chapterTitle: { type: ["string", "null"] }
+        chapterDescription: { type: ["string", "null"] }
+        chapterIsImportant: { type: ["boolean", "null"] }
+        chapterTopicTags:
+          type: ["array", "null"]
+          items: { type: string }
+        chapterStatus: { type: ["string", "null"], enum: [pending, ready, null] }
+        contentType: { type: ["string", "null"] }
+        contentVersion: { type: ["integer", "null"] }
+        contentStatus: { type: ["string", "null"], enum: [generating, ready, failed, null] }
+        content:
+          type: ["object", "null"]
+          additionalProperties: true
+        generatedByModel: { type: ["string", "null"] }
+        generatingTask: { $ref: "#/components/schemas/VerkennerTaskDetail" }
+        sourceUrl: { type: ["string", "null"] }
+        sourceTitle: { type: ["string", "null"] }
+        sourceType: { type: ["string", "null"] }
+        sourceQualityScore: { type: ["integer", "null"] }
+        sourceAiSummary: { type: ["string", "null"] }
+        sourceStatus: { type: ["string", "null"], enum: [pending, accepted, declined, null] }
+        linkedChapters:
+          type: ["array", "null"]
+          items: { $ref: "#/components/schemas/VerkennerLinkedRef" }
+        linkedSubjects:
+          type: ["array", "null"]
+          items: { $ref: "#/components/schemas/VerkennerLinkedRef" }
+        crawl: { $ref: "#/components/schemas/CrawlDetail" }
+        task: { $ref: "#/components/schemas/VerkennerTaskDetail" }
+    VerkennerLinkedRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+    VerkennerTaskDetail:
+      type: object
+      required: [id, taskType, status, summary, result]
+      properties:
+        id: { type: string, format: uuid }
+        taskType: { type: string }
+        status: { type: string, enum: [waiting, ready, running, done, failed] }
+        summary: { type: ["string", "null"] }
+        result:
+          type: ["object", "null"]
+          additionalProperties: true
+        lastError: { type: ["string", "null"] }
+    VerkennerLookupResponse:
+      type: object
+      required: [type, id, subjectId]
+      properties:
+        type: { type: string, enum: [subject, chapter, content, source, crawl, task] }
+        id: { type: string, format: uuid }
+        subjectId: { type: string, format: uuid }
+    UpdateVerkennerSubjectTitleInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+    UpdateVerkennerChapterTitleInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
 

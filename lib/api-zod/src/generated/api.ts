@@ -885,6 +885,259 @@ export const ListCrawlSubjectsResponse = zod.array(ListCrawlSubjectsResponseItem
 
 
 /**
+ * @summary Search subjects for the Verkenner
+ */
+export const ListVerkennerSubjectsQueryParams = zod.object({
+  "q": zod.coerce.string().optional()
+})
+
+export const ListVerkennerSubjectsResponse = zod.object({
+  "subjects": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
+  "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Full object graph for one subject
+ */
+export const GetVerkennerSubjectParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetVerkennerSubjectResponse = zod.object({
+  "subject": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
+  "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "description": zod.string().nullable(),
+  "difficultyLevel": zod.string().nullable(),
+  "adminNote": zod.string().nullable(),
+  "requestedBy": zod.string().nullable()
+}),
+  "decision": zod.object({
+  "taskId": zod.string().uuid().nullish(),
+  "approved": zod.boolean().nullish(),
+  "reason": zod.string().nullish(),
+  "suggestions": zod.string().nullish(),
+  "model": zod.string().nullish(),
+  "summary": zod.string().nullish(),
+  "requestStatus": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('denied'),zod.literal('needs_refinement'),zod.literal(null)]).nullish(),
+  "requestAdminNote": zod.string().nullish()
+}),
+  "chapters": zod.array(zod.object({
+  "chapter": zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "position": zod.number().int(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "isImportant": zod.boolean(),
+  "topicTags": zod.array(zod.string()),
+  "status": zod.enum(['pending', 'ready'])
+}),
+  "content": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "contentType": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['generating', 'ready', 'failed'])
+})),
+  "sourceCount": zod.number().int()
+})),
+  "subjectContent": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "contentType": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['generating', 'ready', 'failed'])
+})),
+  "crawls": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string(),
+  "subjectName": zod.string(),
+  "status": zod.enum(['running', 'complete', 'failed']),
+  "sourcesFound": zod.number().int().nullable(),
+  "sourcesAccepted": zod.number().int().nullable(),
+  "creditsUsed": zod.number().int().nullable(),
+  "efficiencyRatio": zod.number().nullable(),
+  "createdAt": zod.string(),
+  "completedAt": zod.string().nullable()
+})),
+  "tasks": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "summary": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Rename a subject
+ */
+export const UpdateVerkennerSubjectTitleParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const updateVerkennerSubjectTitleBodyNameMax = 160;
+
+
+
+export const UpdateVerkennerSubjectTitleBody = zod.object({
+  "name": zod.string().min(1).max(updateVerkennerSubjectTitleBodyNameMax)
+})
+
+export const UpdateVerkennerSubjectTitleResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
+  "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
+  "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
+  "chapterCount": zod.number().int().nullable(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Rename a chapter
+ */
+export const UpdateVerkennerChapterTitleParams = zod.object({
+  "chapterId": zod.string().uuid()
+})
+
+export const updateVerkennerChapterTitleBodyTitleMax = 200;
+
+
+
+export const UpdateVerkennerChapterTitleBody = zod.object({
+  "title": zod.string().min(1).max(updateVerkennerChapterTitleBodyTitleMax)
+})
+
+export const UpdateVerkennerChapterTitleResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "position": zod.number().int(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "isImportant": zod.boolean(),
+  "topicTags": zod.array(zod.string()),
+  "status": zod.enum(['pending', 'ready'])
+})
+
+
+/**
+ * @summary Detail for one object plus its linked tasks and logs
+ */
+export const GetVerkennerObjectParams = zod.object({
+  "type": zod.enum(['chapter', 'content', 'source', 'crawl', 'task']),
+  "id": zod.string().uuid()
+})
+
+export const GetVerkennerObjectResponse = zod.object({
+  "type": zod.enum(['chapter', 'content', 'source', 'crawl', 'task']),
+  "id": zod.string().uuid(),
+  "logs": zod.array(zod.object({
+  "id": zod.string(),
+  "taskId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "level": zod.enum(['info', 'warn', 'error']),
+  "phase": zod.string(),
+  "message": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "chapterTitle": zod.string().nullish(),
+  "chapterDescription": zod.string().nullish(),
+  "chapterIsImportant": zod.boolean().nullish(),
+  "chapterTopicTags": zod.array(zod.string()).nullish(),
+  "chapterStatus": zod.union([zod.literal('pending'),zod.literal('ready'),zod.literal(null)]).nullish(),
+  "contentType": zod.string().nullish(),
+  "contentVersion": zod.number().int().nullish(),
+  "contentStatus": zod.union([zod.literal('generating'),zod.literal('ready'),zod.literal('failed'),zod.literal(null)]).nullish(),
+  "content": zod.record(zod.string(), zod.unknown()).nullish(),
+  "generatedByModel": zod.string().nullish(),
+  "generatingTask": zod.object({
+  "id": zod.string().uuid(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "summary": zod.string().nullable(),
+  "result": zod.record(zod.string(), zod.unknown()).nullable(),
+  "lastError": zod.string().nullish()
+}).optional(),
+  "sourceUrl": zod.string().nullish(),
+  "sourceTitle": zod.string().nullish(),
+  "sourceType": zod.string().nullish(),
+  "sourceQualityScore": zod.number().int().nullish(),
+  "sourceAiSummary": zod.string().nullish(),
+  "sourceStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal(null)]).nullish(),
+  "linkedChapters": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string()
+})).nullish(),
+  "linkedSubjects": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string()
+})).nullish(),
+  "crawl": zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string(),
+  "subjectName": zod.string(),
+  "status": zod.enum(['running', 'complete', 'failed']),
+  "sourcesFound": zod.number().int().nullable(),
+  "sourcesAccepted": zod.number().int().nullable(),
+  "creditsUsed": zod.number().int().nullable(),
+  "efficiencyRatio": zod.number().nullable(),
+  "createdAt": zod.string(),
+  "completedAt": zod.string().nullable()
+}).and(zod.object({
+  "promptUsed": zod.string().nullable(),
+  "errorDetail": zod.string().nullable(),
+  "sources": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "url": zod.string(),
+  "title": zod.string().nullable(),
+  "type": zod.union([zod.literal('article'),zod.literal('book'),zod.literal('pdf'),zod.literal('video'),zod.literal('website'),zod.literal(null)]).nullable(),
+  "qualityScore": zod.number().int().nullable(),
+  "confidenceScore": zod.number().nullable(),
+  "aiSummary": zod.string().nullable(),
+  "status": zod.enum(['pending', 'accepted', 'declined']),
+  "declineReason": zod.string().nullable(),
+  "createdAt": zod.string().nullable()
+}))
+})).optional(),
+  "task": zod.object({
+  "id": zod.string().uuid(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "summary": zod.string().nullable(),
+  "result": zod.record(zod.string(), zod.unknown()).nullable(),
+  "lastError": zod.string().nullish()
+}).optional()
+})
+
+
+/**
+ * @summary Resolve any object id or source URL to its type and parent subject
+ */
+export const LookupVerkennerObjectQueryParams = zod.object({
+  "q": zod.coerce.string()
+})
+
+export const LookupVerkennerObjectResponse = zod.object({
+  "type": zod.enum(['subject', 'chapter', 'content', 'source', 'crawl', 'task']),
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid()
+})
+
+
+/**
  * @summary List pending student subject requests
  */
 export const ListCrawlSubjectRequestsResponseItem = zod.object({

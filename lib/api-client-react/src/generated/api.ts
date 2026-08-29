@@ -29,6 +29,7 @@ import type {
   AdminTrackedSession,
   AuthEventInput,
   BroadcastInput,
+  Chapter,
   ChapterContent,
   ChatMessage,
   CrawlDetail,
@@ -50,6 +51,9 @@ import type {
   ListPipelineLogsParams,
   ListPipelineTasksParams,
   ListSourcesParams,
+  ListVerkennerSubjectsParams,
+  ListVerkennerSubjectsResponse,
+  LookupVerkennerObjectParams,
   PasswordResetRequestInput,
   PendingSource,
   PipelineLogEntry,
@@ -86,6 +90,12 @@ import type {
   SubjectDetail,
   SubjectSummary,
   TrackedSession,
+  UpdateVerkennerChapterTitleInput,
+  UpdateVerkennerSubjectTitleInput,
+  VerkennerLookupResponse,
+  VerkennerObjectDetailResponse,
+  VerkennerSubjectDetailResponse,
+  VerkennerSubjectSummary,
   WeakTopic
 } from './api.schemas';
 
@@ -2320,6 +2330,477 @@ export function useListCrawlSubjects<TData = Awaited<ReturnType<typeof listCrawl
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListCrawlSubjectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListVerkennerSubjectsUrl = (params?: ListVerkennerSubjectsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/verkenner/subjects?${stringifiedParams}` : `/api/admin/verkenner/subjects`
+}
+
+/**
+ * @summary Search subjects for the Verkenner
+ */
+export const listVerkennerSubjects = async (params?: ListVerkennerSubjectsParams, options?: Parameters<typeof customFetch>[1]): Promise<ListVerkennerSubjectsResponse> => {
+
+  return customFetch<ListVerkennerSubjectsResponse>(getListVerkennerSubjectsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListVerkennerSubjectsQueryKey = (params?: ListVerkennerSubjectsParams,) => {
+    return [
+    `/api/admin/verkenner/subjects`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListVerkennerSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listVerkennerSubjects>>, TError = ErrorType<void>>(params?: ListVerkennerSubjectsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVerkennerSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVerkennerSubjectsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVerkennerSubjects>>> = ({ signal }) => listVerkennerSubjects(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listVerkennerSubjects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListVerkennerSubjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listVerkennerSubjects>>>
+export type ListVerkennerSubjectsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Search subjects for the Verkenner
+ */
+
+export function useListVerkennerSubjects<TData = Awaited<ReturnType<typeof listVerkennerSubjects>>, TError = ErrorType<void>>(
+ params?: ListVerkennerSubjectsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVerkennerSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListVerkennerSubjectsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVerkennerSubjectUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/verkenner/subjects/${subjectId}`
+}
+
+/**
+ * @summary Full object graph for one subject
+ */
+export const getVerkennerSubject = async (subjectId: string, options?: Parameters<typeof customFetch>[1]): Promise<VerkennerSubjectDetailResponse> => {
+
+  return customFetch<VerkennerSubjectDetailResponse>(getGetVerkennerSubjectUrl(subjectId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVerkennerSubjectQueryKey = (subjectId: string,) => {
+    return [
+    `/api/admin/verkenner/subjects/${subjectId}`
+    ] as const;
+    }
+
+
+export const getGetVerkennerSubjectQueryOptions = <TData = Awaited<ReturnType<typeof getVerkennerSubject>>, TError = ErrorType<void>>(subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerkennerSubject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVerkennerSubjectQueryKey(subjectId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVerkennerSubject>>> = ({ signal }) => getVerkennerSubject(subjectId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: subjectId !== null && subjectId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVerkennerSubject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVerkennerSubjectQueryResult = NonNullable<Awaited<ReturnType<typeof getVerkennerSubject>>>
+export type GetVerkennerSubjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Full object graph for one subject
+ */
+
+export function useGetVerkennerSubject<TData = Awaited<ReturnType<typeof getVerkennerSubject>>, TError = ErrorType<void>>(
+ subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerkennerSubject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVerkennerSubjectQueryOptions(subjectId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateVerkennerSubjectTitleUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/verkenner/subjects/${subjectId}`
+}
+
+/**
+ * @summary Rename a subject
+ */
+export const updateVerkennerSubjectTitle = async (subjectId: string,
+    updateVerkennerSubjectTitleInput: UpdateVerkennerSubjectTitleInput, options?: Parameters<typeof customFetch>[1]): Promise<VerkennerSubjectSummary> => {
+
+  return customFetch<VerkennerSubjectSummary>(getUpdateVerkennerSubjectTitleUrl(subjectId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateVerkennerSubjectTitleInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateVerkennerSubjectTitleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>, TError,{subjectId: string;data: BodyType<UpdateVerkennerSubjectTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>, TError,{subjectId: string;data: BodyType<UpdateVerkennerSubjectTitleInput>}, TContext> => {
+
+const mutationKey = ['updateVerkennerSubjectTitle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>, {subjectId: string;data: BodyType<UpdateVerkennerSubjectTitleInput>}> = (props) => {
+          const {subjectId,data} = props ?? {};
+
+          return  updateVerkennerSubjectTitle(subjectId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVerkennerSubjectTitleMutationResult = NonNullable<Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>>
+    export type UpdateVerkennerSubjectTitleMutationBody = BodyType<UpdateVerkennerSubjectTitleInput>
+    export type UpdateVerkennerSubjectTitleMutationError = ErrorType<void>
+
+    /**
+ * @summary Rename a subject
+ */
+export const useUpdateVerkennerSubjectTitle = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>, TError,{subjectId: string;data: BodyType<UpdateVerkennerSubjectTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVerkennerSubjectTitle>>,
+        TError,
+        {subjectId: string;data: BodyType<UpdateVerkennerSubjectTitleInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateVerkennerSubjectTitleMutationOptions(options));
+    }
+
+export const getUpdateVerkennerChapterTitleUrl = (chapterId: string,) => {
+
+
+
+
+  return `/api/admin/verkenner/chapters/${chapterId}`
+}
+
+/**
+ * @summary Rename a chapter
+ */
+export const updateVerkennerChapterTitle = async (chapterId: string,
+    updateVerkennerChapterTitleInput: UpdateVerkennerChapterTitleInput, options?: Parameters<typeof customFetch>[1]): Promise<Chapter> => {
+
+  return customFetch<Chapter>(getUpdateVerkennerChapterTitleUrl(chapterId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateVerkennerChapterTitleInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateVerkennerChapterTitleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerChapterTitle>>, TError,{chapterId: string;data: BodyType<UpdateVerkennerChapterTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerChapterTitle>>, TError,{chapterId: string;data: BodyType<UpdateVerkennerChapterTitleInput>}, TContext> => {
+
+const mutationKey = ['updateVerkennerChapterTitle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVerkennerChapterTitle>>, {chapterId: string;data: BodyType<UpdateVerkennerChapterTitleInput>}> = (props) => {
+          const {chapterId,data} = props ?? {};
+
+          return  updateVerkennerChapterTitle(chapterId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVerkennerChapterTitleMutationResult = NonNullable<Awaited<ReturnType<typeof updateVerkennerChapterTitle>>>
+    export type UpdateVerkennerChapterTitleMutationBody = BodyType<UpdateVerkennerChapterTitleInput>
+    export type UpdateVerkennerChapterTitleMutationError = ErrorType<void>
+
+    /**
+ * @summary Rename a chapter
+ */
+export const useUpdateVerkennerChapterTitle = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVerkennerChapterTitle>>, TError,{chapterId: string;data: BodyType<UpdateVerkennerChapterTitleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVerkennerChapterTitle>>,
+        TError,
+        {chapterId: string;data: BodyType<UpdateVerkennerChapterTitleInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateVerkennerChapterTitleMutationOptions(options));
+    }
+
+export const getGetVerkennerObjectUrl = (type: 'chapter' | 'content' | 'source' | 'crawl' | 'task',
+    id: string,) => {
+
+
+
+
+  return `/api/admin/verkenner/objects/${type}/${id}`
+}
+
+/**
+ * @summary Detail for one object plus its linked tasks and logs
+ */
+export const getVerkennerObject = async (type: 'chapter' | 'content' | 'source' | 'crawl' | 'task',
+    id: string, options?: Parameters<typeof customFetch>[1]): Promise<VerkennerObjectDetailResponse> => {
+
+  return customFetch<VerkennerObjectDetailResponse>(getGetVerkennerObjectUrl(type,id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVerkennerObjectQueryKey = (type: 'chapter' | 'content' | 'source' | 'crawl' | 'task',
+    id: string,) => {
+    return [
+    `/api/admin/verkenner/objects/${type}/${id}`
+    ] as const;
+    }
+
+
+export const getGetVerkennerObjectQueryOptions = <TData = Awaited<ReturnType<typeof getVerkennerObject>>, TError = ErrorType<void>>(type: 'chapter' | 'content' | 'source' | 'crawl' | 'task',
+    id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerkennerObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVerkennerObjectQueryKey(type,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVerkennerObject>>> = ({ signal }) => getVerkennerObject(type,id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: type !== null && type !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVerkennerObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVerkennerObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getVerkennerObject>>>
+export type GetVerkennerObjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Detail for one object plus its linked tasks and logs
+ */
+
+export function useGetVerkennerObject<TData = Awaited<ReturnType<typeof getVerkennerObject>>, TError = ErrorType<void>>(
+ type: 'chapter' | 'content' | 'source' | 'crawl' | 'task',
+    id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVerkennerObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVerkennerObjectQueryOptions(type,id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLookupVerkennerObjectUrl = (params: LookupVerkennerObjectParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/verkenner/lookup?${stringifiedParams}` : `/api/admin/verkenner/lookup`
+}
+
+/**
+ * @summary Resolve any object id or source URL to its type and parent subject
+ */
+export const lookupVerkennerObject = async (params: LookupVerkennerObjectParams, options?: Parameters<typeof customFetch>[1]): Promise<VerkennerLookupResponse> => {
+
+  return customFetch<VerkennerLookupResponse>(getLookupVerkennerObjectUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLookupVerkennerObjectQueryKey = (params?: LookupVerkennerObjectParams,) => {
+    return [
+    `/api/admin/verkenner/lookup`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getLookupVerkennerObjectQueryOptions = <TData = Awaited<ReturnType<typeof lookupVerkennerObject>>, TError = ErrorType<void>>(params: LookupVerkennerObjectParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupVerkennerObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLookupVerkennerObjectQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupVerkennerObject>>> = ({ signal }) => lookupVerkennerObject(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof lookupVerkennerObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type LookupVerkennerObjectQueryResult = NonNullable<Awaited<ReturnType<typeof lookupVerkennerObject>>>
+export type LookupVerkennerObjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Resolve any object id or source URL to its type and parent subject
+ */
+
+export function useLookupVerkennerObject<TData = Awaited<ReturnType<typeof lookupVerkennerObject>>, TError = ErrorType<void>>(
+ params: LookupVerkennerObjectParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupVerkennerObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getLookupVerkennerObjectQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

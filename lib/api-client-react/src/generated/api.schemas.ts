@@ -1257,6 +1257,336 @@ export interface AdminSubjectContentPreview {
   chapters: AdminSubjectContentPreviewChaptersItem[];
 }
 
+export type VerkennerSubjectSummaryYearLevel = typeof VerkennerSubjectSummaryYearLevel[keyof typeof VerkennerSubjectSummaryYearLevel];
+
+
+export const VerkennerSubjectSummaryYearLevel = {
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
+} as const;
+
+export type VerkennerSubjectSummaryStatus = typeof VerkennerSubjectSummaryStatus[keyof typeof VerkennerSubjectSummaryStatus];
+
+
+export const VerkennerSubjectSummaryStatus = {
+  pending: 'pending',
+  active: 'active',
+  denied: 'denied',
+  needs_refinement: 'needs_refinement',
+} as const;
+
+export type VerkennerSubjectSummaryPublishStatus = typeof VerkennerSubjectSummaryPublishStatus[keyof typeof VerkennerSubjectSummaryPublishStatus];
+
+
+export const VerkennerSubjectSummaryPublishStatus = {
+  incomplete: 'incomplete',
+  ready: 'ready',
+  published: 'published',
+} as const;
+
+export interface VerkennerSubjectSummary {
+  id: string;
+  name: string;
+  yearLevel: VerkennerSubjectSummaryYearLevel;
+  status: VerkennerSubjectSummaryStatus;
+  publishStatus: VerkennerSubjectSummaryPublishStatus;
+  /** @nullable */
+  chapterCount: number | null;
+  createdAt: string;
+}
+
+export interface ListVerkennerSubjectsResponse {
+  subjects: VerkennerSubjectSummary[];
+}
+
+/**
+ * @nullable
+ */
+export type VerkennerDecisionRequestStatus = typeof VerkennerDecisionRequestStatus[keyof typeof VerkennerDecisionRequestStatus] | null;
+
+
+export const VerkennerDecisionRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  denied: 'denied',
+  needs_refinement: 'needs_refinement',
+} as const;
+
+export interface VerkennerDecision {
+  /** @nullable */
+  taskId?: string | null;
+  /** @nullable */
+  approved?: boolean | null;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  suggestions?: string | null;
+  /** @nullable */
+  model?: string | null;
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  requestStatus?: VerkennerDecisionRequestStatus;
+  /** @nullable */
+  requestAdminNote?: string | null;
+}
+
+export type VerkennerContentSummaryStatus = typeof VerkennerContentSummaryStatus[keyof typeof VerkennerContentSummaryStatus];
+
+
+export const VerkennerContentSummaryStatus = {
+  generating: 'generating',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+export interface VerkennerContentSummary {
+  id: string;
+  contentType: string;
+  version: number;
+  status: VerkennerContentSummaryStatus;
+}
+
+export interface VerkennerChapterSummary {
+  chapter: Chapter;
+  content: VerkennerContentSummary[];
+  sourceCount: number;
+}
+
+export type VerkennerTaskSummaryStatus = typeof VerkennerTaskSummaryStatus[keyof typeof VerkennerTaskSummaryStatus];
+
+
+export const VerkennerTaskSummaryStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  running: 'running',
+  done: 'done',
+  failed: 'failed',
+} as const;
+
+export interface VerkennerTaskSummary {
+  id: string;
+  taskType: string;
+  status: VerkennerTaskSummaryStatus;
+  /** @nullable */
+  summary: string | null;
+}
+
+export type VerkennerSubjectDetailYearLevel = typeof VerkennerSubjectDetailYearLevel[keyof typeof VerkennerSubjectDetailYearLevel];
+
+
+export const VerkennerSubjectDetailYearLevel = {
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
+} as const;
+
+export type VerkennerSubjectDetailStatus = typeof VerkennerSubjectDetailStatus[keyof typeof VerkennerSubjectDetailStatus];
+
+
+export const VerkennerSubjectDetailStatus = {
+  pending: 'pending',
+  active: 'active',
+  denied: 'denied',
+  needs_refinement: 'needs_refinement',
+} as const;
+
+export type VerkennerSubjectDetailPublishStatus = typeof VerkennerSubjectDetailPublishStatus[keyof typeof VerkennerSubjectDetailPublishStatus];
+
+
+export const VerkennerSubjectDetailPublishStatus = {
+  incomplete: 'incomplete',
+  ready: 'ready',
+  published: 'published',
+} as const;
+
+export interface VerkennerSubjectDetail {
+  id: string;
+  name: string;
+  yearLevel: VerkennerSubjectDetailYearLevel;
+  status: VerkennerSubjectDetailStatus;
+  publishStatus: VerkennerSubjectDetailPublishStatus;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  difficultyLevel: string | null;
+  /** @nullable */
+  adminNote: string | null;
+  /** @nullable */
+  requestedBy: string | null;
+}
+
+export interface VerkennerSubjectDetailResponse {
+  subject: VerkennerSubjectDetail;
+  decision: VerkennerDecision;
+  chapters: VerkennerChapterSummary[];
+  subjectContent: VerkennerContentSummary[];
+  crawls: CrawlSummary[];
+  tasks: VerkennerTaskSummary[];
+}
+
+export type VerkennerObjectDetailResponseType = typeof VerkennerObjectDetailResponseType[keyof typeof VerkennerObjectDetailResponseType];
+
+
+export const VerkennerObjectDetailResponseType = {
+  chapter: 'chapter',
+  content: 'content',
+  source: 'source',
+  crawl: 'crawl',
+  task: 'task',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VerkennerObjectDetailResponseChapterStatus = typeof VerkennerObjectDetailResponseChapterStatus[keyof typeof VerkennerObjectDetailResponseChapterStatus] | null;
+
+
+export const VerkennerObjectDetailResponseChapterStatus = {
+  pending: 'pending',
+  ready: 'ready',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VerkennerObjectDetailResponseContentStatus = typeof VerkennerObjectDetailResponseContentStatus[keyof typeof VerkennerObjectDetailResponseContentStatus] | null;
+
+
+export const VerkennerObjectDetailResponseContentStatus = {
+  generating: 'generating',
+  ready: 'ready',
+  failed: 'failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VerkennerObjectDetailResponseContent = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type VerkennerObjectDetailResponseSourceStatus = typeof VerkennerObjectDetailResponseSourceStatus[keyof typeof VerkennerObjectDetailResponseSourceStatus] | null;
+
+
+export const VerkennerObjectDetailResponseSourceStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export type VerkennerTaskDetailStatus = typeof VerkennerTaskDetailStatus[keyof typeof VerkennerTaskDetailStatus];
+
+
+export const VerkennerTaskDetailStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  running: 'running',
+  done: 'done',
+  failed: 'failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VerkennerTaskDetailResult = { [key: string]: unknown } | null;
+
+export interface VerkennerTaskDetail {
+  id: string;
+  taskType: string;
+  status: VerkennerTaskDetailStatus;
+  /** @nullable */
+  summary: string | null;
+  /** @nullable */
+  result: VerkennerTaskDetailResult;
+  /** @nullable */
+  lastError?: string | null;
+}
+
+export interface VerkennerLinkedRef {
+  id: string;
+  name: string;
+}
+
+export interface VerkennerObjectDetailResponse {
+  type: VerkennerObjectDetailResponseType;
+  id: string;
+  logs: PipelineLogEntry[];
+  /** @nullable */
+  chapterTitle?: string | null;
+  /** @nullable */
+  chapterDescription?: string | null;
+  /** @nullable */
+  chapterIsImportant?: boolean | null;
+  /** @nullable */
+  chapterTopicTags?: string[] | null;
+  /** @nullable */
+  chapterStatus?: VerkennerObjectDetailResponseChapterStatus;
+  /** @nullable */
+  contentType?: string | null;
+  /** @nullable */
+  contentVersion?: number | null;
+  /** @nullable */
+  contentStatus?: VerkennerObjectDetailResponseContentStatus;
+  /** @nullable */
+  content?: VerkennerObjectDetailResponseContent;
+  /** @nullable */
+  generatedByModel?: string | null;
+  generatingTask?: VerkennerTaskDetail;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  sourceTitle?: string | null;
+  /** @nullable */
+  sourceType?: string | null;
+  /** @nullable */
+  sourceQualityScore?: number | null;
+  /** @nullable */
+  sourceAiSummary?: string | null;
+  /** @nullable */
+  sourceStatus?: VerkennerObjectDetailResponseSourceStatus;
+  /** @nullable */
+  linkedChapters?: VerkennerLinkedRef[] | null;
+  /** @nullable */
+  linkedSubjects?: VerkennerLinkedRef[] | null;
+  crawl?: CrawlDetail;
+  task?: VerkennerTaskDetail;
+}
+
+export type VerkennerLookupResponseType = typeof VerkennerLookupResponseType[keyof typeof VerkennerLookupResponseType];
+
+
+export const VerkennerLookupResponseType = {
+  subject: 'subject',
+  chapter: 'chapter',
+  content: 'content',
+  source: 'source',
+  crawl: 'crawl',
+  task: 'task',
+} as const;
+
+export interface VerkennerLookupResponse {
+  type: VerkennerLookupResponseType;
+  id: string;
+  subjectId: string;
+}
+
+export interface UpdateVerkennerSubjectTitleInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+}
+
+export interface UpdateVerkennerChapterTitleInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  title: string;
+}
+
 export type ListAdminAccountsParams = {
 /**
  * @maxLength 200
@@ -1286,6 +1616,14 @@ export const ListAdminAccountsStatus = {
 export type GetStudyCatalogParams = {
 query?: string;
 subjectId?: string;
+};
+
+export type ListVerkennerSubjectsParams = {
+q?: string;
+};
+
+export type LookupVerkennerObjectParams = {
+q: string;
 };
 
 export type ListSourcesParams = {
