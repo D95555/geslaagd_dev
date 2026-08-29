@@ -143,7 +143,7 @@ bron van waarheid.
 | Fundament (typografie-ramp, donker thema, layout-primitieven) — *voorloper aan dit plan, uit de tweede/afgekeurde poging* | ✅ Af, blijft staan | `50c44ce`, `9aad87a`, `ff42509`, `2a28114`, `108abf2`-voorlopers |
 | **A** — Dichtheid en oppervlak herijken | ✅ Af | `108abf2` |
 | **B** — Persistente AppShell | ✅ Af | `ce5c9a5` |
-| **C** — Toetsenbordlaag | ✅ Af | zie onderstaande commit |
+| **C** — Toetsenbordlaag | ✅ Af | `e54e765` |
 | **D** — Studentpagina's als inhoud (goedkeuringsmoment) | ⬜ Nog niet begonnen | — |
 | **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
 | **F** — Publiek en opruimen | ⬜ Nog niet begonnen | — |
