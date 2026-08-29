@@ -1232,6 +1232,16 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .shell-rail { display: none; }
 }
 
+/* ── Toetsenbordlaag (components/shell/shortcuts-dialog.tsx) ────────────────
+   The Cmd+K palette reuses the shadcn Command/Dialog primitives as-is; only
+   the `?` shortcuts overview needs its own key/description list. */
+
+.shortcuts-list { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.shortcuts-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 0; }
+.shortcuts-row dt { margin: 0; }
+.shortcuts-row dd { margin: 0; color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); }
+.shortcuts-row kbd { display: inline-block; padding: 2px 6px; border: 1px solid hsl(var(--border)); border-radius: 4px; background: hsl(var(--muted)); font-family: var(--app-font-mono); font-size: .8em; }
+
 /* ── Beheeromgeving ──────────────────────────────────────────────────────── */
 /* The sidebar and top bar now live in the persistent AppShell
    (components/shell/app-shell.tsx); this is only the page's own content. */

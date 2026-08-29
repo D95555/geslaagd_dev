@@ -17,6 +17,9 @@ import { AdminSidebarNav } from '@/components/shell/admin-sidebar';
 import { StudySidebarNav } from '@/components/shell/study-sidebar';
 import { RailProvider, useRailSlotContent } from '@/components/shell/rail-context';
 import { LiveTaskTicker } from '@/components/admin/live-task-ticker';
+import { CommandPalette } from '@/components/shell/command-palette';
+import { ShortcutsDialog } from '@/components/shell/shortcuts-dialog';
+import { useSuppressSidebarHotkeyInEditable } from '@/hooks/use-hotkeys';
 
 type Section = 'public' | 'study' | 'admin';
 
@@ -57,6 +60,7 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
 
   // Deep ink is the shared learning/admin surface, per the design guidelines.
   useSurfaceTheme('dark');
+  useSuppressSidebarHotkeyInEditable();
 
   const leave = async () => {
     await signOut();
@@ -65,6 +69,8 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
 
   return (
     <SidebarProvider open={open} onOpenChange={setOpen}>
+      <CommandPalette section={section} />
+      <ShortcutsDialog />
       <Sidebar collapsible="icon" className={section === 'admin' ? 'density-compact' : undefined}>
         <SidebarHeader>
           <button className="shell-brand" onClick={() => setLocation('/')} aria-label="Naar geslaagd.app">

@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import { useLocation } from 'wouter';
-import { BookOpen, CircleDashed, LayoutDashboard, Lock } from 'lucide-react';
+import { BookOpen, CircleDashed, LayoutDashboard, Lock, type LucideIcon } from 'lucide-react';
 import { getGetSubjectDetailQueryKey, useGetSubjectDetail } from '@workspace/api-client-react';
 import {
   SidebarGroup,
@@ -11,14 +12,16 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from '@workspace/geslaagd-momentum/components/ui/sidebar';
+import { useArrowKeyListFocus } from '@/hooks/use-arrow-key-list-focus';
+import { chapterIdFrom, subjectIdFrom } from '@/lib/study-routes';
 
-function subjectIdFrom(location: string): string | null {
-  return location.match(/^\/vakken\/([^/]+)/)?.[1] ?? null;
-}
+export type StudyNavItem = { href: string; label: string; icon: LucideIcon };
 
-function chapterIdFrom(location: string): string | null {
-  return location.match(/^\/vakken\/[^/]+\/hoofdstuk\/([^/]+)/)?.[1] ?? null;
-}
+/** Shared with the command palette so both list the same top-level pages. */
+export const STUDY_NAV: StudyNavItem[] = [
+  { href: '/mijn-leeromgeving', label: 'Mijn leeromgeving', icon: LayoutDashboard },
+  { href: '/vakken', label: 'Vakken', icon: BookOpen },
+];
 
 /**
  * The nav that stays on screen across the whole student surface. Its point is
@@ -39,24 +42,38 @@ export function StudySidebarNav({ location }: { location: string }) {
     query: { enabled: subjectId !== null, queryKey: getGetSubjectDetailQueryKey(subjectId ?? '') },
   });
 
+  // j/k move focus through whichever list is the current context: the
+  // chapter list once a subject is open, otherwise the top-level pages.
+  const topItemsRef = useRef<(HTMLElement | null)[]>([]);
+  const chapterItemsRef = useRef<(HTMLElement | null)[]>([]);
+  const activeTopIndex = Math.max(STUDY_NAV.findIndex((item) => item.href === location), 0);
+  const activeChapterIndex = Math.max(
+    subject?.chapters.findIndex((chapter) => chapter.id === activeChapterId) ?? -1,
+    0,
+  );
+  useArrowKeyListFocus(subjectId ? chapterItemsRef : topItemsRef, subjectId ? activeChapterIndex : activeTopIndex);
+
   return (
     <>
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={location === '/mijn-leeromgeving'}
-                onClick={() => setLocation('/mijn-leeromgeving')}
-              >
-                <LayoutDashboard /> <span>Mijn leeromgeving</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton isActive={location === '/vakken'} onClick={() => setLocation('/vakken')}>
-                <BookOpen /> <span>Vakken</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {STUDY_NAV.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    ref={(el: HTMLButtonElement | null) => {
+                      topItemsRef.current[index] = el;
+                    }}
+                    isActive={location === item.href}
+                    onClick={() => setLocation(item.href)}
+                  >
+                    <Icon /> <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -69,11 +86,14 @@ export function StudySidebarNav({ location }: { location: string }) {
               {isLoading &&
                 Array.from({ length: 6 }, (_, index) => <SidebarMenuSkeleton key={index} showIcon />)}
 
-              {subject?.chapters.map((chapter) => {
+              {subject?.chapters.map((chapter, index) => {
                 const ready = chapter.status === 'ready';
                 return (
                   <SidebarMenuItem key={chapter.id}>
                     <SidebarMenuButton
+                      ref={(el: HTMLButtonElement | null) => {
+                        chapterItemsRef.current[index] = el;
+                      }}
                       isActive={chapter.id === activeChapterId}
                       disabled={!ready}
                       tooltip={!ready ? 'Nog in de maak' : undefined}

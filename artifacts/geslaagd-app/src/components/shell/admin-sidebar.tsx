@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useLocation } from 'wouter';
 import {
   ClipboardList,
@@ -16,15 +17,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@workspace/geslaagd-momentum/components/ui/sidebar';
+import { useArrowKeyListFocus } from '@/hooks/use-arrow-key-list-focus';
 
-type NavItem = { href: string; label: string; hint: string; icon: LucideIcon };
+export type NavItem = { href: string; label: string; hint: string; icon: LucideIcon };
 
 /**
  * One place that says what lives where. At compact sidebar height there's no
  * room for the old two-line (label + hint) rows, so the hint moves into the
- * hover tooltip the sidebar primitive already supports.
+ * hover tooltip the sidebar primitive already supports. Also shared with the
+ * command palette so both list the same pages.
  */
-const NAV: NavItem[] = [
+export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer', label: 'Overzicht', hint: 'Wat vraagt aandacht', icon: LayoutDashboard },
   { href: '/beheer/verkenner', label: 'Verkenner', hint: 'Elk object opzoeken, met beslissingen en logs', icon: Sparkles },
   { href: '/beheer/crawl', label: 'Vakken & crawls', hint: 'Aanvragen en zoekopdrachten', icon: Compass },
@@ -41,17 +44,26 @@ function isActive(current: string, href: string): boolean {
 
 export function AdminSidebarNav({ location }: { location: string }) {
   const [, setLocation] = useLocation();
+  const itemsRef = useRef<(HTMLElement | null)[]>([]);
+  const activeIndex = Math.max(
+    ADMIN_NAV.findIndex((item) => isActive(location, item.href)),
+    0,
+  );
+  useArrowKeyListFocus(itemsRef, activeIndex);
 
   return (
     <SidebarGroup>
       <SidebarGroupContent>
         <SidebarMenu>
-          {NAV.map((item) => {
+          {ADMIN_NAV.map((item, index) => {
             const Icon = item.icon;
             const active = isActive(location, item.href);
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
+                  ref={(el: HTMLButtonElement | null) => {
+                    itemsRef.current[index] = el;
+                  }}
                   isActive={active}
                   tooltip={item.hint}
                   onClick={() => setLocation(item.href)}

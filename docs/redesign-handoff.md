@@ -143,7 +143,7 @@ bron van waarheid.
 | Fundament (typografie-ramp, donker thema, layout-primitieven) — *voorloper aan dit plan, uit de tweede/afgekeurde poging* | ✅ Af, blijft staan | `50c44ce`, `9aad87a`, `ff42509`, `2a28114`, `108abf2`-voorlopers |
 | **A** — Dichtheid en oppervlak herijken | ✅ Af | `108abf2` |
 | **B** — Persistente AppShell | ✅ Af | `ce5c9a5` |
-| **C** — Toetsenbordlaag | ⬜ Nog niet begonnen | — |
+| **C** — Toetsenbordlaag | ✅ Af | zie onderstaande commit |
 | **D** — Studentpagina's als inhoud (goedkeuringsmoment) | ⬜ Nog niet begonnen | — |
 | **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
 | **F** — Publiek en opruimen | ⬜ Nog niet begonnen | — |
@@ -173,15 +173,55 @@ bron van waarheid.
   zijn ongewijzigd gebleven** — dezelfde props, dus geen van de 8
   beheerpagina's of studentpagina's hoefde aangepast te worden voor fase B.
 
+### Wat fase C concreet heeft opgeleverd
+
+- `hooks/use-hotkeys.ts` — `useHotkeys(hotkeys[])`, generieke registratie op
+  `window` met standaard invoerveld-bescherming
+  (`isEditableTarget`: `INPUT`/`TEXTAREA`/`SELECT`/`contenteditable`), plus
+  `useSuppressSidebarHotkeyInEditable()` — een capture-fase listener voor
+  dezelfde Cmd/Ctrl+B-combinatie die `stopPropagation()` aanroept zodra het
+  focus in een invoerveld staat, vóórdat de sidebar-primitive's eigen
+  bubble-fase listener op `window` het event ziet. De ingebouwde toggle blijft
+  verder gewoon werken buiten invoervelden — geen fork nodig.
+- `hooks/use-arrow-key-list-focus.ts` — `useArrowKeyListFocus(itemsRef,
+  activeIndex)`: j/k verplaatsen **DOM-focus** door een lijst van
+  button-refs (disabled items worden overgeslagen), startend vanaf
+  `activeIndex` als niets in de lijst al focus heeft. Bewuste keuze: geen
+  losse Enter-binding — omdat focus echt naar de `SidebarMenuButton`
+  (een native `<button>`) gaat, activeert de browser 'm al op Enter/Space.
+  Een globale Enter-hotkey was overwogen en verworpen: die zou
+  Enter-activatie van elke andere gefocuste knop/link elders in de app
+  breken (preventDefault op keydown onderdrukt de synthetische click).
+- `lib/study-routes.ts` — `subjectIdFrom`/`chapterIdFrom` verhuisd hierheen
+  vanuit `study-sidebar.tsx` zodat `command-palette.tsx` dezelfde
+  route-parsing gebruikt.
+- `study-sidebar.tsx` — top-nav geëxporteerd als `STUDY_NAV`; j/k target de
+  hoofdstukkenlijst zodra een vak open staat, anders de twee top-items.
+- `admin-sidebar.tsx` — nav-array geëxporteerd als `ADMIN_NAV` (was `NAV`,
+  alleen intern gebruikt); j/k target de 7 nav-items.
+- `components/shell/command-palette.tsx` — Cmd/Ctrl+K, overal in de
+  study/admin-schil. `CommandDialog` met een toegevoegde `sr-only`
+  `DialogTitle`/`DialogDescription` (loste de Radix a11y-waarschuwing op).
+  Toont `STUDY_NAV`/`ADMIN_NAV` voor de huidige sectie, plus — binnen een vak
+  — de hoofdstukken via dezelfde gedeelde `useGetSubjectDetail`-query-key als
+  de sidebar, plus twee acties (zijbalk in-/uitklappen, uitloggen).
+- `components/shell/shortcuts-dialog.tsx` — `?` toont een overzicht van alle
+  sneltoetsen. Let op: `?` wordt op een QWERTY-toetsenbord alleen geproduceerd
+  mét Shift ingedrukt, dus de hotkey-registratie zet `shift: true` expliciet
+  — zonder die vlag matcht `useHotkeys`'s strikte shift-check nooit.
+- Beide dialogen worden gemonteerd in `AppShell`s `ShellSurface`, binnen
+  `SidebarProvider` (nodig voor `useSidebar()` in het palet) en binnen
+  `AuthProvider` (nodig voor `useAuth()` — de uitloggen-actie).
+- Geverifieerd met `pnpm typecheck` (root) en
+  `PORT=5173 BASE_PATH=/ pnpm build` — beide groen. **Niet visueel getest**
+  (zie hieronder).
+
 ### Wat NIET is gedaan (bewust, hoort bij latere fases)
 
 - Geen enkele pagina-inhoud is herstructureerd voor het nieuwe drie-koloms-
   concept. De contextkolom (voortgang, toetsaftelling, zwakke punten,
   herhaalplan) staat nog gewoon in de hoofdinhoud, niet in de rail — dat is
   fase D.
-- Geen toetsenbordlaag (fase C): geen Cmd+K, geen j/k, geen `?`-overzicht. De
-  sidebar-primitive heeft wél zelf al een ingebouwde Cmd/Ctrl+B (zie
-  Waarschuwing hieronder).
 - De 8 beheerpagina's zijn niet individueel doorlopen om te checken of ze goed
   ogen binnen de nieuwe schil (fase E) — ze zouden moeten werken (props
   ongewijzigd) maar zijn niet visueel geverifieerd.
@@ -219,15 +259,21 @@ PORT=5173 BASE_PATH=/ pnpm build
   `"use client"`-directive bovenaan (die is een no-op buiten Next.js).
 - **Cmd/Ctrl+B is al ingebouwd** (`SIDEBAR_KEYBOARD_SHORTCUT = "b"`), maar
   zonder invoerveld-bescherming — hij vuurt ook als je in een tekstveld typt.
-  Dit is **nog niet gefixt** en hoort bij fase C.
+  **Gefixt in fase C** zonder de primitive te forken: een capture-fase
+  listener op `window` (`useSuppressSidebarHotkeyInEditable` in
+  `hooks/use-hotkeys.ts`) roept `stopPropagation()` aan voor dezelfde
+  combinatie zodra het focus in een invoerveld staat — capture-fase op
+  `window` loopt altijd vóór de primitive's eigen bubble-fase listener op
+  hetzelfde element, dus die krijgt het event dan nooit te zien.
 - Schrijft zijn open/dicht-stand naar een cookie
   (`sidebar_state`) die **niemand leest** in deze SPA (dat werkt alleen in de
   Next.js-variant waar de server de cookie leest). Ik heb dit in `AppShell`
   vervangen door een eigen `localStorage`-hook (`useSidebarOpenState`),
   gebruikt via de `open`/`onOpenChange`-props van `SidebarProvider`.
-- `CommandDialog` (in `components/ui/command.tsx`, hoort bij fase C) rendert
-  geen `DialogTitle` — geeft een Radix a11y-waarschuwing tenzij je zelf een
-  `sr-only` titel toevoegt.
+- `CommandDialog` (in `components/ui/command.tsx`) rendert geen `DialogTitle`
+  — gaf een Radix a11y-waarschuwing. **Gefixt in fase C**:
+  `command-palette.tsx` voegt zelf een `sr-only` `DialogTitle` +
+  `DialogDescription` toe, de primitive zelf is niet aangepast.
 
 ### Data delen tussen schil en pagina
 `useGetSubjectDetail` (gegenereerd door orval in `@workspace/api-client-react`)
@@ -280,22 +326,19 @@ opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
 4. Test op een **niet-gemaximaliseerd venster** — een eerdere ronde bracht een
    afgesneden zijbalk en horizontale overflow aan het licht die alleen
    zichtbaar waren op smallere/niet-gemaximaliseerde vensters.
+5. **Toetsenbordtest (fase C, nog niet visueel bekeken):** Cmd/Ctrl+K opent
+   het commandopalet (met zoekbalk, sectie-navigatie, en binnen een vak de
+   hoofdstukken); Cmd/Ctrl+B klapt de zijbalk in/uit én doet dat **niet**
+   meer terwijl je in een tekstveld typt; `j`/`k` verplaatsen de focus door
+   de zichtbare lijst (hoofdstukken binnen een vak, anders de top-nav, in
+   beheer de 7 nav-items) — Enter/Spatie activeert het gefocuste item via de
+   normale knop-semantiek; `?` toont het sneltoetsenoverzicht.
 
 ---
 
 ## Aanbevolen vervolgstappen (in volgorde)
 
-1. **Fase C — Toetsenbord.** Nieuw bestand `use-hotkeys.ts` met
-   invoerveld-bescherming (`event.target` check op `INPUT`/`TEXTAREA`/
-   `[contenteditable]` voordat een sneltoets vuurt). Commandopalet op
-   `CommandDialog` uit `@workspace/geslaagd-momentum/components/ui/command`
-   (met `sr-only` `DialogTitle` toegevoegd). De ingebouwde Cmd+B van de
-   sidebar-primitive zelf kán niet uitgeschakeld worden zonder de primitive
-   te forken — overweeg of je hem laat staan (met het risico dat hij in
-   invoervelden vuurt) of een eigen `SidebarProvider`-wrapper bouwt die het
-   event op capture-fase onderschept vóórdat de primitive het ziet.
-
-2. **Fase D — Pagina's als inhoud (het goedkeuringsmoment).** Dit is het
+1. **Fase D — Pagina's als inhoud (het goedkeuringsmoment).** Dit is het
    werk waar de gebruiker om vroeg en nog niet gezien heeft. Kernvraag per
    pagina: welk deel van de huidige inhoud hoort in het middenpaneel (het
    eigenlijke werk: hoofdstuktekst, oefenvragen) en welk deel hoort in de
@@ -305,12 +348,12 @@ opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
    uit een eerdere (afgekeurde) ronde; met de zijbalk die nu al vaknaam en
    hoofdstuklijst toont, is een deel van die breadcrumb-info dubbel.
 
-3. **Fase E — Beheer verifiëren.** Loop de 8 `/beheer`-pagina's visueel na in
+2. **Fase E — Beheer verifiëren.** Loop de 8 `/beheer`-pagina's visueel na in
    Replit. De schil-integratie zou al moeten werken (props ongewijzigd), dit
    is vooral controleren of niets er raar uitziet in de compacte
    dichtheidsschaal.
 
-4. **Fase F — Publiek en opruimen.** Homepage uit `App.tsx` naar een eigen
+3. **Fase F — Publiek en opruimen.** Homepage uit `App.tsx` naar een eigen
    paginabestand, in de Firecrawl-behandeling (rasterlijnen, precisie). Auth-
    pagina. Daarna dode code: dubbele `.spin`-definitie (`admin-spin` en
    `study-spin` overschrijven elkaar — zoek naar beide), `framer-motion` uit
