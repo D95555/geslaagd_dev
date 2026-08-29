@@ -172,7 +172,7 @@ function batch<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
-async function scoreBatch(
+export async function scoreBatch(
   subject: CrawlSubject,
   results: FirecrawlResult[],
 ): Promise<ScoredSource[]> {
@@ -242,7 +242,7 @@ async function scoreBatch(
 
 // ─── Acceptance logic ───────────────────────────────────────────────────────
 
-function determineAcceptance(
+export function determineAcceptance(
   score: number,
   confidence: number,
   totalAcceptedSoFar: number,

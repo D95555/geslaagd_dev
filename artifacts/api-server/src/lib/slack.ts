@@ -145,6 +145,36 @@ export async function logAuthEvent(
   await postMessage(channel, text, details.clientMessageId);
 }
 
+export type PipelineEvent =
+  | { kind: "task-failed"; subjectName: string; subjectId: string; taskType: string; detail: string }
+  | { kind: "subject-ready"; subjectName: string; subjectId: string }
+  | { kind: "subject-incomplete"; subjectName: string; subjectId: string; detail: string };
+
+export async function logPipelineEvent(event: PipelineEvent): Promise<void> {
+  const channel = await getChannelId("pipeline-logs");
+  const lines =
+    event.kind === "task-failed"
+      ? [
+          "⚠️ *Pipelinetaak mislukt*",
+          `Vak: ${event.subjectName}`,
+          `Taak: ${event.taskType}`,
+          `Fout: ${event.detail}`,
+        ]
+      : event.kind === "subject-ready"
+        ? [
+            "✅ *Vak klaar om te publiceren*",
+            `Vak: ${event.subjectName}`,
+            "→ Bekijk het dashboard: https://geslaagd.app/beheer/pipeline",
+          ]
+        : [
+            "🚧 *Vak nog niet compleet*",
+            `Vak: ${event.subjectName}`,
+            `Ontbreekt:\n${event.detail}`,
+          ];
+
+  await postMessage(channel, lines.join("\n"));
+}
+
 export async function logPendingSourceEvent(details: {
   sourceId: string;
   sourceUrl: string;

@@ -8,6 +8,8 @@ import {
   RequestSourceSubjectBody,
   RequestSourceSubjectResponse,
 } from "@workspace/api-zod";
+import { createTask } from "../lib/pipeline-tasks/task-store";
+import { pollAndProcess } from "../lib/pipeline-worker";
 import { getAuthenticatedUser, rest, restService } from "../lib/supabase";
 
 const router: IRouter = Router();
@@ -93,6 +95,15 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
         status: "pending",
       }),
     });
+
+    // The pipeline triages the request on its own; the worker picks this up
+    // within one poll, so the student does not wait on the AI call here.
+    await createTask({
+      subjectId: subject.id as string,
+      taskType: "triage",
+      status: "ready",
+    }).catch((error) => req.log.warn({ error }, "Could not queue triage task"));
+    void pollAndProcess();
 
     res.status(201).json(
       RequestSourceSubjectResponse.parse({

@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startAuthEventOutboxWorker } from "./lib/auth-event-outbox";
 import { startUserNotificationWorker } from "./lib/user-notification-outbox";
 import { startSourceEventOutboxWorker } from "./lib/source-event-outbox";
+import { startPipelineWorker } from "./lib/pipeline-worker";
 
 const rawPort = process.env["PORT"];
 
@@ -28,4 +29,5 @@ app.listen(port, (err) => {
   startAuthEventOutboxWorker();
   startUserNotificationWorker();
   startSourceEventOutboxWorker();
+  startPipelineWorker();
 });
