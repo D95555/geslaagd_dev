@@ -1,17 +1,19 @@
 import { Router, type IRouter, type Request } from "express";
 import {
   GetVerkennerObjectParams,
+  GetVerkennerObjectResponse,
   GetVerkennerSubjectParams,
+  GetVerkennerSubjectResponse,
   ListVerkennerSubjectsQueryParams,
   ListVerkennerSubjectsResponse,
   LookupVerkennerObjectQueryParams,
+  LookupVerkennerObjectResponse,
   UpdateVerkennerChapterTitleBody,
   UpdateVerkennerChapterTitleParams,
+  UpdateVerkennerChapterTitleResponse,
   UpdateVerkennerSubjectTitleBody,
   UpdateVerkennerSubjectTitleParams,
-  VerkennerLookupResponse,
-  VerkennerObjectDetailResponse,
-  VerkennerSubjectDetailResponse,
+  UpdateVerkennerSubjectTitleResponse,
 } from "@workspace/api-zod";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { loadTaskLogs } from "../lib/pipeline-tasks/task-log";
@@ -40,6 +42,39 @@ function toSubjectSummary(row: Row) {
   };
 }
 
+function toCrawlSummary(row: Row) {
+  return {
+    id: row.id as string,
+    subjectId: row.subject_id as string,
+    subjectName: "",
+    status: row.status as "running" | "complete" | "failed",
+    sourcesFound: (row.sources_found as number | null) ?? null,
+    sourcesAccepted: (row.sources_accepted as number | null) ?? null,
+    creditsUsed: (row.credits_used as number | null) ?? null,
+    efficiencyRatio: (row.efficiency_ratio as number | null) ?? null,
+    createdAt: row.created_at as string,
+    completedAt: (row.completed_at as string | null) ?? null,
+  };
+}
+
+function toTaskSummary(row: Row) {
+  return {
+    id: row.id as string,
+    taskType: row.task_type as string,
+    status: row.status as "waiting" | "ready" | "running" | "done" | "failed",
+    summary: (row.summary as string | null) ?? null,
+  };
+}
+
+function toContentSummary(row: Row) {
+  return {
+    id: row.id as string,
+    contentType: row.content_type as string,
+    version: Number(row.version ?? 1),
+    status: row.status as "generating" | "ready" | "failed",
+  };
+}
+
 router.get("/admin/verkenner/subjects", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) {
@@ -63,6 +98,118 @@ router.get("/admin/verkenner/subjects", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not search Verkenner subjects");
     res.status(500).json({ error: "Vakken konden niet worden geladen." });
+  }
+});
+
+router.get("/admin/verkenner/subjects/:subjectId", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = GetVerkennerSubjectParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Ongeldig vak." });
+    return;
+  }
+  const { subjectId } = params.data;
+  try {
+    const subjects = await restService<Row[]>(`crawl_subjects?id=eq.${subjectId}&select=*`);
+    const subjectRow = subjects[0];
+    if (!subjectRow) {
+      res.status(404).json({ error: "Vak niet gevonden." });
+      return;
+    }
+
+    const [triageTasks, requests, chapters, contentRows, sourceCounts, crawls, tasks] = await Promise.all([
+      restService<Row[]>(
+        `pipeline_tasks?subject_id=eq.${subjectId}&task_type=eq.triage&select=id,result,summary&limit=1`,
+      ),
+      restService<Row[]>(
+        `subject_requests?subject_id=eq.${subjectId}&select=status,admin_note&order=created_at.desc&limit=1`,
+      ),
+      restService<Row[]>(`chapters?subject_id=eq.${subjectId}&select=*&order=position.asc`),
+      restService<Row[]>(
+        `study_content?subject_id=eq.${subjectId}&select=id,chapter_id,content_type,version,status`,
+      ),
+      restService<Row[]>(
+        `chapter_sources?chapter_id=in.(${
+          (await restService<Row[]>(`chapters?subject_id=eq.${subjectId}&select=id`))
+            .map((c) => c.id as string)
+            .join(",") || "00000000-0000-0000-0000-000000000000"
+        })&select=chapter_id`,
+      ),
+      restService<Row[]>(`crawls?subject_id=eq.${subjectId}&select=*&order=created_at.desc`),
+      restService<Row[]>(
+        `pipeline_tasks?subject_id=eq.${subjectId}&select=id,task_type,status,summary&order=created_at.asc`,
+      ),
+    ]);
+
+    const triageTask = triageTasks[0];
+    const triageResult = (triageTask?.result as Record<string, unknown> | null) ?? null;
+    const request = requests[0];
+    const decision =
+      triageTask || request
+        ? {
+            taskId: (triageTask?.id as string | null) ?? null,
+            approved: (triageResult?.approved as boolean | null) ?? null,
+            reason: (triageResult?.reason as string | null) ?? null,
+            suggestions: (triageResult?.suggestions as string | null) ?? null,
+            model: (triageResult?.model as string | null) ?? null,
+            summary: (triageTask?.summary as string | null) ?? null,
+            requestStatus: (request?.status as string | null) ?? null,
+            requestAdminNote: (request?.admin_note as string | null) ?? null,
+          }
+        : null;
+
+    const sourceCountByChapter = new Map<string, number>();
+    for (const row of sourceCounts) {
+      const chapterId = row.chapter_id as string;
+      sourceCountByChapter.set(chapterId, (sourceCountByChapter.get(chapterId) ?? 0) + 1);
+    }
+
+    const chapterSummaries = chapters.map((chapter) => ({
+      chapter: {
+        id: chapter.id as string,
+        subjectId: chapter.subject_id as string,
+        position: Number(chapter.position),
+        title: chapter.title as string,
+        description: (chapter.description as string | null) ?? "",
+        isImportant: Boolean(chapter.is_important),
+        topicTags: (chapter.topic_tags as string[] | null) ?? [],
+        status: chapter.status as "pending" | "ready",
+      },
+      content: contentRows
+        .filter((row) => row.chapter_id === chapter.id)
+        .map(toContentSummary),
+      sourceCount: sourceCountByChapter.get(chapter.id as string) ?? 0,
+    }));
+
+    const subjectContent = contentRows.filter((row) => row.chapter_id == null).map(toContentSummary);
+
+    res.json(
+      GetVerkennerSubjectResponse.parse({
+        subject: {
+          id: subjectRow.id as string,
+          name: subjectRow.name as string,
+          yearLevel: subjectRow.year_level as "havo_vwo_bovenbouw" | "universitair",
+          status: subjectRow.status as "pending" | "active" | "denied" | "needs_refinement",
+          publishStatus: (subjectRow.publish_status as "incomplete" | "ready" | "published" | null) ?? "incomplete",
+          description: (subjectRow.description as string | null) ?? null,
+          difficultyLevel: (subjectRow.difficulty_level as string | null) ?? null,
+          adminNote: (subjectRow.admin_note as string | null) ?? null,
+          requestedBy: (subjectRow.requested_by as string | null) ?? null,
+        },
+        decision,
+        chapters: chapterSummaries,
+        subjectContent,
+        crawls: crawls.map((row) => ({ ...toCrawlSummary(row), subjectName: subjectRow.name as string })),
+        tasks: tasks.map(toTaskSummary),
+      }),
+    );
+  } catch (error) {
+    req.log.warn({ error }, "Could not load Verkenner subject detail");
+    res.status(500).json({ error: "Vakdetail kon niet worden geladen." });
   }
 });
 
