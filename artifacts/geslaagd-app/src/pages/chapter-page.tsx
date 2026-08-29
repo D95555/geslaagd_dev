@@ -17,11 +17,11 @@ import {
 import { BookCheck, ChevronDown, MessageCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useContextRail } from '@/components/shell/rail-context';
 import { ChatPanel } from '@/components/study/chat-panel';
 import { CitedText } from '@/components/study/citation-tag';
 import { ExerciseView } from '@/components/study/exercise-view';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
-import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
 import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
 import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
 import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
@@ -43,8 +43,8 @@ export default function ChapterPage({
   const { user, isLoading } = useAuth();
 
   const [chapter, setChapter] = useState<Chapter | null>(null);
-  // Kept so the chapter keeps naming the subject it belongs to, in the
-  // breadcrumbs and the page kicker.
+  // Kept so the page kicker can still name the subject this chapter belongs
+  // to (the sidebar shows it too, but not when the sidebar is collapsed).
   const [subjectName, setSubjectName] = useState<string | null>(null);
   const [content, setContent] = useState<ChapterContent | null>(null);
   const [progress, setProgress] = useState<ChapterProgress | null>(null);
@@ -88,6 +88,36 @@ export default function ChapterPage({
     }
   };
 
+  // Key notes and formulas are reference material for while you're reading
+  // or practicing, not the reading itself, so they live in the context rail
+  // instead of interrupting the summary as an inline collapsible. Registered
+  // unconditionally (and regardless of `activity`) so it stays put across
+  // the reading/exercise/exam views instead of flickering on navigation.
+  useContextRail(
+    content?.keyNotes && content.keyNotes.sections.length > 0 ? (
+      <Collapsible className="key-notes" defaultOpen>
+        <CollapsibleTrigger className="key-notes-trigger">
+          Kernpunten en formules <ChevronDown size={15} aria-hidden="true" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {content.keyNotes.sections.map((section) => (
+            <section key={section.heading}>
+              <h3>{section.heading}</h3>
+              <dl>
+                {section.items.map((item) => (
+                  <div key={`${section.heading}-${item.label}`}>
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    ) : null,
+  );
+
   if (state === 'unauthorized') {
     return (
       <StudyPageShell>
@@ -99,22 +129,6 @@ export default function ChapterPage({
       </StudyPageShell>
     );
   }
-
-  const crumbs = (extra?: string) => (
-    <Breadcrumbs
-      onNavigate={setLocation}
-      items={[
-        { label: 'Vakken', href: '/vakken' },
-        { label: subjectName ?? 'Vak', href: `/vakken/${subjectId}` },
-        ...(extra
-          ? [
-              { label: chapter?.title ?? 'Hoofdstuk', href: `/vakken/${subjectId}/hoofdstuk/${chapterId}` },
-              { label: extra },
-            ]
-          : [{ label: chapter?.title ?? 'Hoofdstuk' }]),
-      ]}
-    />
-  );
 
   if (state === 'loading') {
     return (
@@ -145,7 +159,6 @@ export default function ChapterPage({
       <StudyPageShell>
         <PageSections>
           <PageHeader
-            breadcrumbs={crumbs(activity === 'exam' ? 'Tentamen' : 'Oefenvragen')}
             kicker={subjectName ?? undefined}
             title={`${chapter.position}. ${chapter.title}`}
           />
@@ -167,7 +180,6 @@ export default function ChapterPage({
     <StudyPageShell>
       <PageSections>
       <PageHeader
-        breadcrumbs={crumbs()}
         kicker={subjectName ?? undefined}
         title={`${chapter.position}. ${chapter.title}`}
         description={chapter.description ?? undefined}
@@ -197,29 +209,6 @@ export default function ChapterPage({
           {progress?.summaryRead ? 'Gelezen' : 'Markeer als gelezen'}
         </Button>
       </div>
-
-      {content?.keyNotes && content.keyNotes.sections.length > 0 && (
-        <Collapsible className="key-notes">
-          <CollapsibleTrigger className="key-notes-trigger">
-            Kernpunten en formules <ChevronDown size={15} aria-hidden="true" />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {content.keyNotes.sections.map((section) => (
-              <section key={section.heading}>
-                <h3>{section.heading}</h3>
-                <dl>
-                  {section.items.map((item) => (
-                    <div key={`${section.heading}-${item.label}`}>
-                      <dt>{item.label}</dt>
-                      <dd>{item.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
 
       <section className="chapter-practice">
         <button

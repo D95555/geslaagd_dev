@@ -144,7 +144,7 @@ bron van waarheid.
 | **A** — Dichtheid en oppervlak herijken | ✅ Af | `108abf2` |
 | **B** — Persistente AppShell | ✅ Af | `ce5c9a5` |
 | **C** — Toetsenbordlaag | ✅ Af | `e54e765` |
-| **D** — Studentpagina's als inhoud (goedkeuringsmoment) | ⬜ Nog niet begonnen | — |
+| **D** — Studentpagina's als inhoud (goedkeuringsmoment) | 🟡 Twee kernpagina's af, nog niet visueel goedgekeurd | zie onderstaande commit |
 | **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
 | **F** — Publiek en opruimen | ⬜ Nog niet begonnen | — |
 
@@ -216,12 +216,54 @@ bron van waarheid.
   `PORT=5173 BASE_PATH=/ pnpm build` — beide groen. **Niet visueel getest**
   (zie hieronder).
 
-### Wat NIET is gedaan (bewust, hoort bij latere fases)
+### Wat fase D concreet heeft opgeleverd (nog niet compleet — zie hieronder)
 
-- Geen enkele pagina-inhoud is herstructureerd voor het nieuwe drie-koloms-
-  concept. De contextkolom (voortgang, toetsaftelling, zwakke punten,
-  herhaalplan) staat nog gewoon in de hoofdinhoud, niet in de rail — dat is
-  fase D.
+De twee pagina's die het plan als startpunt noemde:
+
+- **`pages/subject-study-page.tsx`** (de vak-hub). Middenpaneel: paginakop
+  (kicker/titel/beschrijving/acties, **geen breadcrumbs meer** — de zijbalk
+  toont het vak en de hoofdstukken al) + de `ChapterList` (rijker dan de
+  compacte zijbalkversie: beschrijvingen en per-hoofdstuk percentages, dus dit
+  is bewust niet weggehaald als "duplicaat"). Naar de contextkolom via
+  `useContextRail()`: voortgangsbalk, toetsaftelling, herhaalplan, zwakke
+  punten, en een "Bekijk volledig studieplan"-link (was een Section-actie naast
+  "Hoofdstukken", hoort inhoudelijk beter bij het herhaalplan).
+- **`pages/chapter-page.tsx`** (de leespagina — het hart van de werkbank).
+  Middenpaneel: paginakop zonder breadcrumbs, de hoofdstuksamenvatting (leest
+  al met de `bodyLong`-typografie uit fase A: groter en luchtiger dan
+  interface-tekst, `max-width: 72ch`), "Markeer als gelezen", en de
+  oefenvragen/tentamen-kaarten. Naar de contextkolom: het "Kernpunten en
+  formules"-blok (was een inline `Collapsible` die de leesflow onderbrak) —
+  nu referentiemateriaal ernaast in plaats van ertussen. De rail-registratie
+  staat **vóór** de loading/error-early-returns en is onafhankelijk van
+  `activity` (lezen/oefenen/tentamen), zodat 'm niet knippert bij het wisselen
+  tussen die weergaven.
+- `hooks/use-list-navigation`-achtige aanpassingen waren niet nodig hier; wel
+  is `.shell-rail` (`index.css`) van een kale flex-container zonder gap
+  voorzien van `display:flex; flex-direction:column; gap: var(--density-block-gap)`
+  — niemand vulde de rail vóór fase D, dus dit werd nooit zichtbaar.
+  `.study-status`/`.study-secondary` (de oude twee-koloms-grid voor de
+  status-strip) zijn verwijderd — echt niet meer gebruikt. `.study-card` blijft
+  bestaan: de voortgangsbalk in de rail is er nog in gewrapt voor dezelfde
+  kaart-rand/achtergrond als de andere rail-items.
+- Geverifieerd met `pnpm typecheck` (root) en
+  `PORT=5173 BASE_PATH=/ pnpm build` — beide groen. **Niet visueel getest** —
+  dit is letterlijk het goedkeuringsmoment dat de gebruiker nog moet zien.
+
+### Wat NIET is gedaan (bewust, hoort bij latere fases of een vervolg op fase D)
+
+- Alleen deze twee pagina's zijn herstructureerd. `study-plan-page.tsx` (waar
+  de nieuwe "Bekijk volledig studieplan"-link naartoe wijst),
+  `subject-catalog-page.tsx` en `dashboard-page.tsx` dragen nog hun oude
+  volle-breedte structuur — geen rail-gebruik, mogelijk nog eigen
+  breadcrumbs. Niet gecontroleerd of dat al dan niet stoort naast de nu wel
+  al aangepaste pagina's.
+- De `.key-notes`-styling (kernpunten/formules) is ongewijzigd verplaatst; hij
+  had `max-width: 72ch` voor de oude volle-breedte context, wat in de 280px
+  rail een no-op is (niet stuk, maar ook geen doelbewuste keuze voor de
+  smallere kolom). De `dl`-layout (`justify-content: space-between`) kan bij
+  lange labels/waarden in een smalle kolom lelijk wrappen — niet visueel
+  geverifieerd.
 - De 8 beheerpagina's zijn niet individueel doorlopen om te checken of ze goed
   ogen binnen de nieuwe schil (fase E) — ze zouden moeten werken (props
   ongewijzigd) maar zijn niet visueel geverifieerd.
@@ -333,20 +375,27 @@ opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
    de zichtbare lijst (hoofdstukken binnen een vak, anders de top-nav, in
    beheer de 7 nav-items) — Enter/Spatie activeert het gefocuste item via de
    normale knop-semantiek; `?` toont het sneltoetsenoverzicht.
+6. **Fase D, hét goedkeuringsmoment:** open een vak
+   (`/vakken/:subjectId`) — de contextkolom rechts moet de voortgangsbalk,
+   toetsaftelling, herhaalplan en zwakke punten tonen (gestapeld, niet meer
+   onder de hoofdstukkenlijst); open een hoofdstuk — de kernpunten/formules
+   staan nu in dezelfde contextkolom in plaats van als inklapbaar blok tussen
+   de samenvatting en de oefenkaarten. Check specifiek: ziet de rail er goed
+   uit op 280px breed (met name de kernpunten-tabel bij lange labels/waarden),
+   en knippert de rail niet bij het wisselen tussen lezen/oefenen/tentamen
+   binnen hetzelfde hoofdstuk?
 
 ---
 
 ## Aanbevolen vervolgstappen (in volgorde)
 
-1. **Fase D — Pagina's als inhoud (het goedkeuringsmoment).** Dit is het
-   werk waar de gebruiker om vroeg en nog niet gezien heeft. Kernvraag per
-   pagina: welk deel van de huidige inhoud hoort in het middenpaneel (het
-   eigenlijke werk: hoofdstuktekst, oefenvragen) en welk deel hoort in de
-   contextkolom via `useContextRail()` (voortgang, toetsaftelling, zwakke
-   punten, herhaalplan)? Begin met `subject-study-page.tsx` en
-   `chapter-page.tsx` — die dragen nu nog hun eigen `PageHeader`+breadcrumbs
-   uit een eerdere (afgekeurde) ronde; met de zijbalk die nu al vaknaam en
-   hoofdstuklijst toont, is een deel van die breadcrumb-info dubbel.
+1. **Fase D afmaken.** `subject-study-page.tsx` en `chapter-page.tsx` zijn
+   herstructureerd (zie hierboven) maar **nog niet visueel goedgekeurd** —
+   dat is de eerste stap, via Replit (zie hieronder). Reken ook op mogelijke
+   bijstelling van `.key-notes` in de smalle rail. Daarna, optioneel binnen
+   dezelfde fase: `study-plan-page.tsx`, `subject-catalog-page.tsx` en
+   `dashboard-page.tsx` zijn nog niet aangeraakt en dragen nog hun oude
+   structuur.
 
 2. **Fase E — Beheer verifiëren.** Loop de 8 `/beheer`-pagina's visueel na in
    Replit. De schil-integratie zou al moeten werken (props ongewijzigd), dit

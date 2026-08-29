@@ -978,9 +978,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .subject-card-foot > span { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 .subject-card-actions { display: flex; gap: 8px; }
 
-/* Subject hub: status strip, then chapters, then the plan that informs them. */
-.study-status, .study-secondary { display: grid; gap: var(--density-block-gap); grid-template-columns: repeat(auto-fit, minmax(clamp(240px, 28vw, 320px), 1fr)); align-items: stretch; }
-
 /* One surface treatment for every card on a study page. The progress bar is
    deliberately not one: it also appears inside cards, where nesting a second
    card surface inside the first reads as a mistake. */
@@ -1226,7 +1223,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .shell-topbar { display: flex; align-items: center; height: 44px; padding: 0 var(--density-gutter); border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--background)); }
 .shell-body { display: flex; flex: 1; min-height: 0; align-items: stretch; }
 .shell-main { flex: 1; min-width: 0; overflow-y: auto; padding: 0 var(--density-gutter); }
-.shell-rail { flex: 0 0 auto; width: 280px; overflow-y: auto; padding: var(--density-gutter); border-left: 1px solid hsl(var(--border)); }
+.shell-rail {
+  display: flex; flex-direction: column; gap: var(--density-block-gap);
+  flex: 0 0 auto; width: 280px; overflow-y: auto;
+  padding: var(--density-gutter); border-left: 1px solid hsl(var(--border));
+}
 
 @media (max-width: 900px) {
   .shell-rail { display: none; }

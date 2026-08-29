@@ -19,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/geslaagd-momentum/components/ui/dialog';
-import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
 import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
 import { PageSections, Section } from '@workspace/geslaagd-momentum/components/layout/section';
 import {
@@ -29,6 +28,7 @@ import {
 import { CalendarPlus, MessageCircle, NotebookPen } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useContextRail } from '@/components/shell/rail-context';
 import { ChapterList } from '@/components/study/chapter-list';
 import { ChatPanel } from '@/components/study/chat-panel';
 import { ExamCountdown } from '@/components/study/exam-countdown';
@@ -100,6 +100,37 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
     }
   };
 
+  // Progress, the exam countdown, the review plan and weak spots are all
+  // "how am I doing" context rather than the work itself (choosing and
+  // opening a chapter), so they live in the shell's context rail instead of
+  // competing with the chapter list for the main panel.
+  useContextRail(
+    state === 'ready' && subject ? (
+      <>
+        <div className="study-card">
+          <ProgressBar value={progress?.subjectProgress ?? 0} label={`Voortgang ${subject.name}`} />
+        </div>
+        <ExamCountdown examDate={plan?.examDate ?? null} />
+        {plan && (
+          <ReviewPlan
+            tasks={plan.reviewTasks}
+            onOpenChapter={(chapterId) => setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)}
+          />
+        )}
+        {(progress?.weakTopics ?? []).length > 0 && (
+          <WeaknessCard topics={progress?.weakTopics ?? []} />
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setLocation(`/vakken/${subjectId}/studieplan`)}
+        >
+          Bekijk volledig studieplan
+        </Button>
+      </>
+    ) : null,
+  );
+
   if (state === 'unauthorized') {
     return (
       <StudyPageShell>
@@ -136,22 +167,13 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
   const progressByChapter = new Map<string, ChapterProgress>(
     (progress?.chapterProgress ?? []).map((row) => [row.chapterId, row]),
   );
-  const weakTopics = progress?.weakTopics ?? [];
 
   return (
     <StudyPageShell>
       <PageSections>
+        {/* No breadcrumbs here -- the persistent sidebar already shows which
+            subject this is and lists its chapters. */}
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              onNavigate={setLocation}
-              items={[
-                { label: 'Mijn leeromgeving', href: '/mijn-leeromgeving' },
-                { label: 'Vakken', href: '/vakken' },
-                { label: subject.name },
-              ]}
-            />
-          }
           kicker={
             <>
               <NotebookPen size={13} aria-hidden="true" />
@@ -172,50 +194,16 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
           }
         />
 
-        <div className="study-status">
-          <div className="study-card">
-            <ProgressBar
-              value={progress?.subjectProgress ?? 0}
-              label={`Voortgang ${subject.name}`}
-            />
-          </div>
-          <ExamCountdown examDate={plan?.examDate ?? null} />
-        </div>
-
-        {/* Chapters lead: opening one is what a student came here to do. The
-            plan and weak spots inform that choice, so they follow it. */}
-        <Section
-          title="Hoofdstukken"
-          actions={
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation(`/vakken/${subjectId}/studieplan`)}
-            >
-              Bekijk studieplan
-            </Button>
-          }
-        >
+        {/* Chapters are the work: opening one is what a student came here to
+            do. Progress, the plan and weak spots that used to sit below this
+            list now live in the context rail instead. */}
+        <Section title="Hoofdstukken">
           <ChapterList
             chapters={subject.chapters}
             progress={progressByChapter}
             onOpen={(chapterId) => setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)}
           />
         </Section>
-
-        {(plan || weakTopics.length > 0) && (
-          <div className="study-secondary">
-            {plan && (
-              <ReviewPlan
-                tasks={plan.reviewTasks}
-                onOpenChapter={(chapterId) =>
-                  setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)
-                }
-              />
-            )}
-            {weakTopics.length > 0 && <WeaknessCard topics={weakTopics} />}
-          </div>
-        )}
       </PageSections>
 
       <ChatPanel subjectId={subjectId} open={chatOpen} onClose={() => setChatOpen(false)} />
