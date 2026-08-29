@@ -30,6 +30,15 @@ async function admin(req: Request) {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const CONTENT_TYPE_TO_TASK_TYPE: Record<string, string> = {
+  summary: "summary_generation",
+  key_notes: "key_notes_generation",
+  exercise_bank: "exercise_generation",
+  exam: "exam_generation",
+  exam_rubric: "exam_generation",
+  diagnostic_questionnaire: "questionnaire_generation",
+};
+
 function toSubjectSummary(row: Row) {
   return {
     id: row.id as string,
@@ -323,6 +332,68 @@ router.get("/admin/verkenner/objects/:type/:id", async (req, res): Promise<void>
       return;
     }
 
+    if (type === "content") {
+      const rows = await restService<Row[]>(`study_content?id=eq.${id}&select=*`);
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: "Inhoud niet gevonden." });
+        return;
+      }
+      const contentType = row.content_type as string;
+      const taskType = CONTENT_TYPE_TO_TASK_TYPE[contentType];
+      let generatingTask: {
+        id: string;
+        taskType: string;
+        status: "waiting" | "ready" | "running" | "done" | "failed";
+        summary: string | null;
+        result: Record<string, unknown> | null;
+        lastError: string | null;
+      } | null = null;
+      let logs: ReturnType<typeof toLogEntry>[] = [];
+      if (taskType) {
+        const chapterFilter = row.chapter_id ? `chapter_id.eq.${row.chapter_id}` : "chapter_id.is.null";
+        const taskRows = await restService<Row[]>(
+          `pipeline_tasks?subject_id=eq.${row.subject_id}&${chapterFilter}&task_type=eq.${taskType}&select=*&limit=1`,
+        );
+        const taskRow = taskRows[0];
+        if (taskRow) {
+          generatingTask = {
+            id: taskRow.id as string,
+            taskType: taskRow.task_type as string,
+            status: taskRow.status as "waiting" | "ready" | "running" | "done" | "failed",
+            summary: (taskRow.summary as string | null) ?? null,
+            result: (taskRow.result as Record<string, unknown> | null) ?? null,
+            lastError: (taskRow.last_error as string | null) ?? null,
+          };
+          const rawLogs = await loadTaskLogs(taskRow.id as string);
+          logs = rawLogs.map((entry) => ({
+            id: entry.id,
+            taskId: entry.taskId,
+            chapterId: entry.chapterId,
+            level: entry.level,
+            phase: entry.phase,
+            message: entry.message,
+            data: entry.data,
+            createdAt: entry.createdAt,
+          }));
+        }
+      }
+      res.json(
+        GetVerkennerObjectResponse.parse({
+          type,
+          id,
+          contentType,
+          contentVersion: Number(row.version ?? 1),
+          contentStatus: row.status as "generating" | "ready" | "failed",
+          content: (row.content as Record<string, unknown> | null) ?? {},
+          generatedByModel: (row.generated_by_model as string | null) ?? null,
+          generatingTask,
+          logs,
+        }),
+      );
+      return;
+    }
+
     if (type === "task") {
       const rows = await restService<Row[]>(`pipeline_tasks?id=eq.${id}&select=*`);
       const row = rows[0];
@@ -358,7 +429,6 @@ router.get("/admin/verkenner/objects/:type/:id", async (req, res): Promise<void>
       return;
     }
 
-    // type === "content" is handled in Task 5.
     res.status(404).json({ error: "Onbekend objecttype." });
   } catch (error) {
     req.log.warn({ error, type: req.params.type }, "Could not load Verkenner object detail");
