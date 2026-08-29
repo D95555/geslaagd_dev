@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldAlert,
+  Sparkles,
   Terminal,
   Users,
   Workflow,
@@ -27,6 +28,7 @@ type NavItem = {
  */
 const NAV: NavItem[] = [
   { href: '/beheer', label: 'Overzicht', hint: 'Wat vraagt aandacht', icon: LayoutDashboard },
+  { href: '/beheer/verkenner', label: 'Verkenner', hint: 'Elk object opzoeken, met beslissingen en logs', icon: Sparkles },
   { href: '/beheer/crawl', label: 'Vakken & crawls', hint: 'Aanvragen en zoekopdrachten', icon: Compass },
   { href: '/beheer/crawl/pending', label: 'Bronnen beoordelen', hint: 'Wachtrij met twijfelgevallen', icon: ClipboardList },
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },

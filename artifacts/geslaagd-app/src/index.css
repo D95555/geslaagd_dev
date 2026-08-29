@@ -364,6 +364,46 @@
 .study-message { margin: 0 0 18px; padding: 12px 14px; border: 1px solid hsl(var(--destructive) / .35); border-radius: var(--radius); color: hsl(var(--destructive)); background: hsl(var(--destructive) / .08); font-size: .82rem; }
 .request-subject-form { display: grid; gap: 16px; margin: 4px 0; }
 .request-subject-form > div { display: grid; gap: 6px; }
+.verkenner-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+.verkenner-layout:has(.verkenner-object-panel) { grid-template-columns: 300px 1fr 360px; }
+.verkenner-sidebar { display: grid; gap: 16px; position: sticky; top: 20px; }
+.verkenner-search { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); }
+.verkenner-search input { border: 0; }
+.verkenner-subject-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; max-height: 50vh; overflow-y: auto; }
+.verkenner-subject-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; text-align: left; font-size: .85rem; cursor: pointer; }
+.verkenner-subject-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.verkenner-subject-item:hover { background: hsl(var(--secondary)); }
+.verkenner-subject-item.active { border-color: hsl(var(--primary)); background: hsl(var(--secondary)); }
+.verkenner-lookup { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid hsl(var(--border)); }
+.verkenner-lookup label { font-size: .78rem; font-weight: 700; color: hsl(var(--foreground)); }
+.verkenner-lookup-row { display: flex; gap: 6px; }
+.verkenner-detail { display: grid; gap: 16px; }
+.verkenner-detail-head { display: grid; gap: 8px; }
+.verkenner-detail-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.verkenner-id { color: hsl(var(--muted-foreground)); font-size: .72rem; }
+.verkenner-editable-title { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.verkenner-editable-title:hover { border-color: hsl(var(--border)); }
+.verkenner-editable-title-form { display: flex; align-items: center; gap: 6px; }
+.verkenner-detail-title { font-size: 1.4rem; }
+.verkenner-card { display: grid; gap: 8px; padding: 16px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.verkenner-card h3, .verkenner-card h4 { margin: 0; font-size: .95rem; }
+.verkenner-decision-head { display: flex; align-items: center; gap: 8px; }
+.verkenner-chapter-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.verkenner-chapter-row { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 8px 10px; }
+.verkenner-chapter-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.verkenner-chapter-toggle { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; cursor: pointer; }
+.verkenner-chapter-position { color: hsl(var(--muted-foreground)); font-size: .8rem; }
+.verkenner-chapter-source-count { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; color: hsl(var(--muted-foreground)); font-size: .78rem; }
+.verkenner-content-list { display: grid; gap: 4px; margin: 8px 0 0 24px; padding: 0; list-style: none; }
+.verkenner-content-list button { display: flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 4px 0; font-size: .84rem; cursor: pointer; }
+.verkenner-flat-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.verkenner-flat-list button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 6px 4px; text-align: left; font-size: .84rem; cursor: pointer; }
+.verkenner-flat-list button:hover { background: hsl(var(--secondary)); border-radius: var(--radius); }
+.verkenner-object-panel { display: grid; gap: 12px; align-content: start; padding: 16px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); position: sticky; top: 20px; max-height: 85vh; overflow-y: auto; }
+.verkenner-object-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.verkenner-object-panel-head span { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .85rem; }
+.verkenner-content-json { max-height: 260px; overflow: auto; padding: 10px; border-radius: var(--radius); background: hsl(var(--muted)); font-size: .74rem; }
+.verkenner-accent-subject, .verkenner-accent-chapter, .verkenner-accent-content, .verkenner-accent-source, .verkenner-accent-crawl, .verkenner-accent-task { color: hsl(var(--primary)); }
 .coach-panel { display: grid; grid-template-columns: .85fr 1.15fr; gap: 34px; padding: clamp(23px, 4vw, 34px); border: 1px solid hsl(var(--primary) / .35); border-radius: calc(var(--radius) + 3px); background: linear-gradient(120deg, hsl(var(--secondary)), hsl(var(--accent) / .1)); }
 .coach-panel > div > span, .section-title > div > span, .proposal-label { color: hsl(var(--muted-foreground)); }
 .coach-panel h2, .section-title h2 { margin: 10px 0 8px; color: hsl(var(--foreground)); font: 600 clamp(1.35rem, 3vw, 1.9rem) var(--app-font-serif); letter-spacing: -.05em; }
