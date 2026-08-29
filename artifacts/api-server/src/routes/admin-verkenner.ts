@@ -522,7 +522,7 @@ router.get("/admin/verkenner/lookup", async (req, res): Promise<void> => {
   }
 });
 
-router.patch("/admin/verkenner/subjects/:id", async (req, res): Promise<void> => {
+router.patch("/admin/verkenner/subjects/:subjectId", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) {
     res.status(403).json({ error: "Forbidden" });
@@ -551,7 +551,7 @@ router.patch("/admin/verkenner/subjects/:id", async (req, res): Promise<void> =>
   }
 });
 
-router.patch("/admin/verkenner/chapters/:id", async (req, res): Promise<void> => {
+router.patch("/admin/verkenner/chapters/:chapterId", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) {
     res.status(403).json({ error: "Forbidden" });
