@@ -114,36 +114,36 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 96 26.3% 96.3%;
-  --foreground: 159 26.9% 10.2%;
-  --border: 142 15.1% 85.7%;
+  --background: 260 33.3% 98.2%;
+  --foreground: 261 27.8% 14.1%;
+  --border: 262 45.8% 90.6%;
   --card: 0 0% 100%;
-  --card-foreground: 159 26.9% 10.2%;
-  --sidebar: 135 23.5% 93.3%;
-  --sidebar-foreground: 156 32% 20.2%;
-  --sidebar-border: 141 17.1% 83.9%;
-  --sidebar-primary: 164 87.7% 25.5%;
-  --sidebar-primary-foreground: 142 100% 97.8%;
-  --sidebar-accent: 141 24.1% 88.6%;
-  --sidebar-accent-foreground: 162 50.5% 18.2%;
-  --sidebar-ring: 164 87.7% 25.5%;
+  --card-foreground: 261 27.8% 14.1%;
+  --sidebar: 264 62.5% 96.9%;
+  --sidebar-foreground: 261 49.5% 20.2%;
+  --sidebar-border: 264 49% 90%;
+  --sidebar-primary: 263 70% 50.4%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 264 73.7% 92.5%;
+  --sidebar-accent-foreground: 262 55.1% 27.1%;
+  --sidebar-ring: 263 70% 50.4%;
   --popover: 0 0% 100%;
-  --popover-foreground: 159 26.9% 10.2%;
-  --primary: 164 87.7% 25.5%;
-  --primary-foreground: 142 100% 97.8%;
-  --secondary: 142 26.8% 92%;
-  --secondary-foreground: 162 50.5% 18.2%;
-  --muted: 130 20% 94.1%;
-  --muted-foreground: 148 10.4% 35.9%;
-  --accent: 252 54.1% 52.2%;
-  --accent-foreground: 0 0% 100%;
+  --popover-foreground: 261 27.8% 14.1%;
+  --primary: 263 70% 50.4%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 261 58.3% 95.3%;
+  --secondary-foreground: 262 55.1% 27.1%;
+  --muted: 263 40% 96.1%;
+  --muted-foreground: 266 10.6% 42.5%;
+  --accent: 251 91.3% 95.5%;
+  --accent-foreground: 264 67.4% 34.9%;
   --destructive: 4 76.5% 40%;
   --destructive-foreground: 0 0% 100%;
-  --input: 148 14.9% 80.2%;
-  --ring: 164 87.7% 25.5%;
-  --chart-1: 164 87.7% 25.5%;
+  --input: 261 38.2% 86.7%;
+  --ring: 263 70% 50.4%;
+  --chart-1: 263 70% 50.4%;
   --chart-2: 210 66.7% 47.1%;
-  --chart-3: 252 54.1% 52.2%;
+  --chart-3: 17 88.3% 40.4%;
   --chart-4: 38 100% 32.9%;
   --chart-5: 356 49.4% 53.5%;
 
@@ -152,8 +152,8 @@
   --app-font-mono: DM Mono, monospace;
   --radius: 0.75rem;
   --spacing: 0.25rem;
-  --momentum-shadow-soft: 0 4px 12px rgba(3, 18, 13, 0.08);
-  --momentum-shadow-lift: 0 16px 48px rgba(3, 18, 13, 0.16);
+  --momentum-shadow-soft: 0 4px 12px rgba(33, 26, 46, 0.08);
+  --momentum-shadow-lift: 0 16px 48px rgba(33, 26, 46, 0.16);
 
   /* Semantic type ramp. Prefer the .type-* classes over raw sizes so hierarchy
    * stays consistent; these vars exist for cases that need the parts. */
@@ -219,10 +219,10 @@
   --momentum-motion-slow: 400ms;
   --momentum-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Fixed light/dark aliases support comparative preview swatches. */
-  --momentum-light-primary: 164 87.7% 25.5%;
-  --momentum-light-secondary: 142 26.8% 92%;
-  --momentum-light-accent: 252 54.1% 52.2%;
-  --momentum-light-background: 96 26.3% 96.3%;
+  --momentum-light-primary: 263 70% 50.4%;
+  --momentum-light-secondary: 261 58.3% 95.3%;
+  --momentum-light-accent: 251 91.3% 95.5%;
+  --momentum-light-background: 260 33.3% 98.2%;
   --momentum-light-card: 0 0% 100%;
   --momentum-light-chart-2: 210 66.7% 47.1%;
   --momentum-light-chart-4: 38 100% 32.9%;

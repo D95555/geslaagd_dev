@@ -58,8 +58,7 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
   const [open, setOpen] = useSidebarOpenState();
   const railContent = useRailSlotContent();
 
-  // Deep ink is the shared learning/admin surface, per the design guidelines.
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
   useSuppressSidebarHotkeyInEditable();
 
   const leave = async () => {
@@ -112,7 +111,7 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
         <div className="shell-topbar">
           <SidebarTrigger />
         </div>
-        <div className="shell-body grid-ground">
+        <div className="shell-body">
           <div className="shell-main">{children}</div>
           {railContent && <aside className="shell-rail">{railContent}</aside>}
         </div>

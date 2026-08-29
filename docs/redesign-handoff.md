@@ -43,12 +43,55 @@ nieuwe sessie/omgeving, vandaar dat de volledige tekst hier staat.
 | Dichtheid | Compacte chrome (zijbalk/navigatie), ruim leesgebied (samenvattingen/uitleg) |
 | Toetsenbord | **Volledig toetsenbord-eerst**: Cmd+K, Cmd+B, j/k, markeren, `?` |
 | Beheer | Mee naar dezelfde schil als de studentomgeving |
-| Thema | Donker voor studie + beheer, licht voor marketing |
-| Proefpagina/goedkeuring | Fase D (pagina's als inhoud) is het volgende goedkeuringsmoment — nog niet bereikt |
+| Thema | ~~Donker voor studie + beheer, licht voor marketing~~ **Herzien, zie hieronder: licht + paars/wit overal, geen donker thema meer in gebruik.** |
+| Proefpagina/goedkeuring | Fase D (pagina's als inhoud) — **eerste visuele feedback binnen, zie "Eerste visuele feedbackronde" hieronder.** |
 
-**Dit is nog niet in een browser bekeken door de gebruiker.** Alles hieronder
-is geverifieerd op `pnpm typecheck` en `pnpm build`, niet visueel. Zie
-"Hoe visueel te verifiëren" onderaan.
+### Eerste visuele feedbackronde (na fase D's eerste twee pagina's, in Replit)
+
+De gebruiker heeft het in Replit bekeken en vier dingen expliciet afgekeurd/
+gewijzigd — dit **overschrijft** de eerdere thema-keuze uit de tabel hierboven:
+
+1. **Rasterachtergrond weg.** `.grid-ground` (het fijne 24px-lijnenpatroon
+   onder de schil, `app-shell.tsx`) vond de gebruiker niet mooi. Verwijderd:
+   de class-toepassing én de nu ongebruikte CSS-regel in `index.css`.
+2. **Donker groen/zwart thema weg — licht + paars/wit, overal.** De
+   gebruiker noemde het "geeky". `ShellSurface` riep `useSurfaceTheme('dark')`
+   aan; dat is nu `useSurfaceTheme('light')`. Omdat er maar één licht-palet
+   bestaat (gedeeld met marketing, dat al licht was maar groen-getint), is
+   het **hele licht-palet** in `geslaagd-momentum/tokens.json` herzien naar
+   wit/bijna-wit oppervlakken met een paars (`#6d28d9`) primair —
+   `pnpm run build-tokens` (draait ook automatisch in `pretypecheck`)
+   genereert daaruit `index.css`/`tokens.tsx`/`favicon.svg` opnieuw. Dit is dus
+   een **merk-brede** kleurwijziging, niet alleen studie/beheer — marketing
+   verandert mee van groen naar paars. Alle 12 semantische paren zijn
+   opnieuw met de hand gecontroleerd tegen WCAG AA vóór het genereren (zie
+   `check-contrast.mjs`); allemaal ruim boven 4.5:1 (5.2–17:1). Het donkere
+   bos/emerald-palet in `tokens.json` is **niet verwijderd** — niets
+   gebruikt het meer, maar het theme-systeem (`useSurfaceTheme`) ondersteunt
+   nog gewoon beide, mocht een donker-thema-toggle ooit terugkomen.
+3. **Ruwe markdown werd als platte tekst getoond — echte bug, geen
+   ontwerpkeuze.** `CitedText` (`components/study/citation-tag.tsx`, gebruikt
+   in zowel hoofdstuksamenvattingen als chatberichten) deed nooit meer dan
+   op `[Bron X]`-markers splitsen; het AI-gegenereerde Markdown (`##`,
+   `**vet**`, tabellen) kwam letterlijk op het scherm terecht. Verklaart een
+   groot deel van "tekst past niet/loopt uit". Opgelost met `react-markdown`
+   + `remark-gfm` (nieuwe dependencies in `geslaagd-app`): `[Bron X]` wordt
+   vóór het renderen omgezet naar een markdown-link met een eigen
+   `geslaagd-citation:`-schema, en een custom `a`-component in de
+   `components`-prop onderschept die en rendert 'm als de bekende
+   citatie-knop (niet-schema-links worden gewoon externe links). Tabellen
+   krijgen een eigen `overflow-x: auto`-wrapper zodat een brede tabel niet de
+   hele leeskolom breder duwt. Bijbehorende CSS voor koppen/lijsten/tabellen/
+   code binnen `.cited-text` toegevoegd in `index.css`.
+4. **Hoofdstukrijen (`.chapter-row`, `chapter-list.tsx`) gemoderniseerd.**
+   Rond icoon-badge in plaats van los glyph (paars-getint accentkleurtje
+   zodra een hoofdstuk beschikbaar is), titel nu op de heading3-stijl
+   (Sora-lettertype) in plaats van gewone body-tekst, hover geeft een zachte
+   paarse accent-wash in plaats van grijs.
+
+**Nog niet opnieuw visueel bekeken na deze ronde.** Geverifieerd met
+`pnpm typecheck` (root, inclusief de contrastpoort) en
+`PORT=5173 BASE_PATH=/ pnpm build`. Zie "Hoe visueel te verifiëren" onderaan.
 
 ---
 
@@ -295,6 +338,40 @@ variabelen die naar client-code gaan). Gebruik:
 PORT=5173 BASE_PATH=/ pnpm build
 ```
 
+### Het kleurenpalet zit in één bestand, gedeeld door alles
+`artifacts/geslaagd-momentum/tokens.json` is de **enige** bron voor kleur
+(licht + donker), typografie, dichtheid en elevatie — niet los per artifact.
+Wijzig alleen dit bestand, nooit de gegenereerde output met de hand:
+- `node scripts/build-tokens.mjs` (in `geslaagd-momentum`, draait ook
+  automatisch als `pretypecheck` vóór elke `pnpm typecheck`) genereert
+  daaruit `src/index.css` (de `--foreground`/`--primary`/etc.
+  CSS-variabelen), `src/generated/tokens.tsx` en `public/favicon.svg`.
+- `node scripts/check-contrast.mjs` (draait mee in `pretypecheck`) is een
+  **harde bouwpoort**: 12 semantische paren moeten WCAG AA (4.5:1) halen, in
+  zowel `light` als `dark`. Reken dit met de hand na (luminantie-formule
+  staat in het script zelf) vóórdat je een paletwijziging commit — anders
+  faalt de build pas ná het schrijven van de tokens, met een minder
+  behulpzame foutmelding.
+- Er is maar **één** `light`-palet: study/admin en marketing delen het.
+  "Licht thema voor studie" betekent dus automatisch "dezelfde kleuren als
+  marketing" — er bestaat geen aparte lichte variant per sectie. Het
+  `donkere` bos/emerald-palet bestaat nog in het bestand maar wordt sinds de
+  eerste feedbackronde nergens meer aangeroepen (`useSurfaceTheme('dark')`
+  is overal `'light'` geworden) — theoretisch nog bruikbaar voor een
+  toekomstige donker-thema-toggle, verder dode configuratie.
+
+### Markdown-weergave (`components/study/citation-tag.tsx`)
+`CitedText` rendert AI-gegenereerde tekst (hoofdstuksamenvattingen, chat) nu
+via `react-markdown` + `remark-gfm`, niet als platte string meer. De
+`[Bron X]`-citatiemarkers worden vóór het renderen omgezet in een markdown-
+link met een eigen `geslaagd-citation:N`-schema; een custom `a`-component in
+de `components`-prop van `ReactMarkdown` herkent dat schema en rendert de
+bekende citatie-knop in plaats van een echte link (een marker zonder
+bijpassende bron in `citations` valt terug op platte tekst — ongewijzigd
+gedrag). Een `table`-override wrapt elke tabel in een eigen
+`overflow-x: auto`-container zodat een brede tabel niet de hele leeskolom
+opdrukt. Bijbehorende typografie staat onder `.cited-text` in `index.css`.
+
 ### De sidebar-primitive (`@workspace/geslaagd-momentum/components/ui/sidebar`)
 - 23 exports, provider verplicht (`useSidebar` gooit een fout buiten
   `SidebarProvider`). Volledig bruikbaar in Vite/React 19 ondanks de
@@ -384,6 +461,12 @@ opzetten door de netwerkproxy (herhaaldelijk vastgesteld, ook met
    uit op 280px breed (met name de kernpunten-tabel bij lange labels/waarden),
    en knippert de rail niet bij het wisselen tussen lezen/oefenen/tentamen
    binnen hetzelfde hoofdstuk?
+7. **Eerste feedbackronde verifiëren (nog niet gezien):** geen rasterpatroon
+   meer zichtbaar; licht + paars/wit overal (ook marketing/homepage — niet
+   alleen studie/beheer); een hoofdstuksamenvatting met opmaak (koppen, vet,
+   tabellen) toont nu echt geformatteerde tekst in plaats van rauwe
+   `##`/`**`/`|`-tekens; de hoofdstukrijen op de vak-hub hebben een ronde
+   icoon-badge en een grotere/andere titelstijl.
 
 ---
 
