@@ -18,5 +18,5 @@ export interface PipelineTask {
   /** @nullable */
   lastError?: string | null;
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt: Date;
 }

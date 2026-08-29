@@ -2138,7 +2138,7 @@ components:
         chapterId: { type: string, format: uuid }
     PipelineTask:
       type: object
-      required: [id, subjectId, taskType, status, attempts, createdAt]
+      required: [id, subjectId, taskType, status, attempts, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         subjectId: { type: string, format: uuid }

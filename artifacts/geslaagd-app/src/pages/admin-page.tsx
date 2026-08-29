@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { listAdminSessions, revokeAdminSession, sendAdminBroadcast } from '@workspace/api-client-react';
-import { Activity, ArrowLeft, BellRing, ChevronDown, Compass, LogOut, RefreshCw, Send, ShieldAlert, Users } from 'lucide-react';
+import { Activity, ArrowLeft, BellRing, ChevronDown, Compass, LogOut, RefreshCw, Send, ShieldAlert, Users, Workflow } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -25,6 +25,8 @@ const knownPages: Record<string, string> = {
   '/beheer': 'Beheer',
   '/beheer/crawl': 'Bronnen crawl',
   '/beheer/crawl/pending': 'Bronnen wachtrij',
+  '/beheer/pipeline': 'Contentpijplijn',
+  '/vakken': 'Vakkencatalogus',
   '/auth': 'Inloggen',
 };
 function pageLabel(path: string | null) {
@@ -109,7 +111,10 @@ export default function AdminPage() {
     <section className="admin-wrap">
       <div className="admin-intro"><p className="dashboard-kicker"><ShieldAlert size={15}/> prive beheer</p><h1>Houd de leeromgeving in beweging.</h1><p>Bekijk actieve sessies, stuur een broadcast of zoek een account op.</p></div>
       <div className="admin-stats"><div><Activity size={17}/><strong>{active}</strong><span>nu actief</span></div><div><Users size={17}/><strong>{sessions.length}</strong><span>geregistreerd</span></div></div>
-      <Button variant="outline" className="admin-crawl-link" onClick={() => setLocation('/beheer/crawl')}><Compass size={15}/> Bronnen crawl beheren</Button>
+      <div className="admin-quick-links">
+        <Button variant="outline" className="admin-crawl-link" onClick={() => setLocation('/beheer/crawl')}><Compass size={15}/> Bronnen crawl beheren</Button>
+        <Button variant="outline" className="admin-crawl-link" onClick={() => setLocation('/beheer/pipeline')}><Workflow size={15}/> Contentpijplijn</Button>
+      </div>
       <Tabs defaultValue="monitoring" className="admin-tabs">
         <TabsList className="admin-tabs-list">
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>

@@ -1143,7 +1143,7 @@ export interface PipelineTask {
   /** @nullable */
   lastError?: string | null;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export type AdminSubjectContentPreviewChaptersItemContentItemStatus = typeof AdminSubjectContentPreviewChaptersItemContentItemStatus[keyof typeof AdminSubjectContentPreviewChaptersItemContentItemStatus];

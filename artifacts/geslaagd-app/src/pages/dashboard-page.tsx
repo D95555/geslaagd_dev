@@ -239,6 +239,14 @@ export default function DashboardPage() {
 
       {message && <p className="study-message" role="status">{message}</p>}
 
+      <button type="button" className="catalog-banner" onClick={() => setLocation('/vakken')} data-testid="link-subject-catalog">
+        <div>
+          <span>VAKKENCATALOGUS</span>
+          <strong>Volledige vakken met hoofdstukken, oefenvragen en tentamens.</strong>
+        </div>
+        <ArrowRight size={18} aria-hidden="true" />
+      </button>
+
       <section className="coach-panel">
         <div><span>STUDIECOACH</span><h2>Vertel het in je eigen woorden.</h2><p>Bijvoorbeeld: “ik moet erfelijkheid begrijpen voor mijn toets”.</p></div>
         <form onSubmit={askCoach}>

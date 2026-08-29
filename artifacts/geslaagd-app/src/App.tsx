@@ -16,6 +16,11 @@ import AdminPage from '@/pages/admin-page';
 import AdminCrawlPage from '@/pages/admin-crawl-page';
 import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
 import AdminCrawlPendingPage from '@/pages/admin-crawl-pending-page';
+import AdminPipelinePage from '@/pages/admin-pipeline-page';
+import SubjectCatalogPage from '@/pages/subject-catalog-page';
+import SubjectStudyPage from '@/pages/subject-study-page';
+import ChapterPage from '@/pages/chapter-page';
+import StudyPlanPage from '@/pages/study-plan-page';
 import NotFound from '@/pages/not-found';
 import {
   ArrowUpRight,
@@ -259,6 +264,15 @@ function Router() {
         <Route path="/mijn-leeromgeving/vak/:selectionId/nieuw-onderwerp">{(params) => <TopicConfigPage selectionId={params.selectionId} />}</Route>
         <Route path="/mijn-leeromgeving/vak/:selectionId">{(params) => <SubjectDetailPage selectionId={params.selectionId} />}</Route>
         <Route path="/mijn-leeromgeving/:spaceId">{(params) => <StudyDetailPage spaceId={params.spaceId} />}</Route>
+        <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
+        <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
+          {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}
+        </Route>
+        <Route path="/vakken/:subjectId/studieplan">
+          {(params) => <StudyPlanPage subjectId={params.subjectId} />}
+        </Route>
+        <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
+        <Route path="/beheer/pipeline" component={AdminPipelinePage} />
         <Route path="/beheer" component={AdminPage} />
         <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
         <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>

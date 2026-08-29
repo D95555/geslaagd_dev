@@ -1589,7 +1589,7 @@ export const ListPipelineTasksResponseItem = zod.object({
   "attempts": zod.number().int(),
   "lastError": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date()
 })
 export const ListPipelineTasksResponse = zod.array(ListPipelineTasksResponseItem)
 
@@ -1614,7 +1614,7 @@ export const RetryPipelineTaskResponse = zod.object({
   "attempts": zod.number().int(),
   "lastError": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date()
 })
 
 
@@ -1634,7 +1634,7 @@ export const CancelPipelineTaskResponse = zod.object({
   "attempts": zod.number().int(),
   "lastError": zod.string().nullish(),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date().optional()
+  "updatedAt": zod.coerce.date()
 })
 
 
