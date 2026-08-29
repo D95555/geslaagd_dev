@@ -97,9 +97,9 @@ export const tokens = {
     },
     "heading1": {
       "font": "serif",
-      "size": "2rem",
-      "lineHeight": "1.15",
-      "weight": "700",
+      "size": "1.75rem",
+      "lineHeight": "1.2",
+      "weight": "600",
       "tracking": "-0.02em"
     },
     "heading2": {
@@ -150,29 +150,33 @@ export const tokens = {
   "density": {
     "comfortable": {
       "gutter": "1.5rem",
-      "sectionGap": "2rem",
-      "blockGap": "1rem",
-      "rowPaddingY": "0.875rem",
-      "rowPaddingX": "1.125rem",
-      "controlHeight": "2.5rem"
+      "sectionGap": "1.75rem",
+      "blockGap": "0.75rem",
+      "rowPaddingY": "0.625rem",
+      "rowPaddingX": "0.875rem",
+      "cardPaddingY": "0.875rem",
+      "cardPaddingX": "1.125rem",
+      "controlHeight": "2.25rem"
     },
     "compact": {
-      "gutter": "1rem",
-      "sectionGap": "1.25rem",
-      "blockGap": "0.625rem",
-      "rowPaddingY": "0.5rem",
-      "rowPaddingX": "0.75rem",
-      "controlHeight": "2.125rem"
+      "gutter": "0.75rem",
+      "sectionGap": "1rem",
+      "blockGap": "0.5rem",
+      "rowPaddingY": "0.375rem",
+      "rowPaddingX": "0.625rem",
+      "cardPaddingY": "0.625rem",
+      "cardPaddingX": "0.875rem",
+      "controlHeight": "1.75rem"
     }
   },
   "elevation": {
     "light": {
-      "soft": "0 10px 30px rgba(3, 18, 13, 0.10)",
-      "lift": "0 22px 54px rgba(3, 18, 13, 0.18)"
+      "soft": "0 4px 12px rgba(3, 18, 13, 0.08)",
+      "lift": "0 16px 48px rgba(3, 18, 13, 0.16)"
     },
     "dark": {
-      "soft": "inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45)",
-      "lift": "inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 24px 60px rgba(0, 0, 0, 0.6)"
+      "soft": "0 4px 12px rgba(0, 0, 0, 0.4)",
+      "lift": "inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 24px 60px rgba(0, 0, 0, 0.62)"
     }
   },
   "motion": {

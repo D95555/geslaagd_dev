@@ -32,6 +32,17 @@
   50% { opacity: 1; transform: scale(1); }
 }
 
+/* A quiet 24px grid under the workspace surfaces -- the one piece of the
+   Firecrawl reference that's purely decorative, so it stays faint and never
+   competes with content. Two line layers at right angles, in the border
+   color, at an opacity low enough to read as texture rather than a table. */
+.grid-ground {
+  background-image:
+    linear-gradient(hsl(var(--border) / .5) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / .5) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 .site-shell {
   min-height: 100dvh;
   overflow: hidden;
@@ -309,7 +320,7 @@
   border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) + 4px);
   background: hsl(var(--card));
-  box-shadow: var(--momentum-shadow-soft);
+ 
 }
 .auth-kicker { display: inline-flex; align-items: center; gap: 8px; color: hsl(var(--accent)); font: 500 .67rem var(--app-font-mono); letter-spacing: .1em; text-transform: uppercase; }
 .auth-card h1, .not-found-card h1, .error-card h1 { margin: 17px 0 12px; color: hsl(var(--foreground)); font: 600 clamp(2rem, 5vw, 3rem)/1.06 var(--app-font-serif); letter-spacing: -.07em; }
@@ -442,7 +453,7 @@
 .book-meta h3 { margin: 12px 0 8px; font: 600 1.3rem var(--app-font-serif); letter-spacing: -.05em; }
 .book-meta p { margin: 0; color: hsl(var(--muted-foreground)); font-size: .78rem; line-height: 1.6; }
 .chapter-list { display: grid; gap: 8px; padding: 18px; background: hsl(var(--background)); }
-.study-empty, .admin-empty { display: flex; align-items: center; gap: 8px; padding: calc(var(--density-row-padding-y) * 2) calc(var(--density-row-padding-x) * 1.5); border: 1px dashed hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
+.study-empty, .admin-empty { display: flex; align-items: center; gap: 8px; padding: var(--density-card-padding-y) var(--density-card-padding-x); border: 1px dashed hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
 .study-empty-card { width: min(100% - 40px, 520px); padding: 30px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
 .study-empty-card h1 { margin: 12px 0 8px; font: 600 1.7rem var(--app-font-serif); }
 .study-empty-card p:not(.eyebrow) { color: hsl(var(--muted-foreground)); line-height: 1.6; }
@@ -453,7 +464,7 @@
 .dashboard-back:hover, .admin-back:hover, .back-link:hover { color: hsl(var(--foreground)); }
 
 /* Proposal and onboarding are application compositions over Momentum. */
-.proposal-card { margin-top: 20px; padding: clamp(21px, 4vw, 32px); border: 1px solid hsl(var(--accent) / .5); border-radius: calc(var(--radius) + 3px); background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft); }
+.proposal-card { margin-top: 20px; padding: clamp(21px, 4vw, 32px); border: 1px solid hsl(var(--accent) / .5); border-radius: calc(var(--radius) + 3px); background: hsl(var(--card)); }
 .proposal-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
 .proposal-heading h2 { margin: 8px 0 0; font: 600 clamp(1.45rem, 4vw, 2.25rem) var(--app-font-serif); letter-spacing: -.06em; }
 .confidence { min-width: 125px; text-align: right; }
@@ -546,7 +557,7 @@
 .admin-status-filter { width: 170px; flex: 0 0 auto; background: hsl(var(--card)); }
 .admin-account-count { margin: 0; color: hsl(var(--muted-foreground)); font: .68rem var(--app-font-mono); text-transform: uppercase; letter-spacing: .06em; }
 /* The shared admin row list: crawls, requests, accounts, sources. */
-.account-list { display: grid; overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft); }
+.account-list { display: grid; overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
 .account-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; padding: var(--density-row-padding-y) var(--density-row-padding-x); border: 0; border-top: 1px solid hsl(var(--border)); color: inherit; background: transparent; text-align: left; transition: background-color var(--momentum-motion-fast) var(--momentum-ease-standard); }
 .account-row:first-child { border-top: 0; }
 button.account-row { cursor: pointer; }
@@ -784,7 +795,7 @@ button.account-row:hover, .account-row:has(.request-row-summary:hover) { backgro
   border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) + 3px);
   background: hsl(var(--card));
-  box-shadow: var(--momentum-shadow-soft);
+ 
   animation: rise-in var(--momentum-motion-fast) var(--momentum-ease-standard) both;
 }
 .welcome-card h2 { max-width: 480px; margin: 10px 0 6px; font: 600 clamp(1.4rem, 3.4vw, 1.9rem) var(--app-font-serif); letter-spacing: -.05em; }
@@ -936,7 +947,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 /* Catalog banner on the dashboard */
 .catalog-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%;
-  padding: calc(var(--density-row-padding-y) * 1.4) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px dashed hsl(var(--border)); border-radius: var(--radius);
   background: transparent; color: inherit; text-align: left; cursor: pointer;
   transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard),
@@ -952,9 +963,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .subject-tile {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
   gap: 6px 14px; width: 100%;
-  padding: calc(var(--density-row-padding-y) * 1.4) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
   color: inherit; text-align: left; cursor: pointer;
   transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
@@ -971,9 +982,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .subject-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(260px, 28vw, 320px), 1fr)); gap: var(--density-block-gap); margin: 0; padding: 0; list-style: none; }
 .subject-card {
   display: flex; flex-direction: column; gap: 10px;
-  padding: calc(var(--density-row-padding-y) * 1.6) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
   transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
 .subject-card:hover { border-color: hsl(var(--primary)); }
@@ -992,11 +1003,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
    deliberately not one: it also appears inside cards, where nesting a second
    card surface inside the first reads as a mistake. */
 .study-card, .weakness-card, .review-plan, .exam-countdown {
-  padding: calc(var(--density-row-padding-y) * 1.4) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background: hsl(var(--card));
-  box-shadow: var(--momentum-shadow-soft);
+ 
 }
 .study-card { display: flex; flex-direction: column; justify-content: center; }
 
@@ -1058,9 +1069,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
    because a summary running the full width of a desktop is hard to track. */
 .chapter-summary {
   max-width: 72ch;
-  padding: calc(var(--density-row-padding-y) * 2) calc(var(--density-row-padding-x) * 1.6);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
   font-family: var(--text-body-long-font);
   font-size: var(--text-body-long-size);
   line-height: var(--text-body-long-line-height);
@@ -1072,9 +1083,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .chapter-practice { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 24vw, 260px), 1fr)); gap: var(--density-block-gap); }
 .practice-card {
   display: flex; flex-direction: column; gap: 6px;
-  padding: calc(var(--density-row-padding-y) * 1.4) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
   color: inherit; text-align: left; cursor: pointer;
   transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
@@ -1083,11 +1094,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .practice-card span { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 
 /* Key notes */
-.key-notes { max-width: 72ch; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft); }
-.key-notes-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: var(--density-row-padding-y) calc(var(--density-row-padding-x) * 1.2); border: 0; background: none; color: inherit; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); cursor: pointer; }
+.key-notes { max-width: 72ch; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.key-notes-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: var(--density-row-padding-y) var(--density-card-padding-x); border: 0; background: none; color: inherit; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); cursor: pointer; }
 .key-notes-trigger svg { transition: transform var(--momentum-motion-fast) var(--momentum-ease-standard); }
 .key-notes-trigger[data-state='open'] svg { transform: rotate(180deg); }
-.key-notes section { padding: 0 calc(var(--density-row-padding-x) * 1.2) var(--density-row-padding-y); }
+.key-notes section { padding: 0 var(--density-card-padding-x) var(--density-row-padding-y); }
 .key-notes h3 { margin: 0 0 8px; font-family: var(--text-label-font); font-size: var(--text-label-size); font-weight: var(--text-label-weight); letter-spacing: var(--text-label-tracking); color: hsl(var(--muted-foreground)); text-transform: uppercase; }
 .key-notes dl { display: flex; flex-direction: column; gap: 2px; margin: 0; }
 .key-notes dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-top: 1px solid hsl(var(--border)); font-size: var(--text-body-size); }
@@ -1103,9 +1114,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .exercise-nav { display: flex; align-items: center; gap: 12px; }
 .question-card {
   display: flex; flex-direction: column; gap: 14px;
-  padding: calc(var(--density-row-padding-y) * 1.6) calc(var(--density-row-padding-x) * 1.3);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
 }
 .question-card header { display: flex; justify-content: space-between; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); text-transform: uppercase; }
 /* Question prompts are read closely, so they get the reading step. */
@@ -1126,9 +1137,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .grade-result { display: flex; flex-direction: column; gap: var(--density-block-gap); max-width: 72ch; }
 .grade-header {
   display: flex; align-items: center; gap: 18px;
-  padding: calc(var(--density-row-padding-y) * 1.6) calc(var(--density-row-padding-x) * 1.3);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
 }
 .grade-header.passed { border-color: hsl(var(--primary)); }
 .grade-header.failed { border-color: hsl(var(--destructive)); }
@@ -1138,7 +1149,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .grade-header.failed .grade-number { color: hsl(var(--destructive)); }
 .grade-feedback { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .grade-feedback li {
-  padding: calc(var(--density-row-padding-y) * 1.3) calc(var(--density-row-padding-x) * 1.2);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-left-width: 3px; border-radius: var(--radius);
   background: hsl(var(--card));
 }
@@ -1249,9 +1260,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .attention-card {
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
   width: 100%; min-height: 128px;
-  padding: calc(var(--density-row-padding-y) * 1.6) calc(var(--density-row-padding-x) * 1.3);
+  padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft);
+  background: hsl(var(--card));
   color: inherit; text-align: left; cursor: pointer;
   transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
@@ -1339,7 +1350,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 /* ── Console: a real terminal window around the log feed ────────────────── */
 /* Themed from tokens rather than fixed greys: on the dark learning surface a
  * hardcoded near-black panel reads as a hole rather than a terminal. */
-.console-terminal { margin-top: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid hsl(var(--border)); box-shadow: var(--momentum-shadow-soft); }
+.console-terminal { margin-top: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid hsl(var(--border)); }
 .console-terminal-chrome { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: hsl(var(--muted)); border-bottom: 1px solid hsl(var(--border)); }
 .console-terminal-dot { width: 9px; height: 9px; border-radius: 999px; }
 .dot-red { background: hsl(var(--destructive)); }

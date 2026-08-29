@@ -26,7 +26,7 @@ export function StudyPageShell({
   };
 
   return (
-    <main className="study-page">
+    <main className="study-page grid-ground">
       <header className="dashboard-header">
         <button
           className="auth-brand"

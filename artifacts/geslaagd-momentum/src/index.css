@@ -152,8 +152,8 @@
   --app-font-mono: DM Mono, monospace;
   --radius: 0.75rem;
   --spacing: 0.25rem;
-  --momentum-shadow-soft: 0 10px 30px rgba(3, 18, 13, 0.10);
-  --momentum-shadow-lift: 0 22px 54px rgba(3, 18, 13, 0.18);
+  --momentum-shadow-soft: 0 4px 12px rgba(3, 18, 13, 0.08);
+  --momentum-shadow-lift: 0 16px 48px rgba(3, 18, 13, 0.16);
 
   /* Semantic type ramp. Prefer the .type-* classes over raw sizes so hierarchy
    * stays consistent; these vars exist for cases that need the parts. */
@@ -164,9 +164,9 @@
   --text-display-tracking: -0.03em;
 
   --text-heading1-font: var(--app-font-serif);
-  --text-heading1-size: 2rem;
-  --text-heading1-line-height: 1.15;
-  --text-heading1-weight: 700;
+  --text-heading1-size: 1.75rem;
+  --text-heading1-line-height: 1.2;
+  --text-heading1-weight: 600;
   --text-heading1-tracking: -0.02em;
 
   --text-heading2-font: var(--app-font-serif);
@@ -207,11 +207,13 @@
 
   /* Comfortable density is the default; .density-compact overrides it. */
   --density-gutter: 1.5rem;
-  --density-section-gap: 2rem;
-  --density-block-gap: 1rem;
-  --density-row-padding-y: 0.875rem;
-  --density-row-padding-x: 1.125rem;
-  --density-control-height: 2.5rem;
+  --density-section-gap: 1.75rem;
+  --density-block-gap: 0.75rem;
+  --density-row-padding-y: 0.625rem;
+  --density-row-padding-x: 0.875rem;
+  --density-card-padding-y: 0.875rem;
+  --density-card-padding-x: 1.125rem;
+  --density-control-height: 2.25rem;
   --momentum-motion-fast: 160ms;
   --momentum-motion-base: 240ms;
   --momentum-motion-slow: 400ms;
@@ -270,8 +272,8 @@
 
   /* A drop shadow is invisible on deep ink, so dark raises surfaces with a lit
    * top edge plus a deeper ambient shadow instead. */
-  --momentum-shadow-soft: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.45);
-  --momentum-shadow-lift: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 24px 60px rgba(0, 0, 0, 0.6);
+  --momentum-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --momentum-shadow-lift: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 24px 60px rgba(0, 0, 0, 0.62);
 
   --background: 160 48.4% 6.1%;
   --foreground: 44 48.4% 93.9%;
@@ -327,12 +329,14 @@
 
 /* Admin and other dense surfaces opt in by adding this class to a container. */
 .density-compact {
-  --density-gutter: 1rem;
-  --density-section-gap: 1.25rem;
-  --density-block-gap: 0.625rem;
-  --density-row-padding-y: 0.5rem;
-  --density-row-padding-x: 0.75rem;
-  --density-control-height: 2.125rem;
+  --density-gutter: 0.75rem;
+  --density-section-gap: 1rem;
+  --density-block-gap: 0.5rem;
+  --density-row-padding-y: 0.375rem;
+  --density-row-padding-x: 0.625rem;
+  --density-card-padding-y: 0.625rem;
+  --density-card-padding-x: 0.875rem;
+  --density-control-height: 1.75rem;
 }
 
 @layer components {

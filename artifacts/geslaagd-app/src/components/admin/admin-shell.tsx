@@ -66,7 +66,7 @@ export function AdminShell({
   };
 
   return (
-    <main className="admin-page">
+    <main className="admin-page grid-ground">
       <header className="admin-header">
         <button className="auth-brand" onClick={() => setLocation('/')} aria-label="Naar geslaagd.app">
           <span className="wordmark-mark" />
