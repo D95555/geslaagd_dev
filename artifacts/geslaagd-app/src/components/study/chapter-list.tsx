@@ -28,30 +28,29 @@ export function ChapterList({
               disabled={!ready}
               data-testid={`chapter-${chapter.position}`}
             >
-              <span className="chapter-icon" aria-hidden="true">
-                {!ready ? (
-                  <Lock size={16} />
-                ) : done ? (
-                  <CircleCheck size={16} />
-                ) : (
-                  <CircleDashed size={16} />
-                )}
+              <span className="chapter-index" aria-hidden="true">
+                {String(chapter.position).padStart(2, '0')}
               </span>
-              <span className="chapter-body">
-                <span className="chapter-title">
-                  {chapter.position}. {chapter.title}
+              <span className="chapter-main">
+                <span className="chapter-title-row">
+                  <span className="chapter-title">{chapter.title}</span>
+                  {chapter.isImportant && <Badge variant="secondary">Tentamen</Badge>}
                 </span>
                 {chapter.description && (
                   <span className="chapter-description">{chapter.description}</span>
                 )}
               </span>
-              <span className="chapter-meta">
-                {chapter.isImportant && <Badge variant="secondary">Tentamen</Badge>}
-                {ready ? (
-                  <span className="chapter-percentage">{percentage}%</span>
+              <span className="chapter-status">
+                {!ready ? (
+                  <Lock size={14} aria-hidden="true" />
+                ) : done ? (
+                  <CircleCheck size={14} aria-hidden="true" />
                 ) : (
-                  <span className="chapter-percentage">In voorbereiding</span>
+                  <CircleDashed size={14} aria-hidden="true" />
                 )}
+                <span className="chapter-percentage">
+                  {ready ? `${percentage}%` : 'In voorbereiding'}
+                </span>
               </span>
             </button>
           </li>

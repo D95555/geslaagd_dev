@@ -160,6 +160,63 @@ dezelfde classNamen) via Playwright renderen en screenshotten, in plaats van
 puur op basis van een screenshot-beschrijving te redeneren over CSS-gedrag —
 dat is deze keer wat de fix van de vorige ronde miste.
 
+### Derde feedbackronde: hoofdstukkenlijst helemaal opnieuw ontworpen
+
+De gebruiker stuurde een **mobiele** screenshot met een duidelijke paarse
+"bubbel" achter elke hoofdstuktitel, en vroeg expliciet om **geen
+bugfix maar een echt nieuw ontwerp** van de hoofdstukkenlijst — niet het
+oude patroon (los omrand kaartje per hoofdstuk) met een paar aanpassingen.
+
+**Het nieuwe ontwerp** (`components/study/chapter-list.tsx` +
+`.chapter-list`/`.chapter-row`/... in `index.css`): één samenhangende lijst
+met haarlijnen tussen rijen in plaats van N los omrande kaartjes — dit is
+feitelijk ook een correctie richting de al eerder afgesproken Linear/
+Firecrawl-taal ("haarlijnen, geen dozen"), die de vorige twee ronden nooit
+consequent is doorgevoerd voor dit onderdeel. Elke rij: een tweecijferig
+volgnummer in mono-lettertype (i.p.v. een icoon-in-cirkel), titel +
+eventuele "Tentamen"-badge op één regel die kan wrappen, een op-één-regel-
+geknipte beschrijving (`-webkit-line-clamp`, niet `nowrap`+ellipsis — werkt
+betrouwbaar ongeacht de uiteindelijke kolombreedte), en status-icoon +
+percentage rechts. Mobile-first opgebouwd met CSS Grid
+(`grid-template-columns: auto 1fr auto`) en een `@media (max-width: 30rem)`
+die de status-kolom naar een eigen rij onder de titel verplaatst in plaats
+van 'm in een derde, te smalle kolom te proppen — er was voorheen **geen
+enkele** mobiele aanpassing voor dit component.
+
+**De paarse bubbel-bug, gevonden en opgelost.** Empirisch gereproduceerd
+(zelfde Playwright-methode als de vorige ronde) en teruggeleid naar een
+**losstaande, uit een oudere/verwijderde catalogus-zoekresultaten-opzet
+overgebleven regel** in `index.css`:
+`.catalog-search-results button > span, .chapter-list button > span { ... border-radius: 999px; background: hsl(var(--muted)); ... }`.
+Deze generieke regel raakte élke kale `<span>` die rechtstreeks in een
+`<button>` binnen `.chapter-list` zit — met de oude markup toevallig
+onschadelijk (de specifieke classNamen wonnen toen het conflict), maar met
+de nieuwe markup (drie directe span-kinderen: index/main/status) kreeg ook
+de span met titel+beschrijving een paars pil-uiterlijk. **Tweede vondst bij
+het uitpluizen ervan:** een volledig aparte, losstaande `.chapter-list {
+display: grid; padding: 18px; background: ... }`-regel verderop in
+hetzelfde dode blok, die stilzwijgend `display` en padding overschreef.
+`.catalog-search-results` en `.recent-list` zelf blijken **nergens meer in
+een `.tsx`-bestand voor te komen** — volledig dode CSS, niet door deze
+sessie veroorzaakt. Alleen `.chapter-list` is uit die selectors verwijderd
+(het heeft nu zijn eigen complete regelset); de rest van dat dode blok is
+laten staan (niet mijn wijziging die het onbruikt maakte, dus niet
+eigenhandig verwijderd — zie CLAUDE.md-afspraak "vraag het eerst").
+Ook `.chapter-meta` in een gedeelde `@media`-blok (regel ~1249, een
+override voor een classname die niet meer bestaat sinds de vorige ronde)
+was hierdoor zichtbaar geworden en is verwijderd.
+
+Geverifieerd met `pnpm typecheck` (contrastpoort inbegrepen),
+`PORT=5173 BASE_PATH=/ pnpm build`, én — ditmaal vooraf, niet achteraf —
+Playwright-screenshots op **zowel 900px (desktop) als 390px (mobiel,
+iPhone-breedte)**, beide zonder de bubbel-bug en met een correct
+reflowende status-rij op mobiel.
+
+**Nog te overwegen, niet gedaan:** dezelfde "los dood CSS-blok"-controle
+voor andere componenten is niet systematisch uitgevoerd — als iets ergens
+anders onverklaarbaar oogt, is een losstaande verdwaalde regel (zoals hier
+tweemaal het geval was) een reële eerste verdachte.
+
 ---
 
 ## Het volledige goedgekeurde plan (verbatim)
@@ -549,16 +606,22 @@ wel zou kloppen.
    tabellen) toont nu echt geformatteerde tekst in plaats van rauwe
    `##`/`**`/`|`-tekens; de hoofdstukrijen op de vak-hub hebben een ronde
    icoon-badge en een grotere/andere titelstijl.
-8. **Tweede feedbackronde verifiëren (nog niet gezien):** in de rail van een
-   vak met een herhaalplan — is elke taak nu titel/tags bovenaan met de
-   actie-knoppen op hun eigen regel eronder (niet meer een rij die uit elkaar
-   valt)? Een hoofdstuksamenvatting met een genummerde of opsommingslijst
-   toont nu echt nummers/bullets. De kernpunten-tabel in de rail toont label
-   boven, waarde eronder (niet meer naast elkaar). De ronde icoon-badges bij
-   hoofdstukken ogen gecentreerd. Kleine meta-tekst (percentages, badges) is
-   iets donkerder dan de vorige ronde. De "Tentamen"-badge in de compacte
+8. **Tweede feedbackronde verifiëren:** in de rail van een vak met een
+   herhaalplan — is elke taak nu titel/tags bovenaan met de actie-knoppen op
+   hun eigen regel eronder (niet meer een rij die uit elkaar valt)? Een
+   hoofdstuksamenvatting met een genummerde of opsommingslijst toont nu echt
+   nummers/bullets. De kernpunten-tabel in de rail toont label boven, waarde
+   eronder (niet meer naast elkaar). Kleine meta-tekst (percentages, badges)
+   is iets donkerder dan de vorige ronde. De "Tentamen"-badge in de compacte
    zijbalk is weg (staat nog wel, correct, in de hoofdstukkenlijst in het
    middenpaneel).
+9. **Derde feedbackronde verifiëren (nog niet gezien), en specifiek op een
+   telefoon of een smal browservenster (<480px):** de hoofdstukkenlijst is nu
+   één doorlopende lijst met dunne scheidingslijnen tussen rijen, geen losse
+   omrande kaartjes meer; elke rij heeft een tweecijferig volgnummer (01, 02,
+   …) in plaats van een rond icoon; geen paarse "bubbel" meer achter een
+   titel; op een smal scherm staat het status-icoon + percentage op een
+   eigen regel onder de titel in plaats van ernaast geperst.
 
 ---
 
