@@ -16,11 +16,10 @@ Before implementing:
 
 ## 2. Simplicity First
 
-**Minimum code that solves the problem. Nothing speculative.**
+**Minimum code that solves the problem. **
 
-- No features beyond what was asked.
 - No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
+- No "flexibility" or "configurability", unless you think it is appropriate, but ask first.
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
 
@@ -31,16 +30,16 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
+
 - Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+- Match existing style, even if you'd do it differently. You can suggest reformatting it a better way if you find it necessary, but always ask.
+- If you notice unrelated dead code, mention it - ask to delete it if needed.
 
 When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+- Don't remove pre-existing dead code unless necessary.
 
-The test: Every changed line should trace directly to the user's request.
+The ideal: Every changed line should trace directly to the user's request.
 
 ## 4. Goal-Driven Execution
 
