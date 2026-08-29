@@ -217,6 +217,95 @@ voor andere componenten is niet systematisch uitgevoerd — als iets ergens
 anders onverklaarbaar oogt, is een losstaande verdwaalde regel (zoals hier
 tweemaal het geval was) een reële eerste verdachte.
 
+### Richting: laptop-first, geen mobile-first ontwerp
+
+De gebruiker heeft expliciet gecorrigeerd: **geslaagd.app is gericht op
+laptop-gebruikers, niet op mobiel.** Dit overschrijft geen eerdere
+afspraak (mobiel werd nooit expliciet gekozen), maar is voortaan leidend:
+
+- Ontwerp en visuele verificatie richten zich primair op laptop/desktop-
+  breedtes. Niet meer standaard op telefoonbreedte (bijv. 390px)
+  screenshotten of daarvoor optimaliseren, tenzij expliciet gevraagd.
+- Smalle-scherm `@media`-regels die puur als vangnet dienen voor een
+  **niet-gemaximaliseerd laptop-browservenster** (bijv. de
+  `@media (max-width: 30rem)` in `.chapter-row`, of
+  `@media (max-width: 900px)` op de nieuwe homepage) mogen blijven staan —
+  dat is geen "mobiel ontwerp", maar dekt een laptop-randgeval dat al
+  eerder een echte bug veroorzaakte (zie "Hoe visueel te verifiëren",
+  punt 4: een eerdere ronde had een afgesneden zijbalk op een
+  niet-gemaximaliseerd venster). Geen extra moeite hoeft gestoken te worden
+  in verdere mobiele polish daarbovenop.
+
+### Vierde feedbackronde: herhaalplan-tags + homepage helemaal opnieuw
+
+Twee afzonderlijke verzoeken in één bericht: een kleine restformatterings-
+fix, en een volledige herontwerp van de homepage met vier naamgenoemde
+referentiesites (Attio, Firecrawl, Zapier, Linear.ai) als inspiratie.
+
+**Herhaalplan-tags (`components/study/review-plan.tsx`).** De
+onderwerp-tags per taak waren één samengevoegde string
+(`topicTags.join(' · ')`) in een blok-`<span>`. In de smalle rail-context
+wrapte die string midden in een woord af (bijv. "geneesmiddelenclassific"
+afgekapt), onleesbaar. Vervangen door losse chips in een
+`flex-wrap`-rij (`.review-plan-tags`) — elke tag wrapt nu als geheel naar
+de volgende regel in plaats van een lange string die overal kan afbreken.
+
+**Homepage (`pages/home-page.tsx`, nieuw bestand — verplaatst uit de
+`Home()`-functie in `App.tsx`, zoals het plan al voor fase F voorzag).**
+
+Belangrijke kanttekening vooraf: **de vier referentiesites konden niet
+live bekeken worden.** Zowel Chromium-navigatie (ook met een expliciete
+proxy-configuratie) als de WebFetch-tool gaven `EGRESS_BLOCKED` — dit is
+een organisatiebreed egress-beleid voor deze sandbox, geen tijdelijke
+proxy-storing zoals bij Supabase. Het ontwerp is dus gebaseerd op
+trainingskennis van deze (bekende, veelgebruikte) producten, niet op een
+actuele blik. Vraag de gebruiker om te vergelijken met de daadwerkelijke
+huidige sites als er twijfel is.
+
+Wat er is veranderd, samengevat:
+- Hero: groter, zelfverzekerder opschrift (Sora, tot ~4.75rem), een zachte
+  paarse radiale gloed + een fijn stippenraster op de achtergrond
+  (`.home-hero-grid`, met een ellips-`mask-image` zodat het naar de randen
+  wegvalt) — respectievelijk Attio- en Firecrawl-geïnspireerd.
+- De oude "prompt-card" (een input-veld-achtig widget) is vervangen door
+  een **echte productmoment**-preview: dezelfde `.citation-tag`-styling die
+  de studie-chat gebruikt, in een chatbubbel-mockup met een voorbeeldvraag
+  en -antwoord. Bewuste keuze om iets *echts* van het product te tonen
+  (Attio/Linear-patroon) in plaats van een generieke illustratie.
+- De ene "proof-row" is vervangen door drie korte waardekaarten
+  (`.home-value-grid`) met een icoon, titel en toelichting.
+- Het stappenproces (was: kleine cirkels + verbindingslijn) is nu een
+  **haarlijn-lijst met grote "spooknummers"** (`.home-process-num`, tot
+  ~3.4rem, uitgelijnd met `-webkit-text-stroke`) — bewust dezelfde
+  haarlijn-tussen-rijen-structuur als de herontworpen hoofdstukkenlijst uit
+  de derde ronde, zodat marketing en product visueel dezelfde taal spreken.
+- CTA-sectie: een vol paars gradiëntpaneel in plaats van een lichte kaart
+  met een decoratieve stippellijn-cirkel.
+- Ruimte tussen secties eerst te ruim (twee opeenvolgende sections met elk
+  ~100px padding gaven een kale strook van ~200px) — gecorrigeerd door
+  padding asymmetrisch te verdelen (`clamp(...) 0 clamp(kleiner)` /
+  `clamp(kleiner) 0 clamp(...)`), pas zichtbaar en gecorrigeerd ná een
+  Playwright-screenshot, niet er vooraf op geraden.
+- **Opgeruimd (mijn wijziging maakte dit ongebruikt):** de volledige oude
+  `.hero*`/`.prompt-card*`/`.proof-*`/`.process-*`/`.cta-box*`/`.section`/
+  `.section-header`/`.section-intro`/`.future-heading`-regels in
+  `index.css` — stuk voor stuk gecontroleerd op gebruik elders (`grep` over
+  alle `.tsx`-bestanden) vóór verwijdering. Uit de gedeelde mono-label-
+  selector (`.prompt-label, .prompt-status, .study-kicker, ..., .step-number,
+  ...`) zijn alleen `.prompt-label`, `.prompt-status` en `.step-number`
+  verwijderd — de rest van die regel wordt door andere componenten gebruikt
+  en is met rust gelaten.
+- `App.tsx`: `Home()` weggehaald, `HomePage` geïmporteerd voor de `/`-route.
+  Terzijde opgeruimd: `LogOut`- en `useState`-imports die al vóór deze
+  sessie ongebruikt waren in dat bestand (niet door deze wijziging
+  veroorzaakt, maar wel geraakt omdat dezelfde importregels toch al
+  herschreven moesten worden).
+
+Geverifieerd met `pnpm typecheck`, `PORT=5173 BASE_PATH=/ pnpm build`, en
+een Playwright-screenshot op **1440px (laptop-breedte, niet mobiel — zie
+hierboven)** vóór verzending, inclusief een tweede ronde na de
+spacing-correctie.
+
 ---
 
 ## Het volledige goedgekeurde plan (verbatim)
@@ -313,7 +402,7 @@ bron van waarheid.
 | **C** — Toetsenbordlaag | ✅ Af | `e54e765` |
 | **D** — Studentpagina's als inhoud (goedkeuringsmoment) | 🟡 Twee kernpagina's af, nog niet visueel goedgekeurd | `b41888f` |
 | **E** — Beheer in dezelfde schil | ⬜ Nog niet begonnen (schil werkt al voor `/beheer/*` via fase B, maar de 8 paginabestanden zijn niet individueel nagelopen) | — |
-| **F** — Publiek en opruimen | ⬜ Nog niet begonnen | — |
+| **F** — Publiek en opruimen | 🟡 Homepage opnieuw ontworpen, nog niet visueel goedgekeurd; auth-pagina en dode-code-opruiming nog niet gedaan | zie onderstaande commit |
 
 ### Wat fase B concreet heeft opgeleverd
 
@@ -615,13 +704,26 @@ wel zou kloppen.
    is iets donkerder dan de vorige ronde. De "Tentamen"-badge in de compacte
    zijbalk is weg (staat nog wel, correct, in de hoofdstukkenlijst in het
    middenpaneel).
-9. **Derde feedbackronde verifiëren (nog niet gezien), en specifiek op een
-   telefoon of een smal browservenster (<480px):** de hoofdstukkenlijst is nu
-   één doorlopende lijst met dunne scheidingslijnen tussen rijen, geen losse
+9. **Derde feedbackronde verifiëren:** de hoofdstukkenlijst is nu één
+   doorlopende lijst met dunne scheidingslijnen tussen rijen, geen losse
    omrande kaartjes meer; elke rij heeft een tweecijferig volgnummer (01, 02,
    …) in plaats van een rond icoon; geen paarse "bubbel" meer achter een
-   titel; op een smal scherm staat het status-icoon + percentage op een
-   eigen regel onder de titel in plaats van ernaast geperst.
+   titel. (Getest op laptop-breedte; het smalle-scherm-gedrag is een vangnet
+   voor een niet-gemaximaliseerd venster, geen doel op zich — zie "Richting:
+   laptop-first" hierboven.)
+10. **Vierde feedbackronde verifiëren (nog niet gezien):** in het herhaalplan
+    in de rail tonen de onderwerp-tags nu losse afgeronde chips die elk
+    afzonderlijk wrappen, in plaats van één samengevoegde tekst die
+    mid-woord kon afbreken. De homepage (`/`) heeft een volledig nieuwe hero
+    (groot opschrift, zachte paarse gloed + stippenraster op de achtergrond,
+    een chatbubbel-productpreview met een echte citatie-tag in plaats van
+    een generiek invoerveld-widget), drie waardekaarten, een genummerde
+    haarlijn-lijst voor de drie stappen (dezelfde stijl als de
+    hoofdstukkenlijst), en een vol paars gradiëntpaneel als afsluitende CTA.
+    Vergelijk gerust met de vier genoemde referentiesites (Attio, Firecrawl,
+    Zapier, Linear.ai) zelf — dit ontwerp is gemaakt zonder ze live te
+    kunnen bekijken (egress-blokkade in de sandbox), dus op basis van
+    trainingskennis in plaats van een actuele blik.
 
 ---
 
@@ -640,9 +742,9 @@ wel zou kloppen.
    is vooral controleren of niets er raar uitziet in de compacte
    dichtheidsschaal.
 
-3. **Fase F — Publiek en opruimen.** Homepage uit `App.tsx` naar een eigen
-   paginabestand, in de Firecrawl-behandeling (rasterlijnen, precisie). Auth-
-   pagina. Daarna dode code: dubbele `.spin`-definitie (`admin-spin` en
+3. **Fase F — Publiek en opruimen.** Homepage is al gedaan (zie de vierde
+   feedbackronde hierboven, ✅) — nog wel visueel goed te keuren. Auth-
+   pagina staat nog op de oude stijl. Daarna dode code: dubbele `.spin`-definitie (`admin-spin` en
    `study-spin` overschrijven elkaar — zoek naar beide), `framer-motion` uit
    `geslaagd-app` (0 imports, `motion`-package is de echte), de wees
    `components/ui/terminal.tsx` (298 regels, nergens geïmporteerd), en de

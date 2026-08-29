@@ -34,7 +34,13 @@ export function ReviewPlan({
           <li key={task.chapterId}>
             <div className="review-plan-body">
               <strong>{task.chapterTitle}</strong>
-              {task.topicTags.length > 0 && <span>{task.topicTags.slice(0, 3).join(' · ')}</span>}
+              {task.topicTags.length > 0 && (
+                <ul className="review-plan-tags">
+                  {task.topicTags.slice(0, 3).map((tag) => (
+                    <li key={tag}>{tag}</li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="review-plan-actions">
               <Badge variant={task.priority === 'high' ? 'destructive' : 'secondary'}>
