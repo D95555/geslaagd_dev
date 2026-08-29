@@ -54,3 +54,6 @@ Thumbs.db
 
 # Runtime output van de crawler, geen broncode
 artifacts/api-server/crawl-raw/
+
+# Claude Code git worktrees
+/.claude/worktrees/
