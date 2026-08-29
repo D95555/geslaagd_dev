@@ -353,7 +353,9 @@
 .dashboard-header, .admin-header { display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 max(24px, calc((100% - 1120px) / 2)); border-bottom: 1px solid hsl(var(--border)); }
 .dashboard-actions, .admin-header > div { display: flex; align-items: center; gap: 16px; color: hsl(var(--muted-foreground)); font-size: .75rem; }
 .dashboard-actions button, .admin-header button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 11px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--foreground)); background: transparent; font-size: .76rem; font-weight: 700; }
-.study-shell, .admin-wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; padding: 68px 0 92px; }
+/* Breadcrumbs now open a page, so the old hero's top padding would read as
+   dead space above them. */
+.study-shell, .admin-wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; padding: 40px 0 88px; }
 .study-hero { display: flex; align-items: end; justify-content: space-between; gap: 30px; padding-bottom: 44px; }
 .study-kicker { display: inline-flex; align-items: center; gap: 8px; color: hsl(var(--muted-foreground)); }
 .study-hero h1, .study-detail h1 { max-width: 740px; margin: 16px 0 12px; font: 600 clamp(2.5rem, 6vw, 4.8rem)/1.02 var(--app-font-serif); letter-spacing: -.08em; }
@@ -940,38 +942,61 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .subject-card-foot > span { color: hsl(var(--muted-foreground)); font-size: .8rem; }
 .subject-card-actions { display: flex; gap: 8px; }
 
+/* Subject hub: status strip, then chapters, then the plan that informs them. */
+.study-status, .study-secondary { display: grid; gap: var(--density-block-gap); grid-template-columns: repeat(auto-fit, minmax(clamp(240px, 28vw, 320px), 1fr)); align-items: stretch; }
+
+/* One surface treatment for every card on a study page. */
+.study-progress, .weakness-card, .review-plan, .exam-countdown {
+  padding: calc(var(--density-row-padding-y) * 1.4) calc(var(--density-row-padding-x) * 1.2);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  box-shadow: var(--momentum-shadow-soft);
+}
+
 /* Progress bar */
-.study-progress { display: flex; flex-direction: column; gap: 8px; }
-.study-progress-head { display: flex; justify-content: space-between; font-size: .85rem; color: hsl(var(--muted-foreground)); }
-.study-progress-head strong { color: hsl(var(--foreground)); }
-.study-progress-track { height: 10px; border-radius: 999px; background: hsl(var(--muted)); overflow: hidden; }
-.study-progress-fill { height: 100%; border-radius: 999px; background: hsl(var(--primary)); transition: width .3s ease; }
+.study-progress { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.study-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: hsl(var(--muted-foreground)); }
+.study-progress-head span { font-family: var(--text-label-font); font-size: var(--text-label-size); font-weight: var(--text-label-weight); letter-spacing: var(--text-label-tracking); }
+.study-progress-head strong { color: hsl(var(--foreground)); font-family: var(--text-heading2-font); font-size: var(--text-heading2-size); font-weight: var(--text-heading2-weight); letter-spacing: var(--text-heading2-tracking); line-height: 1; }
+.study-progress-track { height: 8px; border-radius: 999px; background: hsl(var(--muted)); overflow: hidden; }
+.study-progress-fill { height: 100%; border-radius: 999px; background: hsl(var(--primary)); transition: width var(--momentum-motion-slow) var(--momentum-ease-standard); }
 
 /* Weakness, review plan and exam countdown cards */
-.weakness-card, .review-plan, .exam-countdown { padding: 18px 20px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
-.weakness-card header { display: flex; align-items: center; gap: 8px; }
-.weakness-card h3, .review-plan h3 { margin: 0; font-size: .98rem; }
-.weakness-intro, .review-plan-empty { margin: 8px 0 0; color: hsl(var(--muted-foreground)); font-size: .85rem; }
-.weakness-card ul, .review-plan ul { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
-.weakness-card li, .review-plan li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.weakness-card li span, .review-plan li span { display: block; color: hsl(var(--muted-foreground)); font-size: .8rem; }
-.review-plan-actions { display: flex; align-items: center; gap: 8px; }
-.exam-countdown { display: flex; align-items: center; gap: 12px; }
-.exam-countdown span { display: block; color: hsl(var(--muted-foreground)); font-size: .82rem; }
+.weakness-card header { display: flex; align-items: center; gap: 8px; color: hsl(var(--chart-4)); }
+.weakness-card h3, .review-plan h3 { margin: 0; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); color: hsl(var(--foreground)); }
+.weakness-intro, .review-plan-empty { margin: 8px 0 0; color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
+.weakness-card ul, .review-plan ul { display: flex; flex-direction: column; gap: 4px; margin: 14px 0 0; padding: 0; list-style: none; }
+.weakness-card li, .review-plan li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: var(--density-row-padding-y) 0; border-top: 1px solid hsl(var(--border)); }
+.weakness-card li:first-child, .review-plan li:first-child { border-top: 0; padding-top: 0; }
+.weakness-card li strong, .review-plan li strong { font-size: var(--text-body-size); font-weight: 600; }
+.weakness-card li span, .review-plan li span { display: block; margin-top: 2px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
+.review-plan-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.exam-countdown { display: flex; align-items: center; gap: 14px; color: hsl(var(--primary)); }
+.exam-countdown strong { display: block; color: hsl(var(--foreground)); font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); }
+.exam-countdown span { display: block; margin-top: 2px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 
 /* Chapter list */
-.chapter-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.chapter-section-head h2 { margin: 0; font-size: 1.05rem; }
-.chapter-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
-.chapter-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); color: inherit; text-align: left; cursor: pointer; transition: border-color .2s ease; }
-.chapter-row:hover:not(:disabled) { border-color: hsl(var(--primary)); }
-.chapter-row:disabled { opacity: .55; cursor: not-allowed; }
-.chapter-icon { display: flex; color: hsl(var(--muted-foreground)); }
+.chapter-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chapter-row {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: var(--density-row-padding-y) var(--density-row-padding-x);
+  border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+  background: hsl(var(--card)); color: inherit; text-align: left; cursor: pointer;
+  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard),
+              background-color var(--momentum-motion-fast) var(--momentum-ease-standard);
+}
+.chapter-row:hover:not(:disabled) { border-color: hsl(var(--primary)); background: hsl(var(--muted)); }
+/* Not dimmed to near-invisible: a chapter still being prepared is information,
+   not noise, and the reason is spelled out in .chapter-percentage. */
+.chapter-row:disabled { cursor: not-allowed; background: transparent; border-style: dashed; color: hsl(var(--muted-foreground)); }
+.chapter-icon { display: flex; flex-shrink: 0; color: hsl(var(--muted-foreground)); }
+.chapter-row:not(:disabled) .chapter-icon { color: hsl(var(--primary)); }
 .chapter-body { flex: 1; min-width: 0; }
-.chapter-title { display: block; font-weight: 600; font-size: .92rem; }
-.chapter-description { display: block; margin-top: 3px; color: hsl(var(--muted-foreground)); font-size: .8rem; }
-.chapter-meta { display: flex; align-items: center; gap: 10px; }
-.chapter-percentage { color: hsl(var(--muted-foreground)); font-size: .8rem; white-space: nowrap; }
+.chapter-title { display: block; font-size: var(--text-body-size); font-weight: 600; line-height: 1.4; }
+.chapter-description { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: hsl(var(--muted-foreground)); font-size: var(--text-label-size); }
+.chapter-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.chapter-percentage { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); white-space: nowrap; }
 
 /* Chapter page */
 .chapter-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

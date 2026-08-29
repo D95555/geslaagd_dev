@@ -19,7 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/geslaagd-momentum/components/ui/dialog';
-import { CalendarPlus, Loader2, MessageCircle, NotebookPen } from 'lucide-react';
+import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
+import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
+import { PageSections, Section } from '@workspace/geslaagd-momentum/components/layout/section';
+import {
+  ListSkeleton,
+  PageSkeleton,
+} from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
+import { CalendarPlus, MessageCircle, NotebookPen } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { ChapterList } from '@/components/study/chapter-list';
@@ -118,10 +125,10 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
 
   if (state === 'loading' || !subject) {
     return (
-      <StudyPageShell backTo="/vakken" backLabel="Terug naar de catalogus">
-        <p className="study-loading">
-          <Loader2 className="spin" size={18} aria-hidden="true" /> Vak laden…
-        </p>
+      <StudyPageShell>
+        <PageSkeleton label="Vak laden…">
+          <ListSkeleton rows={5} />
+        </PageSkeleton>
       </StudyPageShell>
     );
   }
@@ -129,59 +136,82 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
   const progressByChapter = new Map<string, ChapterProgress>(
     (progress?.chapterProgress ?? []).map((row) => [row.chapterId, row]),
   );
+  const weakTopics = progress?.weakTopics ?? [];
 
   return (
-    <StudyPageShell backTo="/vakken" backLabel="Terug naar de catalogus">
-      <div className="study-hero">
-        <div>
-          <span className="study-kicker">
-            <NotebookPen size={15} /> {subject.difficultyLevel ?? 'studiepakket'}
-          </span>
-          <h1>{subject.name}</h1>
-          {subject.description && <p>{subject.description}</p>}
-        </div>
-        <div className="study-hero-actions">
-          <Button variant="outline" onClick={() => setExamOpen(true)}>
-            <CalendarPlus size={15} /> Toetsdatum
-          </Button>
-          <Button onClick={() => setChatOpen(true)} data-testid="button-open-chat">
-            <MessageCircle size={15} /> Vraag de assistent
-          </Button>
-        </div>
-      </div>
-
-      <ProgressBar value={progress?.subjectProgress ?? 0} label={`Voortgang ${subject.name}`} />
-
-      <ExamCountdown examDate={plan?.examDate ?? null} />
-
-      {progress && progress.weakTopics.length > 0 && (
-        <WeaknessCard topics={progress.weakTopics} />
-      )}
-
-      {plan && (
-        <ReviewPlan
-          tasks={plan.reviewTasks}
-          onOpenChapter={(chapterId) => setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)}
+    <StudyPageShell>
+      <PageSections>
+        <PageHeader
+          breadcrumbs={
+            <Breadcrumbs
+              onNavigate={setLocation}
+              items={[
+                { label: 'Mijn leeromgeving', href: '/mijn-leeromgeving' },
+                { label: 'Vakken', href: '/vakken' },
+                { label: subject.name },
+              ]}
+            />
+          }
+          kicker={
+            <>
+              <NotebookPen size={13} aria-hidden="true" />
+              {subject.difficultyLevel ?? 'studiepakket'}
+            </>
+          }
+          title={subject.name}
+          description={subject.description ?? undefined}
+          actions={
+            <>
+              <Button variant="outline" onClick={() => setExamOpen(true)}>
+                <CalendarPlus size={15} /> Toetsdatum
+              </Button>
+              <Button onClick={() => setChatOpen(true)} data-testid="button-open-chat">
+                <MessageCircle size={15} /> Vraag de assistent
+              </Button>
+            </>
+          }
         />
-      )}
 
-      <section className="chapter-section">
-        <div className="chapter-section-head">
-          <h2>Hoofdstukken</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation(`/vakken/${subjectId}/studieplan`)}
-          >
-            Bekijk studieplan
-          </Button>
+        <div className="study-status">
+          <ProgressBar value={progress?.subjectProgress ?? 0} label={`Voortgang ${subject.name}`} />
+          <ExamCountdown examDate={plan?.examDate ?? null} />
         </div>
-        <ChapterList
-          chapters={subject.chapters}
-          progress={progressByChapter}
-          onOpen={(chapterId) => setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)}
-        />
-      </section>
+
+        {/* Chapters lead: opening one is what a student came here to do. The
+            plan and weak spots inform that choice, so they follow it. */}
+        <Section
+          title="Hoofdstukken"
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation(`/vakken/${subjectId}/studieplan`)}
+            >
+              Bekijk studieplan
+            </Button>
+          }
+        >
+          <ChapterList
+            chapters={subject.chapters}
+            progress={progressByChapter}
+            onOpen={(chapterId) => setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)}
+          />
+        </Section>
+
+        {(plan || weakTopics.length > 0) && (
+          <div className="study-secondary">
+            {plan && (
+              <ReviewPlan
+                tasks={plan.reviewTasks}
+                onOpenChapter={(chapterId) =>
+                  setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)
+                }
+              />
+            )}
+            {weakTopics.length > 0 && <WeaknessCard topics={weakTopics} />}
+          </div>
+        )}
+      </PageSections>
 
       <ChatPanel subjectId={subjectId} open={chatOpen} onClose={() => setChatOpen(false)} />
 
