@@ -522,4 +522,74 @@ router.get("/admin/verkenner/lookup", async (req, res): Promise<void> => {
   }
 });
 
+router.patch("/admin/verkenner/subjects/:id", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = UpdateVerkennerSubjectTitleParams.safeParse(req.params);
+  const input = UpdateVerkennerSubjectTitleBody.safeParse(req.body);
+  if (!params.success || !input.success) {
+    res.status(400).json({ error: "Geldige titel is verplicht." });
+    return;
+  }
+  try {
+    const rows = await restService<Row[]>(`crawl_subjects?id=eq.${params.data.subjectId}`, {
+      method: "PATCH",
+      headers: { prefer: "return=representation" },
+      body: JSON.stringify({ name: input.data.name, updated_at: new Date().toISOString() }),
+    });
+    if (!rows[0]) {
+      res.status(404).json({ error: "Vak niet gevonden." });
+      return;
+    }
+    res.json(UpdateVerkennerSubjectTitleResponse.parse(toSubjectSummary(rows[0])));
+  } catch (error) {
+    req.log.warn({ error }, "Could not rename Verkenner subject");
+    res.status(500).json({ error: "Titel kon niet worden opgeslagen." });
+  }
+});
+
+router.patch("/admin/verkenner/chapters/:id", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = UpdateVerkennerChapterTitleParams.safeParse(req.params);
+  const input = UpdateVerkennerChapterTitleBody.safeParse(req.body);
+  if (!params.success || !input.success) {
+    res.status(400).json({ error: "Geldige titel is verplicht." });
+    return;
+  }
+  try {
+    const rows = await restService<Row[]>(`chapters?id=eq.${params.data.chapterId}`, {
+      method: "PATCH",
+      headers: { prefer: "return=representation" },
+      body: JSON.stringify({ title: input.data.title, updated_at: new Date().toISOString() }),
+    });
+    const row = rows[0];
+    if (!row) {
+      res.status(404).json({ error: "Hoofdstuk niet gevonden." });
+      return;
+    }
+    res.json(
+      UpdateVerkennerChapterTitleResponse.parse({
+        id: row.id as string,
+        subjectId: row.subject_id as string,
+        position: Number(row.position),
+        title: row.title as string,
+        description: (row.description as string | null) ?? "",
+        isImportant: Boolean(row.is_important),
+        topicTags: (row.topic_tags as string[] | null) ?? [],
+        status: row.status as "pending" | "ready",
+      }),
+    );
+  } catch (error) {
+    req.log.warn({ error }, "Could not rename Verkenner chapter");
+    res.status(500).json({ error: "Titel kon niet worden opgeslagen." });
+  }
+});
+
 export default router;
