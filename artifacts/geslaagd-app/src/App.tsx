@@ -6,6 +6,7 @@ import { Toaster } from '@workspace/geslaagd-momentum/components/ui/toaster';
 import { TooltipProvider } from '@workspace/geslaagd-momentum/components/ui/tooltip';
 import { ThemeProvider } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
+import { AppShell } from '@/components/shell/app-shell';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
 import DashboardPage from '@/pages/dashboard-page';
 import AdminPage from '@/pages/admin-page';
@@ -258,32 +259,34 @@ function Home() {
 
 function Router() {
   return (
-    <RoutedErrorBoundary>
-      <BroadcastNotice />
-      <Switch>
-        <Route path="/auth/herstel-wachtwoord" component={PasswordRecoveryPage} />
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/mijn-leeromgeving" component={DashboardPage} />
-        <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
-        <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
-          {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}
-        </Route>
-        <Route path="/vakken/:subjectId/studieplan">
-          {(params) => <StudyPlanPage subjectId={params.subjectId} />}
-        </Route>
-        <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
-        <Route path="/beheer/verkenner" component={AdminVerkennerPage} />
-        <Route path="/beheer/pipeline" component={AdminPipelinePage} />
-        <Route path="/beheer/console" component={AdminConsolePage} />
-        <Route path="/beheer/accounts" component={AdminPage} />
-        <Route path="/beheer" component={AdminOverviewPage} />
-        <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
-        <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>
-        <Route path="/beheer/crawl" component={AdminCrawlPage} />
-        <Route path="/" component={Home} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
+    <AppShell>
+      <RoutedErrorBoundary>
+        <BroadcastNotice />
+        <Switch>
+          <Route path="/auth/herstel-wachtwoord" component={PasswordRecoveryPage} />
+          <Route path="/auth" component={AuthPage} />
+          <Route path="/mijn-leeromgeving" component={DashboardPage} />
+          <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
+          <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
+            {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}
+          </Route>
+          <Route path="/vakken/:subjectId/studieplan">
+            {(params) => <StudyPlanPage subjectId={params.subjectId} />}
+          </Route>
+          <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
+          <Route path="/beheer/verkenner" component={AdminVerkennerPage} />
+          <Route path="/beheer/pipeline" component={AdminPipelinePage} />
+          <Route path="/beheer/console" component={AdminConsolePage} />
+          <Route path="/beheer/accounts" component={AdminPage} />
+          <Route path="/beheer" component={AdminOverviewPage} />
+          <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
+          <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>
+          <Route path="/beheer/crawl" component={AdminCrawlPage} />
+          <Route path="/" component={Home} />
+          <Route component={NotFound} />
+        </Switch>
+      </RoutedErrorBoundary>
+    </AppShell>
   );
 }
 
