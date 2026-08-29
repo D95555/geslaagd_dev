@@ -30,6 +30,11 @@ import { BookOpen, Loader2, Plus, Send } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
+import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
+import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
+import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
+import { CardGridSkeleton } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
 
 const emptyRequestForm = {
   name: '',
@@ -119,45 +124,53 @@ export default function SubjectCatalogPage() {
   }
 
   return (
-    <StudyPageShell backTo="/mijn-leeromgeving" backLabel="Terug naar mijn leeromgeving">
-      <div className="study-hero">
-        <div>
-          <span className="study-kicker">
-            <BookOpen size={15} /> vakkencatalogus
-          </span>
-          <h1>Kies een vak om mee te beginnen.</h1>
-          <p>
-            Elk vak is opgedeeld in hoofdstukken met uitleg, oefenvragen en tentamens.
-          </p>
-        </div>
-        <Button variant="outline" onClick={openRequestDialog} data-testid="button-request-subject">
-          <Send size={15} /> Vak aanvragen
-        </Button>
-      </div>
+    <StudyPageShell>
+      <PageSections>
+        <PageHeader
+          breadcrumbs={
+            <Breadcrumbs
+              onNavigate={setLocation}
+              items={[
+                { label: 'Mijn leeromgeving', href: '/mijn-leeromgeving' },
+                { label: 'Vakken' },
+              ]}
+            />
+          }
+          kicker={
+            <>
+              <BookOpen size={13} aria-hidden="true" /> vakkencatalogus
+            </>
+          }
+          title="Kies een vak om mee te beginnen."
+          description="Elk vak is opgedeeld in hoofdstukken met uitleg, oefenvragen en tentamens."
+          actions={
+            <Button variant="outline" onClick={openRequestDialog} data-testid="button-request-subject">
+              <Send size={15} /> Vak aanvragen
+            </Button>
+          }
+        />
 
-      {state === 'loading' && (
-        <p className="study-loading">
-          <Loader2 className="spin" size={18} aria-hidden="true" /> Vakken laden…
-        </p>
-      )}
+      {state === 'loading' && <CardGridSkeleton cards={6} />}
 
       {state === 'error' && (
-        <div className="study-page-message">
-          <p>De vakken konden niet worden geladen.</p>
-          <Button onClick={() => void load()}>Opnieuw proberen</Button>
-        </div>
+        <EmptyState
+          title="De vakken konden niet worden geladen"
+          description="Er ging iets mis bij het ophalen. Probeer het opnieuw."
+          action={<Button onClick={() => void load()}>Opnieuw proberen</Button>}
+        />
       )}
 
       {state === 'ready' && subjects.length === 0 && (
-        <div className="study-page-message">
-          <h2>Nog geen vakken beschikbaar</h2>
-          <p>
-            Er zijn nog geen vakken gepubliceerd. Vraag een vak aan — dan gaan we ermee aan de slag.
-          </p>
-          <Button onClick={openRequestDialog}>
-            <Send size={15} /> Vak aanvragen
-          </Button>
-        </div>
+        <EmptyState
+          icon={<BookOpen size={20} aria-hidden="true" />}
+          title="Nog geen vakken beschikbaar"
+          description="Er zijn nog geen vakken gepubliceerd. Vraag een vak aan — dan gaan we ermee aan de slag."
+          action={
+            <Button onClick={openRequestDialog}>
+              <Send size={15} /> Vak aanvragen
+            </Button>
+          }
+        />
       )}
 
       {state === 'ready' && subjects.length > 0 && (
@@ -202,6 +215,7 @@ export default function SubjectCatalogPage() {
           ))}
         </ul>
       )}
+      </PageSections>
 
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
         <DialogContent data-testid="dialog-request-subject">

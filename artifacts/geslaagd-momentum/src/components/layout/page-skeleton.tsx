@@ -39,6 +39,30 @@ export function ListSkeleton({
   )
 }
 
+/**
+ * A stand-in for a block of prose. The last line is short, so the shape reads
+ * as a paragraph rather than a stack of bars.
+ */
+export function TextSkeleton({
+  lines = 6,
+  className,
+}: {
+  lines?: number
+  className?: string
+}) {
+  return (
+    <div className={cn("flex flex-col gap-3", className)} aria-hidden="true">
+      {Array.from({ length: lines }, (_, index) => (
+        <Skeleton
+          key={index}
+          className="h-4 rounded"
+          style={{ width: index === lines - 1 ? "62%" : "100%" }}
+        />
+      ))}
+    </div>
+  )
+}
+
 /** A stand-in for a row of stat or subject cards. */
 export function CardGridSkeleton({
   cards = 3,

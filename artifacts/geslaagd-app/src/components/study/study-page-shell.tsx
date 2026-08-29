@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft, LogOut, ShieldCheck } from 'lucide-react';
 import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 
@@ -15,7 +15,7 @@ export function StudyPageShell({
   backLabel?: string;
 }) {
   const [, setLocation] = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   // Deep ink is the learning environment, per the design guidelines.
   useSurfaceTheme('dark');
@@ -38,6 +38,15 @@ export function StudyPageShell({
         </button>
         <div className="dashboard-actions">
           {user && <span>{user.email}</span>}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setLocation('/beheer')}
+              data-testid="button-admin-dashboard"
+            >
+              <ShieldCheck size={15} /> Beheer
+            </button>
+          )}
           <button type="button" onClick={leave}>
             <LogOut size={15} /> Uitloggen
           </button>

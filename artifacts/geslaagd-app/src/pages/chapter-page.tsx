@@ -14,13 +14,21 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/collapsible';
-import { BookCheck, ChevronDown, Loader2, MessageCircle } from 'lucide-react';
+import { BookCheck, ChevronDown, MessageCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { ChatPanel } from '@/components/study/chat-panel';
 import { CitedText } from '@/components/study/citation-tag';
 import { ExerciseView } from '@/components/study/exercise-view';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
+import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
+import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
+import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
+import {
+  PageSkeleton,
+  TextSkeleton,
+} from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
 
 type Activity = 'reading' | 'exercise' | 'exam';
 
@@ -35,6 +43,9 @@ export default function ChapterPage({
   const { user, isLoading } = useAuth();
 
   const [chapter, setChapter] = useState<Chapter | null>(null);
+  // Kept so the chapter keeps naming the subject it belongs to, in the
+  // breadcrumbs and the page kicker.
+  const [subjectName, setSubjectName] = useState<string | null>(null);
   const [content, setContent] = useState<ChapterContent | null>(null);
   const [progress, setProgress] = useState<ChapterProgress | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'unauthorized' | 'error'>('loading');
@@ -50,6 +61,7 @@ export default function ChapterPage({
         getChapterContent(subjectId, chapterId),
       ]);
       setChapter(detail.chapters.find((item) => item.id === chapterId) ?? null);
+      setSubjectName(detail.name);
       setContent(chapterContent);
       const subjectProgress = await getSubjectProgress(subjectId).catch(() => null);
       setProgress(
@@ -88,12 +100,30 @@ export default function ChapterPage({
     );
   }
 
+  const crumbs = (extra?: string) => (
+    <Breadcrumbs
+      onNavigate={setLocation}
+      items={[
+        { label: 'Vakken', href: '/vakken' },
+        { label: subjectName ?? 'Vak', href: `/vakken/${subjectId}` },
+        ...(extra
+          ? [
+              { label: chapter?.title ?? 'Hoofdstuk', href: `/vakken/${subjectId}/hoofdstuk/${chapterId}` },
+              { label: extra },
+            ]
+          : [{ label: chapter?.title ?? 'Hoofdstuk' }]),
+      ]}
+    />
+  );
+
   if (state === 'loading') {
     return (
-      <StudyPageShell backTo={`/vakken/${subjectId}`} backLabel="Terug naar het vak">
-        <p className="study-loading">
-          <Loader2 className="spin" size={18} aria-hidden="true" /> Hoofdstuk laden…
-        </p>
+      <StudyPageShell>
+        <PageSkeleton label="Hoofdstuk laden…">
+          <div className="chapter-summary-skeleton">
+            <TextSkeleton lines={8} />
+          </div>
+        </PageSkeleton>
       </StudyPageShell>
     );
   }
@@ -101,46 +131,52 @@ export default function ChapterPage({
   if (state === 'error' || !chapter) {
     return (
       <StudyPageShell backTo={`/vakken/${subjectId}`} backLabel="Terug naar het vak">
-        <div className="study-page-message">
-          <p>Dit hoofdstuk kon niet worden geladen.</p>
-          <Button onClick={() => void load()}>Opnieuw proberen</Button>
-        </div>
+        <EmptyState
+          title="Dit hoofdstuk kon niet worden geladen"
+          description="Er ging iets mis bij het ophalen. Probeer het opnieuw."
+          action={<Button onClick={() => void load()}>Opnieuw proberen</Button>}
+        />
       </StudyPageShell>
     );
   }
 
   if (activity !== 'reading') {
     return (
-      <StudyPageShell backTo={`/vakken/${subjectId}`} backLabel="Terug naar het vak">
-        <h1 className="chapter-heading">
-          {chapter.position}. {chapter.title}
-        </h1>
-        <ExerciseView
-          subjectId={subjectId}
-          chapterId={chapterId}
-          mode={activity === 'exam' ? 'exam' : 'exercise'}
-          onBack={() => {
-            setActivity('reading');
-            void load();
-          }}
-        />
+      <StudyPageShell>
+        <PageSections>
+          <PageHeader
+            breadcrumbs={crumbs(activity === 'exam' ? 'Tentamen' : 'Oefenvragen')}
+            kicker={subjectName ?? undefined}
+            title={`${chapter.position}. ${chapter.title}`}
+          />
+          <ExerciseView
+            subjectId={subjectId}
+            chapterId={chapterId}
+            mode={activity === 'exam' ? 'exam' : 'exercise'}
+            onBack={() => {
+              setActivity('reading');
+              void load();
+            }}
+          />
+        </PageSections>
       </StudyPageShell>
     );
   }
 
   return (
-    <StudyPageShell backTo={`/vakken/${subjectId}`} backLabel="Terug naar het vak">
-      <div className="chapter-head">
-        <div>
-          <h1 className="chapter-heading">
-            {chapter.position}. {chapter.title}
-          </h1>
-          {chapter.description && <p className="chapter-sub">{chapter.description}</p>}
-        </div>
-        <Button variant="outline" onClick={() => setChatOpen(true)}>
-          <MessageCircle size={15} /> Vraag hierover
-        </Button>
-      </div>
+    <StudyPageShell>
+      <PageSections>
+      <PageHeader
+        breadcrumbs={crumbs()}
+        kicker={subjectName ?? undefined}
+        title={`${chapter.position}. ${chapter.title}`}
+        description={chapter.description ?? undefined}
+        actions={
+          <Button variant="outline" onClick={() => setChatOpen(true)}>
+            <MessageCircle size={15} /> Vraag hierover
+          </Button>
+        }
+      />
 
       {content?.summary ? (
         <article className="chapter-summary" data-testid="chapter-summary">
@@ -215,6 +251,8 @@ export default function ChapterPage({
           </button>
         )}
       </section>
+
+      </PageSections>
 
       <ChatPanel
         subjectId={subjectId}

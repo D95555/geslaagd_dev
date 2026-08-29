@@ -6,12 +6,17 @@ import {
   type SubjectDetail,
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { ExamCountdown } from '@/components/study/exam-countdown';
 import { ReviewPlan } from '@/components/study/review-plan';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+import { Breadcrumbs } from '@workspace/geslaagd-momentum/components/layout/breadcrumbs';
+import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
+import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
+import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
+import { ListSkeleton } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
 
 export default function StudyPlanPage({ subjectId }: { subjectId: string }) {
   const [, setLocation] = useLocation();
@@ -53,46 +58,55 @@ export default function StudyPlanPage({ subjectId }: { subjectId: string }) {
   }
 
   return (
-    <StudyPageShell backTo={`/vakken/${subjectId}`} backLabel="Terug naar het vak">
-      <div className="study-hero">
-        <div>
-          <span className="study-kicker">
-            <CalendarDays size={15} /> studieplan
-          </span>
-          <h1>{subject ? `Studieplan ${subject.name}` : 'Studieplan'}</h1>
-          <p>Wat je vandaag het beste kunt herhalen, op volgorde van belang.</p>
-        </div>
-      </div>
+    <StudyPageShell>
+      <PageSections>
+        <PageHeader
+          breadcrumbs={
+            <Breadcrumbs
+              onNavigate={setLocation}
+              items={[
+                { label: 'Vakken', href: '/vakken' },
+                { label: subject?.name ?? 'Vak', href: `/vakken/${subjectId}` },
+                { label: 'Studieplan' },
+              ]}
+            />
+          }
+          kicker={
+            <>
+              <CalendarDays size={13} aria-hidden="true" /> studieplan
+            </>
+          }
+          title={subject ? `Studieplan ${subject.name}` : 'Studieplan'}
+          description="Wat je vandaag het beste kunt herhalen, op volgorde van belang."
+        />
 
-      {state === 'loading' && (
-        <p className="study-loading">
-          <Loader2 className="spin" size={18} aria-hidden="true" /> Studieplan laden…
-        </p>
-      )}
+        {state === 'loading' && <ListSkeleton rows={4} />}
 
-      {state === 'error' && (
-        <div className="study-page-message">
-          <p>Het studieplan kon niet worden geladen.</p>
-          <Button onClick={() => void load()}>Opnieuw proberen</Button>
-        </div>
-      )}
-
-      {state === 'ready' && plan && (
-        <>
-          <ExamCountdown examDate={plan.examDate} />
-          {!plan.examDate && (
-            <p className="study-hint">
-              Stel een toetsdatum in bij het vak, dan verdelen we de stof over de dagen die je nog hebt.
-            </p>
-          )}
-          <ReviewPlan
-            tasks={plan.reviewTasks}
-            onOpenChapter={(chapterId) =>
-              setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)
-            }
+        {state === 'error' && (
+          <EmptyState
+            title="Het studieplan kon niet worden geladen"
+            description="Er ging iets mis bij het ophalen. Probeer het opnieuw."
+            action={<Button onClick={() => void load()}>Opnieuw proberen</Button>}
           />
-        </>
-      )}
+        )}
+
+        {state === 'ready' && plan && (
+          <>
+            <ExamCountdown examDate={plan.examDate} />
+            {!plan.examDate && (
+              <p className="study-hint">
+                Stel een toetsdatum in bij het vak, dan verdelen we de stof over de dagen die je nog hebt.
+              </p>
+            )}
+            <ReviewPlan
+              tasks={plan.reviewTasks}
+              onOpenChapter={(chapterId) =>
+                setLocation(`/vakken/${subjectId}/hoofdstuk/${chapterId}`)
+              }
+            />
+          </>
+        )}
+      </PageSections>
     </StudyPageShell>
   );
 }

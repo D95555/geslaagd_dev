@@ -173,7 +173,12 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
         />
 
         <div className="study-status">
-          <ProgressBar value={progress?.subjectProgress ?? 0} label={`Voortgang ${subject.name}`} />
+          <div className="study-card">
+            <ProgressBar
+              value={progress?.subjectProgress ?? 0}
+              label={`Voortgang ${subject.name}`}
+            />
+          </div>
           <ExamCountdown examDate={plan?.examDate ?? null} />
         </div>
 
