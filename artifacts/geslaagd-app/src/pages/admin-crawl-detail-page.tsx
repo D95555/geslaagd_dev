@@ -19,7 +19,9 @@ import { useAuth } from '@/auth/auth-context';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
-import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
+import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
+import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
+import { ListSkeleton } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
 import {
   Dialog,
   DialogContent,
@@ -53,10 +55,6 @@ function barelyMissed(source: CrawlSource): boolean {
 
 export default function AdminCrawlDetailPage({ crawlId }: { crawlId: string }) {
   const [, setLocation] = useLocation();
-  // This page still builds its own chrome instead of using AdminShell (it is
-  // rebuilt in the admin phase); declare the surface theme so it does not show
-  // up as the one light page in a dark admin.
-  useSurfaceTheme('dark');
   const { user, isLoading } = useAuth();
   const [crawl, setCrawl] = useState<CrawlDetail | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
@@ -125,41 +123,32 @@ export default function AdminCrawlDetailPage({ crawlId }: { crawlId: string }) {
     }
   };
 
-  if (state === 'forbidden') {
-    return (
-      <main className="admin-denied">
-        <ShieldAlert size={29} />
-        <h1>Geen toegang.</h1>
-        <p>Deze omgeving is alleen voor beheerders.</p>
-        <Button onClick={() => setLocation('/beheer')}>Terug naar beheer</Button>
-      </main>
-    );
-  }
+  if (state === 'forbidden') return <AdminDenied />;
 
   return (
-    <main className="admin-page">
-      <header className="admin-header">
-        <button className="auth-brand" onClick={() => setLocation('/beheer/crawl')}>
-          <span className="wordmark-mark" /><span>geslaagd.app</span>
-        </button>
-        <div>
-          <span>crawldetail</span>
-          <Button variant="ghost" onClick={() => setLocation('/beheer/crawl')}><ArrowLeft size={15} /> Terug naar crawls</Button>
-        </div>
-      </header>
-      <section className="admin-wrap">
+    <AdminShell
+      title={crawl?.subjectName ?? 'Crawl'}
+      intro={
+        crawl
+          ? `Gestart ${fmtDateTime(crawl.createdAt)}${crawl.completedAt ? ` · voltooid ${fmtDateTime(crawl.completedAt)}` : ''}`
+          : undefined
+      }
+      actions={
+        <Button variant="outline" size="sm" onClick={() => setLocation('/beheer/crawl')}>
+          <ArrowLeft size={15} /> Terug naar crawls
+        </Button>
+      }
+    >
         {state === 'loading' ? (
-          <p className="admin-empty"><Loader2 className="spin" size={15} /> Crawl laden…</p>
+          <ListSkeleton rows={5} />
         ) : state === 'error' || !crawl ? (
-          <p className="admin-empty">Crawl kon niet geladen worden.</p>
+          <EmptyState
+            title="Crawl kon niet geladen worden"
+            description="Er ging iets mis bij het ophalen. Probeer het opnieuw."
+            action={<Button onClick={() => void load()}>Opnieuw proberen</Button>}
+          />
         ) : (
           <>
-            <div className="admin-intro">
-              <p className="dashboard-kicker">crawl</p>
-              <h1>{crawl.subjectName}</h1>
-              <p>Gestart {fmtDateTime(crawl.createdAt)}{crawl.completedAt ? ` · voltooid ${fmtDateTime(crawl.completedAt)}` : ''}</p>
-            </div>
-
             <div className="crawl-detail-meta">
               <div><span>Status</span><strong>{crawl.status}</strong></div>
               <div><span>Gevonden</span><strong>{crawl.sourcesFound ?? 0}</strong></div>
@@ -256,7 +245,6 @@ export default function AdminCrawlDetailPage({ crawlId }: { crawlId: string }) {
             </div>
           </>
         )}
-      </section>
 
       <SourceInfoDialog
         source={infoSource}
@@ -278,6 +266,6 @@ export default function AdminCrawlDetailPage({ crawlId }: { crawlId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </AdminShell>
   );
 }
