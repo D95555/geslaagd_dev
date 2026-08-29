@@ -11,6 +11,7 @@ import studyChatRouter from "./study-chat";
 import studyExercisesRouter from "./study-exercises";
 import studyProgressRouter from "./study-progress";
 import adminPipelineRouter from "./admin-pipeline";
+import adminVerkennerRouter from "./admin-verkenner";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(studyProgressRouter);
 router.use(studyChatRouter);
 router.use(subjectsRouter);
 router.use(adminPipelineRouter);
+router.use(adminVerkennerRouter);
 
 export default router;
