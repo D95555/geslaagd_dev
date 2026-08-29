@@ -15,29 +15,55 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Progress } from '../components/ui/progress';
+import { tokens } from '../generated/tokens';
 import { Guidelines } from './parts';
 
+/**
+ * Swatch labels read their values from the generated tokens rather than
+ * repeating them, so this page cannot drift from tokens.json.
+ */
+function pair(token: keyof typeof tokens.color.light): string {
+  return `${tokens.color.light[token].toUpperCase()} · ${tokens.color.dark[token].toUpperCase()}`;
+}
+
 const CORE_SWATCHES = [
-  { name: 'Primary / momentum emerald', className: 'momentum-swatch momentum-swatch-primary', value: '#087A5B · #6FE5B3' },
-  { name: 'Secondary / forest surface', className: 'momentum-swatch momentum-swatch-secondary', value: '#E5F0E9 · #17352B' },
-  { name: 'Accent / aurora violet', className: 'momentum-swatch momentum-swatch-accent', value: '#5D43C7 · #BCAEFF' },
+  { name: 'Primary / momentum emerald', className: 'momentum-swatch momentum-swatch-primary', value: pair('primary') },
+  { name: 'Secondary / forest surface', className: 'momentum-swatch momentum-swatch-secondary', value: pair('secondary') },
+  { name: 'Accent / aurora violet', className: 'momentum-swatch momentum-swatch-accent', value: pair('accent') },
 ] as const;
 
 const SUPPORTING_SWATCHES = [
-  { name: 'Paper / ink', className: 'momentum-swatch momentum-swatch-paper', value: '#F5F8F3 · #081712' },
-  { name: 'Card / forest', className: 'momentum-swatch momentum-swatch-card', value: '#FFFFFF · #0E211A' },
-  { name: 'Aurora blue', className: 'momentum-swatch momentum-swatch-blue', value: '#2878C8 · #72BAFF' },
-  { name: 'Signal amber', className: 'momentum-swatch momentum-swatch-amber', value: '#A86B00 · #F2C46D' },
-  { name: 'Destructive', className: 'momentum-swatch momentum-swatch-danger', value: '#B42318 · #F47772' },
+  { name: 'Paper / ink', className: 'momentum-swatch momentum-swatch-paper', value: pair('background') },
+  { name: 'Card / forest', className: 'momentum-swatch momentum-swatch-card', value: pair('card') },
+  { name: 'Aurora blue', className: 'momentum-swatch momentum-swatch-blue', value: pair('chart2') },
+  { name: 'Signal amber', className: 'momentum-swatch momentum-swatch-amber', value: pair('chart4') },
+  { name: 'Destructive', className: 'momentum-swatch momentum-swatch-danger', value: pair('destructive') },
 ] as const;
 
-const TYPE_SCALE = [
-  { label: 'Display', sample: 'Meer grip. Eén volgende stap.', className: 'momentum-type-display' },
-  { label: 'Heading', sample: 'Van twijfel naar duidelijkheid.', className: 'momentum-type-heading' },
-  { label: 'Body', sample: 'Heldere uitleg die je helpt om verder te leren.', className: 'momentum-type-body' },
-  { label: 'Label', sample: 'STAP 02 / BRONNEN', className: 'momentum-type-label' },
-  { label: 'Provenance', sample: 'bron 01 · gecontroleerd · 6 min', className: 'momentum-type-mono' },
-] as const;
+const TYPE_SAMPLES: Record<string, string> = {
+  display: 'Meer grip. Eén volgende stap.',
+  heading1: 'Van twijfel naar duidelijkheid.',
+  heading2: 'Wat je deze week oppakt.',
+  heading3: 'Hoofdstuk 3 · Celdeling',
+  body: 'Heldere uitleg die je helpt om verder te leren.',
+  bodyLong:
+    'Langere leesteksten krijgen meer lucht: iets groter, met ruimere regelafstand, zodat je een hele samenvatting achter elkaar kunt lezen zonder je plek kwijt te raken.',
+  label: 'Stap 02 / Bronnen',
+  meta: 'bron 01 · gecontroleerd · 6 min',
+};
+
+/** camelCase token name -> the generated .type-* class, same rule as the generator. */
+function typeClass(name: string): string {
+  return `type-${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`;
+}
+
+/** Rendered with the real .type-* classes, so this page cannot drift from the ramp. */
+const TYPE_SCALE = Object.entries(tokens.typeScale).map(([name, step]) => ({
+  name,
+  sample: TYPE_SAMPLES[name] ?? name,
+  className: typeClass(name),
+  detail: `${step.size} · ${step.lineHeight} · ${step.weight}`,
+}));
 
 const SPACING_SCALE = [
   { label: '4 / micro', size: 'momentum-space-4' },
@@ -158,7 +184,15 @@ export function FontsPage() {
     <div className="momentum-page">
       <section className="momentum-panel momentum-type-panel">
         <div className="momentum-panel-heading"><div><span className="momentum-kicker">type system</span><h3>Sora geeft richting. DM Sans geeft ruimte.</h3></div></div>
-        {TYPE_SCALE.map((entry) => <div className="momentum-type-row" key={entry.label}><span>{entry.label}</span><p className={entry.className}>{entry.sample}</p></div>)}
+        {TYPE_SCALE.map((entry) => (
+          <div className="momentum-type-row" key={entry.name}>
+            <span>
+              {entry.name}
+              <small className="type-meta block text-muted-foreground">{entry.detail}</small>
+            </span>
+            <p className={entry.className}>{entry.sample}</p>
+          </div>
+        ))}
       </section>
       <div className="momentum-two-column">
         <section className="momentum-panel"><span className="momentum-kicker">families</span><h3>Sora / display</h3><p>Voor hero’s, resultaatkoppen en momenten waarop de learner voelt: ik snap waar ik heen ga.</p><div className="momentum-font-sample momentum-sora">Klaar voor de kern.</div></section>
