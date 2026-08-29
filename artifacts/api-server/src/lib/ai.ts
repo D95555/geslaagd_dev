@@ -10,10 +10,10 @@ export const FAST_MODEL = "gpt-5.6-luna";
  * Which tier each pipeline step runs on, in one place so the balance between
  * cost and quality can be shifted per task without touching handler code.
  *
- * The strong model earns its cost where an error propagates: the chapter plan
- * shapes the whole subject, the summary is the student's only reading material,
- * and exam questions decide grades. Everything else is derived from a summary
- * that has already been written well.
+ * The strong model is reserved for the one decision the rest cannot recover
+ * from: the chapter plan and its topic tags, which fix what every summary,
+ * exercise and exam for the subject will be about. Everything downstream works
+ * from that plan and from summaries already written against it.
  */
 export type ModelTier = "strong" | "fast";
 
@@ -27,8 +27,7 @@ export const MODEL_BY_TASK = {
   summary_generation: "fast",
   key_notes_generation: "fast",
   exercise_generation: "fast",
-  // Exam questions decide grades, so these are worth the stronger model.
-  exam_generation: "strong",
+  exam_generation: "fast",
   questionnaire_generation: "fast",
   grading: "fast",
   chat: "fast",
