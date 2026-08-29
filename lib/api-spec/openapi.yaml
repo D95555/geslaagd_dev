@@ -1685,7 +1685,7 @@ components:
       type: object
       required: [educationLevel, studyProfile, learningGoals]
       properties:
-        educationLevel: { type: string, enum: [vwo6, bachelor1] }
+        educationLevel: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
         studyProfile: { type: string, maxLength: 100 }
         learningGoals:
           type: array
@@ -1814,16 +1814,19 @@ components:
         idempotencyKey: { type: string, minLength: 1, maxLength: 160 }
     CrawlSubject:
       type: object
-      required: [id, name, yearLevel, status, publishStatus, requestedBy, approvedBy, adminNote, createdAt, updatedAt]
+      required: [id, name, yearLevel, status, publishStatus, requestedBy, approvedBy, adminNote, description, emphasis, preferredSourceTypes, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        yearLevel: { type: string, enum: [vwo, bachelor1] }
+        yearLevel: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
         status: { type: string, enum: [pending, active, denied, needs_refinement] }
         publishStatus: { type: string, enum: [incomplete, ready, published] }
         requestedBy: { type: ["string", "null"] }
         approvedBy: { type: ["string", "null"] }
         adminNote: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        emphasis: { type: ["string", "null"] }
+        preferredSourceTypes: { type: ["string", "null"] }
         createdAt: { type: string }
         updatedAt: { type: string }
     CrawlSubjectCreateInput:
@@ -1831,18 +1834,21 @@ components:
       required: [name, year_level]
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
-        year_level: { type: string, enum: [vwo, bachelor1] }
+        year_level: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
     CrawlSubjectRequest:
       type: object
-      required: [id, subjectId, subjectName, yearLevel, studentId, status, adminNote, createdAt, updatedAt]
+      required: [id, subjectId, subjectName, yearLevel, studentId, status, adminNote, description, emphasis, preferredSourceTypes, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         subjectId: { type: ["string", "null"] }
         subjectName: { type: ["string", "null"] }
-        yearLevel: { type: ["string", "null"], enum: [vwo, bachelor1, null] }
+        yearLevel: { type: ["string", "null"], enum: [havo_vwo_bovenbouw, universitair, null] }
         studentId: { type: string }
         status: { type: string, enum: [pending, approved, denied, needs_refinement] }
         adminNote: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        emphasis: { type: ["string", "null"] }
+        preferredSourceTypes: { type: ["string", "null"] }
         createdAt: { type: string }
         updatedAt: { type: string }
     AdminNoteInput:
@@ -1922,8 +1928,10 @@ components:
       required: [name, year_level]
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
-        year_level: { type: string, enum: [vwo, bachelor1] }
+        year_level: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
         description: { type: string, maxLength: 1000 }
+        emphasis: { type: string, maxLength: 300 }
+        preferred_source_types: { type: string, maxLength: 300 }
     RequestSubjectResult:
       type: object
       required: [requestId, subjectId]
@@ -1967,7 +1975,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        yearLevel: { type: string, enum: [vwo, bachelor1] }
+        yearLevel: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
         description: { type: ["string", "null"] }
         difficultyLevel: { type: ["string", "null"] }
         publishStatus: { type: string, enum: [incomplete, ready, published] }

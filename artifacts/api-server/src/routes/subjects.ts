@@ -32,7 +32,7 @@ function toSubjectSummary(row: Row) {
   return {
     id: row.id as string,
     name: row.name as string,
-    yearLevel: row.year_level as "vwo" | "bachelor1",
+    yearLevel: row.year_level as "havo_vwo_bovenbouw" | "universitair",
     description: (row.description as string | null) ?? null,
     difficultyLevel: (row.difficulty_level as string | null) ?? null,
     publishStatus: row.publish_status as "incomplete" | "ready" | "published",

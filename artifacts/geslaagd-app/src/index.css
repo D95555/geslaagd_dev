@@ -362,6 +362,8 @@
 .study-hero-note { min-width: 140px; padding: 17px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); text-align: right; background: hsl(var(--card)); }
 .study-hero-note strong { display: block; color: hsl(var(--primary)); font: 600 2rem var(--app-font-serif); }
 .study-message { margin: 0 0 18px; padding: 12px 14px; border: 1px solid hsl(var(--destructive) / .35); border-radius: var(--radius); color: hsl(var(--destructive)); background: hsl(var(--destructive) / .08); font-size: .82rem; }
+.request-subject-form { display: grid; gap: 16px; margin: 4px 0; }
+.request-subject-form > div { display: grid; gap: 6px; }
 .coach-panel { display: grid; grid-template-columns: .85fr 1.15fr; gap: 34px; padding: clamp(23px, 4vw, 34px); border: 1px solid hsl(var(--primary) / .35); border-radius: calc(var(--radius) + 3px); background: linear-gradient(120deg, hsl(var(--secondary)), hsl(var(--accent) / .1)); }
 .coach-panel > div > span, .section-title > div > span, .proposal-label { color: hsl(var(--muted-foreground)); }
 .coach-panel h2, .section-title h2 { margin: 10px 0 8px; color: hsl(var(--foreground)); font: 600 clamp(1.35rem, 3vw, 1.9rem) var(--app-font-serif); letter-spacing: -.05em; }

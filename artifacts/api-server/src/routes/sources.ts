@@ -30,10 +30,13 @@ function toSubjectRequest(row: Row) {
     id: row.id as string,
     subjectId: (row.subject_id as string | null) ?? null,
     subjectName: (subject?.name as string | undefined) ?? null,
-    yearLevel: (subject?.year_level as "vwo" | "bachelor1" | undefined) ?? null,
+    yearLevel: (subject?.year_level as "havo_vwo_bovenbouw" | "universitair" | undefined) ?? null,
     studentId: row.student_id as string,
     status: row.status as "pending" | "approved" | "denied" | "needs_refinement",
     adminNote: (row.admin_note as string | null) ?? null,
+    description: (subject?.description as string | null) ?? null,
+    emphasis: (subject?.emphasis as string | null) ?? null,
+    preferredSourceTypes: (subject?.preferred_source_types as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -79,6 +82,9 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
       body: JSON.stringify({
         name: input.data.name,
         year_level: input.data.year_level,
+        description: input.data.description ?? null,
+        emphasis: input.data.emphasis ?? null,
+        preferred_source_types: input.data.preferred_source_types ?? null,
         status: "pending",
         requested_by: identity.user.id,
       }),
@@ -125,7 +131,7 @@ router.get("/sources/subject-requests", async (req, res): Promise<void> => {
   }
   try {
     const rows = await restService<Row[]>(
-      `subject_requests?student_id=eq.${identity.user.id}&select=*,crawl_subjects(name,year_level)&order=created_at.desc`,
+      `subject_requests?student_id=eq.${identity.user.id}&select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types)&order=created_at.desc`,
     );
     res.json(ListMySourceSubjectRequestsResponse.parse(rows.map(toSubjectRequest)));
   } catch (error) {

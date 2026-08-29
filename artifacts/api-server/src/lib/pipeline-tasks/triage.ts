@@ -35,10 +35,17 @@ const SYSTEM_PROMPT = [
 export async function runTriage(task: PipelineTask): Promise<Record<string, unknown>> {
   const subject = await loadSubject(task.subjectId);
 
+  const userLines = [
+    `Vak: ${subject.name}`,
+    `Niveau: ${subject.yearLevel}`,
+    subject.description ? `Beschrijving: ${subject.description}` : null,
+    subject.emphasis ? `Nadruk: ${subject.emphasis}` : null,
+  ].filter((line): line is string => line !== null);
+
   const parsed = triageSchema.safeParse(
     await callFastJson({
       system: SYSTEM_PROMPT,
-      user: `Vak: ${subject.name}\nNiveau: ${subject.yearLevel}`,
+      user: userLines.join("\n"),
     }),
   );
   if (!parsed.success) {

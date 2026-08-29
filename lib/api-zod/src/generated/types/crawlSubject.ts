@@ -21,6 +21,12 @@ export interface CrawlSubject {
   approvedBy: string | null;
   /** @nullable */
   adminNote: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  emphasis: string | null;
+  /** @nullable */
+  preferredSourceTypes: string | null;
   createdAt: string;
   updatedAt: string;
 }

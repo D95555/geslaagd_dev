@@ -8,6 +8,8 @@ export type SubjectContext = {
   yearLevel: string;
   description: string | null;
   difficultyLevel: string | null;
+  emphasis: string | null;
+  preferredSourceTypes: string | null;
 };
 
 export type ChapterContext = {
@@ -38,7 +40,7 @@ export type ContentType =
 
 export async function loadSubject(subjectId: string): Promise<SubjectContext> {
   const rows = await restService<Row[]>(
-    `crawl_subjects?id=eq.${subjectId}&select=id,name,year_level,description,difficulty_level`,
+    `crawl_subjects?id=eq.${subjectId}&select=id,name,year_level,description,difficulty_level,emphasis,preferred_source_types`,
   );
   const row = rows[0];
   if (!row) throw new Error(`Subject ${subjectId} not found.`);
@@ -48,6 +50,8 @@ export async function loadSubject(subjectId: string): Promise<SubjectContext> {
     yearLevel: row.year_level as string,
     description: (row.description as string | null) ?? null,
     difficultyLevel: (row.difficulty_level as string | null) ?? null,
+    emphasis: (row.emphasis as string | null) ?? null,
+    preferredSourceTypes: (row.preferred_source_types as string | null) ?? null,
   };
 }
 

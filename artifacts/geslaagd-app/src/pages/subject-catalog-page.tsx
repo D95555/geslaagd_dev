@@ -1,11 +1,43 @@
 import { useEffect, useState } from 'react';
-import { listSubjects, selectSubject, type SubjectSummary } from '@workspace/api-client-react';
+import {
+  listSubjects,
+  requestSourceSubject,
+  selectSubject,
+  type RequestSubjectInputYearLevel,
+  type SubjectSummary,
+} from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
-import { BookOpen, Loader2, Plus } from 'lucide-react';
+import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
+import { Label } from '@workspace/geslaagd-momentum/components/ui/label';
+import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@workspace/geslaagd-momentum/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@workspace/geslaagd-momentum/components/ui/dialog';
+import { BookOpen, Loader2, Plus, Send } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+
+const emptyRequestForm = {
+  name: '',
+  description: '',
+  emphasis: '',
+  yearLevel: 'havo_vwo_bovenbouw' as RequestSubjectInputYearLevel,
+  preferredSourceTypes: '',
+};
 
 export default function SubjectCatalogPage() {
   const [, setLocation] = useLocation();
@@ -13,6 +45,12 @@ export default function SubjectCatalogPage() {
   const [subjects, setSubjects] = useState<SubjectSummary[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'unauthorized' | 'error'>('loading');
   const [adding, setAdding] = useState<string | null>(null);
+
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestForm, setRequestForm] = useState(emptyRequestForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestSent, setRequestSent] = useState(false);
 
   const load = async () => {
     setState('loading');
@@ -36,6 +74,35 @@ export default function SubjectCatalogPage() {
       setLocation(`/vakken/${subject.id}`);
     } catch {
       setAdding(null);
+    }
+  };
+
+  const openRequestDialog = () => {
+    setRequestForm(emptyRequestForm);
+    setRequestError(null);
+    setRequestSent(false);
+    setRequestOpen(true);
+  };
+
+  const submitRequest = async () => {
+    const name = requestForm.name.trim();
+    if (!name) return;
+    setSubmitting(true);
+    setRequestError(null);
+    try {
+      await requestSourceSubject({
+        name,
+        year_level: requestForm.yearLevel,
+        description: requestForm.description.trim() || undefined,
+        emphasis: requestForm.emphasis.trim() || undefined,
+        preferred_source_types: requestForm.preferredSourceTypes.trim() || undefined,
+      });
+      setRequestSent(true);
+    } catch (error) {
+      const data = (error as { data?: { error?: string } }).data;
+      setRequestError(data?.error ?? 'Je aanvraag kon niet worden verstuurd. Probeer het later opnieuw.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -63,6 +130,9 @@ export default function SubjectCatalogPage() {
             Elk vak is opgedeeld in hoofdstukken met uitleg, oefenvragen en tentamens.
           </p>
         </div>
+        <Button variant="outline" onClick={openRequestDialog} data-testid="button-request-subject">
+          <Send size={15} /> Vak aanvragen
+        </Button>
       </div>
 
       {state === 'loading' && (
@@ -82,9 +152,11 @@ export default function SubjectCatalogPage() {
         <div className="study-page-message">
           <h2>Nog geen vakken beschikbaar</h2>
           <p>
-            Er zijn nog geen vakken gepubliceerd. Vraag een vak aan vanuit je leeromgeving —
-            dan gaan we ermee aan de slag.
+            Er zijn nog geen vakken gepubliceerd. Vraag een vak aan — dan gaan we ermee aan de slag.
           </p>
+          <Button onClick={openRequestDialog}>
+            <Send size={15} /> Vak aanvragen
+          </Button>
         </div>
       )}
 
@@ -95,7 +167,7 @@ export default function SubjectCatalogPage() {
               <div className="subject-card-head">
                 <h2>{subject.name}</h2>
                 <Badge variant="secondary">
-                  {subject.yearLevel === 'vwo' ? 'VWO' : 'Bachelor 1'}
+                  {subject.yearLevel === 'havo_vwo_bovenbouw' ? 'HAVO/VWO Bovenbouw' : 'Universitair'}
                 </Badge>
               </div>
               {subject.difficultyLevel && (
@@ -130,6 +202,103 @@ export default function SubjectCatalogPage() {
           ))}
         </ul>
       )}
+
+      <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
+        <DialogContent data-testid="dialog-request-subject">
+          <DialogHeader>
+            <DialogTitle>Vak aanvragen</DialogTitle>
+            <DialogDescription>
+              Zie je het vak dat je nodig hebt nog niet? Vraag het aan, hoe meer detail je geeft, hoe beter we het vak kunnen samenstellen.
+            </DialogDescription>
+          </DialogHeader>
+
+          {requestSent ? (
+            <div className="study-page-message">
+              <h2>Aanvraag verstuurd</h2>
+              <p>We laten je weten zodra het vak klaarstaat.</p>
+            </div>
+          ) : (
+            <div className="request-subject-form">
+              <div>
+                <Label htmlFor="request-subject-name">Vak</Label>
+                <Input
+                  id="request-subject-name"
+                  value={requestForm.name}
+                  maxLength={160}
+                  onChange={(e) => setRequestForm((form) => ({ ...form, name: e.target.value }))}
+                  placeholder="Bijv. Psychofarmacologie"
+                />
+              </div>
+              <div>
+                <Label htmlFor="request-subject-description">Beschrijving</Label>
+                <Textarea
+                  id="request-subject-description"
+                  value={requestForm.description}
+                  maxLength={1000}
+                  onChange={(e) => setRequestForm((form) => ({ ...form, description: e.target.value }))}
+                  placeholder="Korte beschrijving van het vak"
+                />
+              </div>
+              <div>
+                <Label htmlFor="request-subject-emphasis">Nadruk</Label>
+                <Input
+                  id="request-subject-emphasis"
+                  value={requestForm.emphasis}
+                  maxLength={300}
+                  onChange={(e) => setRequestForm((form) => ({ ...form, emphasis: e.target.value }))}
+                  placeholder="Bijv. werkingsmechanisme (mechanism of action)"
+                />
+              </div>
+              <div>
+                <Label htmlFor="request-subject-level">Niveau</Label>
+                <Select
+                  value={requestForm.yearLevel}
+                  onValueChange={(value) =>
+                    setRequestForm((form) => ({ ...form, yearLevel: value as RequestSubjectInputYearLevel }))
+                  }
+                >
+                  <SelectTrigger id="request-subject-level" aria-label="Niveau"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="havo_vwo_bovenbouw">HAVO/VWO Bovenbouw</SelectItem>
+                    <SelectItem value="universitair">Universitair</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="request-subject-sources">Type bronnen gewenst</Label>
+                <Input
+                  id="request-subject-sources"
+                  value={requestForm.preferredSourceTypes}
+                  maxLength={300}
+                  onChange={(e) =>
+                    setRequestForm((form) => ({ ...form, preferredSourceTypes: e.target.value }))
+                  }
+                  placeholder="Bijv. recente onderzoeken, richtlijnen, of boeken"
+                />
+              </div>
+              {requestError && <p className="admin-notice is-error">{requestError}</p>}
+            </div>
+          )}
+
+          <DialogFooter>
+            {requestSent ? (
+              <Button onClick={() => setRequestOpen(false)}>Sluiten</Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setRequestOpen(false)} disabled={submitting}>
+                  Annuleren
+                </Button>
+                <Button
+                  onClick={() => void submitRequest()}
+                  disabled={!requestForm.name.trim() || submitting}
+                >
+                  {submitting ? <Loader2 className="spin" size={14} /> : <Send size={14} />} Aanvragen
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </StudyPageShell>
   );
 }

@@ -244,7 +244,7 @@ router.get("/admin/subjects/:subjectId/content", async (req, res): Promise<void>
         subject: {
           id: subjectRow.id as string,
           name: subjectRow.name as string,
-          yearLevel: subjectRow.year_level as "vwo" | "bachelor1",
+          yearLevel: subjectRow.year_level as "havo_vwo_bovenbouw" | "universitair",
           description: (subjectRow.description as string | null) ?? null,
           difficultyLevel: (subjectRow.difficulty_level as string | null) ?? null,
           publishStatus: subjectRow.publish_status as "incomplete" | "ready" | "published",
@@ -328,7 +328,7 @@ router.post("/admin/subjects/:subjectId/publish", async (req, res): Promise<void
       PublishSubjectResponse.parse({
         id: row.id as string,
         name: row.name as string,
-        yearLevel: row.year_level as "vwo" | "bachelor1",
+        yearLevel: row.year_level as "havo_vwo_bovenbouw" | "universitair",
         description: (row.description as string | null) ?? subject.description,
         difficultyLevel: (row.difficulty_level as string | null) ?? subject.difficultyLevel,
         publishStatus: row.publish_status as "incomplete" | "ready" | "published",

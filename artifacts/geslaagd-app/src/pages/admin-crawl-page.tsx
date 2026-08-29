@@ -75,7 +75,7 @@ export default function AdminCrawlPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectYearLevel, setNewSubjectYearLevel] = useState<'vwo' | 'bachelor1'>('vwo');
+  const [newSubjectYearLevel, setNewSubjectYearLevel] = useState<'havo_vwo_bovenbouw' | 'universitair'>('havo_vwo_bovenbouw');
   const [creating, setCreating] = useState(false);
 
   const [refinement, setRefinement] = useState<RefinementAction | null>(null);
@@ -234,7 +234,7 @@ export default function AdminCrawlPage() {
                   <div key={request.id} className="account-row request-row">
                     <div>
                       <strong>{request.subjectName ?? 'Onbekend vak'}</strong>
-                      <span>{request.yearLevel === 'bachelor1' ? 'Eerstejaars bachelor' : '6 VWO'} · aangevraagd {fmtDateTime(request.createdAt)}</span>
+                      <span>{request.yearLevel === 'universitair' ? 'Universitair' : 'HAVO/VWO Bovenbouw'} · aangevraagd {fmtDateTime(request.createdAt)}</span>
                     </div>
                     <div className="request-row-actions">
                       <Badge variant="secondary">{requestStatusLabel[request.status]}</Badge>
@@ -284,11 +284,11 @@ export default function AdminCrawlPage() {
             <DialogDescription>Maakt direct een actief vak aan, zonder studentaanvraag.</DialogDescription>
           </DialogHeader>
           <Input value={newSubjectName} maxLength={160} onChange={(e) => setNewSubjectName(e.target.value)} placeholder="Vaknaam" />
-          <Select value={newSubjectYearLevel} onValueChange={(value) => setNewSubjectYearLevel(value as 'vwo' | 'bachelor1')}>
+          <Select value={newSubjectYearLevel} onValueChange={(value) => setNewSubjectYearLevel(value as 'havo_vwo_bovenbouw' | 'universitair')}>
             <SelectTrigger aria-label="Niveau"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="vwo">6 VWO</SelectItem>
-              <SelectItem value="bachelor1">Eerstejaars bachelor</SelectItem>
+              <SelectItem value="havo_vwo_bovenbouw">HAVO/VWO Bovenbouw</SelectItem>
+              <SelectItem value="universitair">Universitair</SelectItem>
             </SelectContent>
           </Select>
           <DialogFooter>

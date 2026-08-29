@@ -16,4 +16,8 @@ export interface RequestSubjectInput {
   year_level: RequestSubjectInputYearLevel;
   /** @maxLength 1000 */
   description?: string;
+  /** @maxLength 300 */
+  emphasis?: string;
+  /** @maxLength 300 */
+  preferred_source_types?: string;
 }

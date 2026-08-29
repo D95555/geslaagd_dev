@@ -10,6 +10,6 @@ export type StudyPreferencesInputEducationLevel = typeof StudyPreferencesInputEd
 
 
 export const StudyPreferencesInputEducationLevel = {
-  vwo6: 'vwo6',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;

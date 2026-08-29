@@ -439,8 +439,8 @@ export type StudyPreferencesInputEducationLevel = typeof StudyPreferencesInputEd
 
 
 export const StudyPreferencesInputEducationLevel = {
-  vwo6: 'vwo6',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export interface StudyPreferencesInput {
@@ -598,8 +598,8 @@ export type CrawlSubjectYearLevel = typeof CrawlSubjectYearLevel[keyof typeof Cr
 
 
 export const CrawlSubjectYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export type CrawlSubjectStatus = typeof CrawlSubjectStatus[keyof typeof CrawlSubjectStatus];
@@ -633,6 +633,12 @@ export interface CrawlSubject {
   approvedBy: string | null;
   /** @nullable */
   adminNote: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  emphasis: string | null;
+  /** @nullable */
+  preferredSourceTypes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -641,8 +647,8 @@ export type CrawlSubjectCreateInputYearLevel = typeof CrawlSubjectCreateInputYea
 
 
 export const CrawlSubjectCreateInputYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export interface CrawlSubjectCreateInput {
@@ -661,8 +667,8 @@ export type CrawlSubjectRequestYearLevel = typeof CrawlSubjectRequestYearLevel[k
 
 
 export const CrawlSubjectRequestYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export type CrawlSubjectRequestStatus = typeof CrawlSubjectRequestStatus[keyof typeof CrawlSubjectRequestStatus];
@@ -687,6 +693,12 @@ export interface CrawlSubjectRequest {
   status: CrawlSubjectRequestStatus;
   /** @nullable */
   adminNote: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  emphasis: string | null;
+  /** @nullable */
+  preferredSourceTypes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -807,8 +819,8 @@ export type RequestSubjectInputYearLevel = typeof RequestSubjectInputYearLevel[k
 
 
 export const RequestSubjectInputYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export interface RequestSubjectInput {
@@ -820,6 +832,10 @@ export interface RequestSubjectInput {
   year_level: RequestSubjectInputYearLevel;
   /** @maxLength 1000 */
   description?: string;
+  /** @maxLength 300 */
+  emphasis?: string;
+  /** @maxLength 300 */
+  preferred_source_types?: string;
 }
 
 export interface RequestSubjectResult {
@@ -888,8 +904,8 @@ export type SubjectSummaryYearLevel = typeof SubjectSummaryYearLevel[keyof typeo
 
 
 export const SubjectSummaryYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;
 
 export type SubjectSummaryPublishStatus = typeof SubjectSummaryPublishStatus[keyof typeof SubjectSummaryPublishStatus];

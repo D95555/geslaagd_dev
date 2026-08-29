@@ -792,7 +792,7 @@ export const getStudyPreferencesResponseOneOneLearningGoalsMax = 5;
 
 
 export const GetStudyPreferencesResponse = zod.union([zod.object({
-  "educationLevel": zod.enum(['vwo6', 'bachelor1']),
+  "educationLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "studyProfile": zod.string().max(getStudyPreferencesResponseOneOneStudyProfileMax),
   "learningGoals": zod.array(zod.string().min(1).max(getStudyPreferencesResponseOneOneLearningGoalsItemMax)).min(1).max(getStudyPreferencesResponseOneOneLearningGoalsMax)
 }).and(zod.object({
@@ -812,7 +812,7 @@ export const upsertStudyPreferencesBodyLearningGoalsMax = 5;
 
 
 export const UpsertStudyPreferencesBody = zod.object({
-  "educationLevel": zod.enum(['vwo6', 'bachelor1']),
+  "educationLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "studyProfile": zod.string().max(upsertStudyPreferencesBodyStudyProfileMax),
   "learningGoals": zod.array(zod.string().min(1).max(upsertStudyPreferencesBodyLearningGoalsItemMax)).min(1).max(upsertStudyPreferencesBodyLearningGoalsMax)
 })
@@ -826,7 +826,7 @@ export const upsertStudyPreferencesResponseOneLearningGoalsMax = 5;
 
 
 export const UpsertStudyPreferencesResponse = zod.object({
-  "educationLevel": zod.enum(['vwo6', 'bachelor1']),
+  "educationLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "studyProfile": zod.string().max(upsertStudyPreferencesResponseOneStudyProfileMax),
   "learningGoals": zod.array(zod.string().min(1).max(upsertStudyPreferencesResponseOneLearningGoalsItemMax)).min(1).max(upsertStudyPreferencesResponseOneLearningGoalsMax)
 }).and(zod.object({
@@ -843,18 +843,21 @@ export const createCrawlSubjectBodyNameMax = 160;
 
 export const CreateCrawlSubjectBody = zod.object({
   "name": zod.string().min(1).max(createCrawlSubjectBodyNameMax),
-  "year_level": zod.enum(['vwo', 'bachelor1'])
+  "year_level": zod.enum(['havo_vwo_bovenbouw', 'universitair'])
 })
 
 export const CreateCrawlSubjectResponse = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
   "requestedBy": zod.string().nullable(),
   "approvedBy": zod.string().nullable(),
   "adminNote": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "emphasis": zod.string().nullable(),
+  "preferredSourceTypes": zod.string().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -866,12 +869,15 @@ export const CreateCrawlSubjectResponse = zod.object({
 export const ListCrawlSubjectsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "status": zod.enum(['pending', 'active', 'denied', 'needs_refinement']),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
   "requestedBy": zod.string().nullable(),
   "approvedBy": zod.string().nullable(),
   "adminNote": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "emphasis": zod.string().nullable(),
+  "preferredSourceTypes": zod.string().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -885,10 +891,13 @@ export const ListCrawlSubjectRequestsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "subjectId": zod.string().nullable(),
   "subjectName": zod.string().nullable(),
-  "yearLevel": zod.union([zod.literal('vwo'),zod.literal('bachelor1'),zod.literal(null)]).nullable(),
+  "yearLevel": zod.union([zod.literal('havo_vwo_bovenbouw'),zod.literal('universitair'),zod.literal(null)]).nullable(),
   "studentId": zod.string(),
   "status": zod.enum(['pending', 'approved', 'denied', 'needs_refinement']),
   "adminNote": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "emphasis": zod.string().nullable(),
+  "preferredSourceTypes": zod.string().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1109,12 +1118,18 @@ export const requestSourceSubjectBodyNameMax = 160;
 
 export const requestSourceSubjectBodyDescriptionMax = 1000;
 
+export const requestSourceSubjectBodyEmphasisMax = 300;
+
+export const requestSourceSubjectBodyPreferredSourceTypesMax = 300;
+
 
 
 export const RequestSourceSubjectBody = zod.object({
   "name": zod.string().min(1).max(requestSourceSubjectBodyNameMax),
-  "year_level": zod.enum(['vwo', 'bachelor1']),
-  "description": zod.string().max(requestSourceSubjectBodyDescriptionMax).optional()
+  "year_level": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
+  "description": zod.string().max(requestSourceSubjectBodyDescriptionMax).optional(),
+  "emphasis": zod.string().max(requestSourceSubjectBodyEmphasisMax).optional(),
+  "preferred_source_types": zod.string().max(requestSourceSubjectBodyPreferredSourceTypesMax).optional()
 })
 
 export const RequestSourceSubjectResponse = zod.object({
@@ -1130,10 +1145,13 @@ export const ListMySourceSubjectRequestsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "subjectId": zod.string().nullable(),
   "subjectName": zod.string().nullable(),
-  "yearLevel": zod.union([zod.literal('vwo'),zod.literal('bachelor1'),zod.literal(null)]).nullable(),
+  "yearLevel": zod.union([zod.literal('havo_vwo_bovenbouw'),zod.literal('universitair'),zod.literal(null)]).nullable(),
   "studentId": zod.string(),
   "status": zod.enum(['pending', 'approved', 'denied', 'needs_refinement']),
   "adminNote": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "emphasis": zod.string().nullable(),
+  "preferredSourceTypes": zod.string().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1185,7 +1203,7 @@ export const ListSourcesResponse = zod.array(ListSourcesResponseItem)
 export const ListSubjectsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().nullable(),
   "difficultyLevel": zod.string().nullable(),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
@@ -1200,7 +1218,7 @@ export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
 export const ListSelectedSubjectsResponseItem = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().nullable(),
   "difficultyLevel": zod.string().nullable(),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
@@ -1221,7 +1239,7 @@ export const GetSubjectDetailParams = zod.object({
 export const GetSubjectDetailResponse = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().nullable(),
   "difficultyLevel": zod.string().nullable(),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
@@ -1731,7 +1749,7 @@ export const GetAdminSubjectContentResponse = zod.object({
   "subject": zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().nullable(),
   "difficultyLevel": zod.string().nullable(),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),
@@ -1780,7 +1798,7 @@ export const PublishSubjectParams = zod.object({
 export const PublishSubjectResponse = zod.object({
   "id": zod.string().uuid(),
   "name": zod.string(),
-  "yearLevel": zod.enum(['vwo', 'bachelor1']),
+  "yearLevel": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().nullable(),
   "difficultyLevel": zod.string().nullable(),
   "publishStatus": zod.enum(['incomplete', 'ready', 'published']),

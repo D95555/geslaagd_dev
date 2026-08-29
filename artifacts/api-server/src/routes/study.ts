@@ -140,7 +140,7 @@ function toSelectedSubject(row: Row) {
 
 function toPreferences(row: Row) {
   return {
-    educationLevel: row.education_level === "bachelor1" ? "bachelor1" as const : "vwo6" as const,
+    educationLevel: row.education_level === "universitair" ? "universitair" as const : "havo_vwo_bovenbouw" as const,
     studyProfile: text(row.study_profile),
     learningGoals: textArray(row.learning_goals),
     updatedAt: text(row.updated_at),

@@ -10,6 +10,6 @@ export type CrawlSubjectCreateInputYearLevel = typeof CrawlSubjectCreateInputYea
 
 
 export const CrawlSubjectCreateInputYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;

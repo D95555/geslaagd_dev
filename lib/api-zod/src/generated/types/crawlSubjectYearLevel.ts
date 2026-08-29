@@ -10,6 +10,6 @@ export type CrawlSubjectYearLevel = typeof CrawlSubjectYearLevel[keyof typeof Cr
 
 
 export const CrawlSubjectYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;

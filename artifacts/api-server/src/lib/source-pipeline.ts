@@ -16,6 +16,9 @@ export type CrawlSubject = {
   id: string;
   name: string;
   yearLevel: string;
+  description?: string | null;
+  emphasis?: string | null;
+  preferredSourceTypes?: string | null;
 };
 
 export type CrawlResult = {
@@ -103,13 +106,18 @@ async function generateCrawlPrompt(
   const userMessage = [
     `Subject: ${subject.name}`,
     `Year level: ${subject.yearLevel}`,
+    subject.description ? `Description (student-provided): ${subject.description}` : null,
+    subject.emphasis ? `Emphasis to prioritize: ${subject.emphasis}` : null,
+    subject.preferredSourceTypes ? `Preferred source types: ${subject.preferredSourceTypes}` : null,
     "Target: 15-20 high-quality study sources",
     "",
     "Past crawl examples for similar subjects (ordered by efficiency, best first):",
     examplesText,
     "",
     "Generate the optimal Firecrawl search query for this subject.",
-  ].join("\n");
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
 
   // Writing one search string does not need the expensive model.
   const query = await callFastText({

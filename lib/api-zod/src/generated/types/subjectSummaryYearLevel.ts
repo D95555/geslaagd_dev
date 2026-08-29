@@ -10,6 +10,6 @@ export type SubjectSummaryYearLevel = typeof SubjectSummaryYearLevel[keyof typeo
 
 
 export const SubjectSummaryYearLevel = {
-  vwo: 'vwo',
-  bachelor1: 'bachelor1',
+  havo_vwo_bovenbouw: 'havo_vwo_bovenbouw',
+  universitair: 'universitair',
 } as const;

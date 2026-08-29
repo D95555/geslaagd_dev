@@ -37,12 +37,15 @@ function toSubject(row: Row) {
   return {
     id: row.id as string,
     name: row.name as string,
-    yearLevel: row.year_level as "vwo" | "bachelor1",
+    yearLevel: row.year_level as "havo_vwo_bovenbouw" | "universitair",
     status: row.status as "pending" | "active" | "denied" | "needs_refinement",
     publishStatus: (row.publish_status as "incomplete" | "ready" | "published" | null) ?? "incomplete",
     requestedBy: (row.requested_by as string | null) ?? null,
     approvedBy: (row.approved_by as string | null) ?? null,
     adminNote: (row.admin_note as string | null) ?? null,
+    description: (row.description as string | null) ?? null,
+    emphasis: (row.emphasis as string | null) ?? null,
+    preferredSourceTypes: (row.preferred_source_types as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -55,10 +58,13 @@ function toSubjectRequest(row: Row) {
     id: row.id as string,
     subjectId: (row.subject_id as string | null) ?? null,
     subjectName: (subject?.name as string | undefined) ?? null,
-    yearLevel: (subject?.year_level as "vwo" | "bachelor1" | undefined) ?? null,
+    yearLevel: (subject?.year_level as "havo_vwo_bovenbouw" | "universitair" | undefined) ?? null,
     studentId: row.student_id as string,
     status: row.status as "pending" | "approved" | "denied" | "needs_refinement",
     adminNote: (row.admin_note as string | null) ?? null,
+    description: (subject?.description as string | null) ?? null,
+    emphasis: (subject?.emphasis as string | null) ?? null,
+    preferredSourceTypes: (subject?.preferred_source_types as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -150,7 +156,7 @@ router.get("/admin/crawl/subject-requests", async (req, res): Promise<void> => {
   }
   try {
     const rows = await restService<Row[]>(
-      "subject_requests?select=*,crawl_subjects(name,year_level)&status=eq.pending&order=created_at.desc",
+      "subject_requests?select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types)&status=eq.pending&order=created_at.desc",
     );
     res.json(ListCrawlSubjectRequestsResponse.parse(rows.map(toSubjectRequest)));
   } catch (error) {
@@ -281,7 +287,7 @@ router.post("/admin/crawl/run", async (req, res): Promise<void> => {
   }
   try {
     const subjects = await restService<Row[]>(
-      `crawl_subjects?id=eq.${input.data.subjectId}&select=id,name,year_level,status`,
+      `crawl_subjects?id=eq.${input.data.subjectId}&select=id,name,year_level,status,description,emphasis,preferred_source_types`,
     );
     const subject = subjects[0];
     if (!subject) {
@@ -298,6 +304,9 @@ router.post("/admin/crawl/run", async (req, res): Promise<void> => {
         id: subject.id as string,
         name: subject.name as string,
         yearLevel: subject.year_level as string,
+        description: (subject.description as string | null) ?? null,
+        emphasis: (subject.emphasis as string | null) ?? null,
+        preferredSourceTypes: (subject.preferred_source_types as string | null) ?? null,
       },
       triggeredBy: identity.user.id,
     });

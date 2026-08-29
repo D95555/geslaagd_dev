@@ -20,6 +20,12 @@ export interface CrawlSubjectRequest {
   status: CrawlSubjectRequestStatus;
   /** @nullable */
   adminNote: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  emphasis: string | null;
+  /** @nullable */
+  preferredSourceTypes: string | null;
   createdAt: string;
   updatedAt: string;
 }
