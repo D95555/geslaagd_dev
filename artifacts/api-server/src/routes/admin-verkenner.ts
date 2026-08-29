@@ -213,4 +213,157 @@ router.get("/admin/verkenner/subjects/:subjectId", async (req, res): Promise<voi
   }
 });
 
+function toLogEntry(row: Row) {
+  return {
+    id: String(row.id),
+    taskId: row.task_id as string,
+    chapterId: (row.chapter_id as string | null) ?? null,
+    level: row.level as "info" | "warn" | "error",
+    phase: (row.phase as string | null) ?? "",
+    message: row.message as string,
+    data: (row.data as Record<string, unknown> | null) ?? null,
+    createdAt: row.created_at as string,
+  };
+}
+
+router.get("/admin/verkenner/objects/:type/:id", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = GetVerkennerObjectParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Ongeldig object." });
+    return;
+  }
+  const { type, id } = params.data;
+  try {
+    if (type === "chapter") {
+      const rows = await restService<Row[]>(`chapters?id=eq.${id}&select=*`);
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: "Hoofdstuk niet gevonden." });
+        return;
+      }
+      const logs = await restService<Row[]>(
+        `pipeline_task_logs?chapter_id=eq.${id}&select=*&order=id.asc&limit=500`,
+      );
+      res.json(
+        GetVerkennerObjectResponse.parse({
+          type,
+          id,
+          chapterTitle: row.title as string,
+          chapterDescription: (row.description as string | null) ?? "",
+          chapterIsImportant: Boolean(row.is_important),
+          chapterTopicTags: (row.topic_tags as string[] | null) ?? [],
+          chapterStatus: row.status as "pending" | "ready",
+          logs: logs.map(toLogEntry),
+        }),
+      );
+      return;
+    }
+
+    if (type === "source") {
+      const rows = await restService<Row[]>(`sources?id=eq.${id}&select=*`);
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: "Bron niet gevonden." });
+        return;
+      }
+      const [chapterLinks, subjectLinks] = await Promise.all([
+        restService<Row[]>(`chapter_sources?source_id=eq.${id}&select=chapters(id,title)`),
+        restService<Row[]>(`source_subjects?source_id=eq.${id}&select=crawl_subjects(id,name)`),
+      ]);
+      res.json(
+        GetVerkennerObjectResponse.parse({
+          type,
+          id,
+          sourceUrl: row.url as string,
+          sourceTitle: (row.title as string | null) ?? null,
+          sourceType: (row.type as string | null) ?? null,
+          sourceQualityScore: (row.quality_score as number | null) ?? null,
+          sourceAiSummary: (row.ai_summary as string | null) ?? null,
+          sourceStatus: row.status as "pending" | "accepted" | "declined",
+          linkedChapters: chapterLinks
+            .map((link) => link.chapters as Row | null)
+            .filter((chapter): chapter is Row => Boolean(chapter))
+            .map((chapter) => ({ id: chapter.id as string, name: chapter.title as string })),
+          linkedSubjects: subjectLinks
+            .map((link) => link.crawl_subjects as Row | null)
+            .filter((subject): subject is Row => Boolean(subject))
+            .map((subject) => ({ id: subject.id as string, name: subject.name as string })),
+          logs: [],
+        }),
+      );
+      return;
+    }
+
+    if (type === "crawl") {
+      const rows = await restService<Row[]>(`crawls?id=eq.${id}&select=*`);
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: "Crawl niet gevonden." });
+        return;
+      }
+      res.json(
+        GetVerkennerObjectResponse.parse({
+          type,
+          id,
+          crawl: {
+            ...toCrawlSummary(row),
+            subjectName: "",
+            promptUsed: (row.prompt_used as string | null) ?? null,
+            errorDetail: (row.error_detail as string | null) ?? null,
+            sources: [],
+          },
+          logs: [],
+        }),
+      );
+      return;
+    }
+
+    if (type === "task") {
+      const rows = await restService<Row[]>(`pipeline_tasks?id=eq.${id}&select=*`);
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: "Taak niet gevonden." });
+        return;
+      }
+      const logs = await loadTaskLogs(id);
+      res.json(
+        GetVerkennerObjectResponse.parse({
+          type,
+          id,
+          task: {
+            id: row.id as string,
+            taskType: row.task_type as string,
+            status: row.status as "waiting" | "ready" | "running" | "done" | "failed",
+            summary: (row.summary as string | null) ?? null,
+            result: (row.result as Record<string, unknown> | null) ?? null,
+            lastError: (row.last_error as string | null) ?? null,
+          },
+          logs: logs.map((entry) => ({
+            id: entry.id,
+            taskId: entry.taskId,
+            chapterId: entry.chapterId,
+            level: entry.level,
+            phase: entry.phase,
+            message: entry.message,
+            data: entry.data,
+            createdAt: entry.createdAt,
+          })),
+        }),
+      );
+      return;
+    }
+
+    // type === "content" is handled in Task 5.
+    res.status(404).json({ error: "Onbekend objecttype." });
+  } catch (error) {
+    req.log.warn({ error, type: req.params.type }, "Could not load Verkenner object detail");
+    res.status(500).json({ error: "Object kon niet worden geladen." });
+  }
+});
+
 export default router;
