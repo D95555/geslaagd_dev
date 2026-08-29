@@ -51,3 +51,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Runtime output van de crawler, geen broncode
+artifacts/api-server/crawl-raw/
