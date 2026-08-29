@@ -38,6 +38,7 @@ import {
   type CrawlConfigDraft,
 } from '@/components/admin/crawl-config-form';
 import { TaskQueue } from '@/components/admin/task-queue';
+import { TaskDetailDialog } from '@/components/admin/task-detail';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 
 type StatusFilter = 'all' | PipelineTask['status'];
@@ -60,6 +61,7 @@ export default function AdminPipelinePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState('');
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
   // `silent` skips the loading state so background polling updates the task
   // list in place — this page is watched while the pipeline is running.
@@ -221,6 +223,7 @@ export default function AdminPipelinePage() {
               subjectNames={subjectNames}
               onRetry={openRetry}
               onCancel={(task) => void cancel(task)}
+              onOpen={(task) => setDetailTaskId(task.id)}
               busyTaskId={busyTaskId}
             />
 
@@ -311,6 +314,7 @@ export default function AdminPipelinePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <TaskDetailDialog taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
     </AdminShell>
   );
 }

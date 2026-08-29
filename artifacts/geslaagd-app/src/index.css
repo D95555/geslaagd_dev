@@ -1098,3 +1098,41 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .admin-nav-item, .attention-card { transition: none; }
   .task-dot-running { animation: none; }
 }
+
+/* ── Taakdetails en console ─────────────────────────────────────────────── */
+
+.task-open { border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: hsl(var(--border)); }
+.task-open:hover { text-decoration-color: hsl(var(--primary)); }
+
+.task-detail-dialog { max-width: 780px; }
+.task-detail { display: flex; flex-direction: column; gap: 18px; max-height: 62vh; overflow-y: auto; }
+.task-detail-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: hsl(var(--muted-foreground)); font-size: .8rem; }
+.task-detail-block { display: flex; flex-direction: column; gap: 8px; }
+.task-detail-block h3 { margin: 0; font: .65rem var(--app-font-mono); letter-spacing: .06em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+.task-summary { margin: 0; padding: 14px 16px; border-left: 3px solid hsl(var(--primary)); border-radius: var(--radius); background: hsl(var(--muted)); font-size: .88rem; line-height: 1.65; }
+.task-detail-raw summary { cursor: pointer; color: hsl(var(--muted-foreground)); font-size: .8rem; }
+
+.log-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.log-line { display: grid; grid-template-columns: 68px 128px minmax(0, 1fr); gap: 10px; padding: 7px 10px; border-radius: var(--radius); font-size: .82rem; line-height: 1.5; }
+.log-line:nth-child(odd) { background: hsl(var(--muted) / .45); }
+.log-time { color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .74rem; }
+.log-phase { color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; }
+.log-message { min-width: 0; overflow-wrap: anywhere; }
+.log-warn .log-phase, .log-warn .log-message { color: hsl(var(--destructive)); }
+.log-error { border-left: 3px solid hsl(var(--destructive)); }
+.log-error .log-message { color: hsl(var(--destructive)); }
+.log-toggle { margin-left: 8px; border: 0; background: none; color: hsl(var(--muted-foreground)); font-size: .74rem; cursor: pointer; text-decoration: underline; }
+.log-data { margin: 8px 0 0; padding: 10px 12px; border-radius: var(--radius); background: hsl(var(--muted)); font-family: var(--app-font-mono); font-size: .72rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow-y: auto; }
+.log-error-detail { color: hsl(var(--destructive)); }
+
+.console-list { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 6px; background: hsl(var(--card)); }
+.console-row { position: relative; }
+.console-open { position: absolute; inset: 0; border: 0; background: none; cursor: pointer; z-index: 0; }
+.console-row .log-line { position: relative; z-index: 1; pointer-events: none; }
+.console-row .log-toggle { pointer-events: auto; }
+.console-row:hover { background: hsl(var(--muted)); border-radius: var(--radius); }
+
+@media (max-width: 720px) {
+  .log-line { grid-template-columns: 1fr; gap: 2px; }
+  .log-time, .log-phase { display: inline; margin-right: 8px; }
+}

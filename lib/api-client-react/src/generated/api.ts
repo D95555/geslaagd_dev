@@ -47,11 +47,14 @@ import type {
   HealthStatus,
   ListAdminAccountsParams,
   ListChatMessagesParams,
+  ListPipelineLogsParams,
   ListPipelineTasksParams,
   ListSourcesParams,
   PasswordResetRequestInput,
   PendingSource,
+  PipelineLogEntry,
   PipelineTask,
+  PipelineTaskDetail,
   QuestionnaireSubmissionInput,
   ReconsiderSourceInput,
   ReorderSelectedStudySubjectsInput,
@@ -4817,6 +4820,167 @@ export function useListPipelineTasks<TData = Awaited<ReturnType<typeof listPipel
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListPipelineTasksQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPipelineTaskDetailUrl = (taskId: string,) => {
+
+
+
+
+  return `/api/admin/pipeline/tasks/${taskId}`
+}
+
+/**
+ * @summary One task with its full log and closing summary
+ */
+export const getPipelineTaskDetail = async (taskId: string, options?: Parameters<typeof customFetch>[1]): Promise<PipelineTaskDetail> => {
+
+  return customFetch<PipelineTaskDetail>(getGetPipelineTaskDetailUrl(taskId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPipelineTaskDetailQueryKey = (taskId: string,) => {
+    return [
+    `/api/admin/pipeline/tasks/${taskId}`
+    ] as const;
+    }
+
+
+export const getGetPipelineTaskDetailQueryOptions = <TData = Awaited<ReturnType<typeof getPipelineTaskDetail>>, TError = ErrorType<void>>(taskId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPipelineTaskDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPipelineTaskDetailQueryKey(taskId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPipelineTaskDetail>>> = ({ signal }) => getPipelineTaskDetail(taskId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: taskId !== null && taskId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPipelineTaskDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPipelineTaskDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getPipelineTaskDetail>>>
+export type GetPipelineTaskDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary One task with its full log and closing summary
+ */
+
+export function useGetPipelineTaskDetail<TData = Awaited<ReturnType<typeof getPipelineTaskDetail>>, TError = ErrorType<void>>(
+ taskId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPipelineTaskDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPipelineTaskDetailQueryOptions(taskId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPipelineLogsUrl = (params?: ListPipelineLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/pipeline/logs?${stringifiedParams}` : `/api/admin/pipeline/logs`
+}
+
+/**
+ * @summary Newest log entries across all tasks, for the console
+ */
+export const listPipelineLogs = async (params?: ListPipelineLogsParams, options?: Parameters<typeof customFetch>[1]): Promise<PipelineLogEntry[]> => {
+
+  return customFetch<PipelineLogEntry[]>(getListPipelineLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPipelineLogsQueryKey = (params?: ListPipelineLogsParams,) => {
+    return [
+    `/api/admin/pipeline/logs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPipelineLogsQueryOptions = <TData = Awaited<ReturnType<typeof listPipelineLogs>>, TError = ErrorType<unknown>>(params?: ListPipelineLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPipelineLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPipelineLogsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPipelineLogs>>> = ({ signal }) => listPipelineLogs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPipelineLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPipelineLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listPipelineLogs>>>
+export type ListPipelineLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Newest log entries across all tasks, for the console
+ */
+
+export function useListPipelineLogs<TData = Awaited<ReturnType<typeof listPipelineLogs>>, TError = ErrorType<unknown>>(
+ params?: ListPipelineLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPipelineLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPipelineLogsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

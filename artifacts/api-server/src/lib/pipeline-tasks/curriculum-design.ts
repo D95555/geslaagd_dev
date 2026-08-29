@@ -7,6 +7,7 @@ import { restService } from "../supabase";
 import { loadSubject } from "./context";
 import { linkSourceToChapter, linkSourceToSubject, upsertSource } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
 
@@ -112,6 +113,9 @@ export async function runCurriculumDesign(
   task: PipelineTask,
 ): Promise<Record<string, unknown>> {
   const subject = await loadSubject(task.subjectId);
+  const log = taskLog(task);
+
+  await log.info("onderzoek", `Vooronderzoek naar "${subject.name}" via Firecrawl.`);
   const research = await researchSubject(subject.name, subject.yearLevel);
 
   const parsed = curriculumSchema.safeParse(
@@ -131,6 +135,19 @@ export async function runCurriculumDesign(
     throw new Error(`Curriculum design returned unusable JSON: ${parsed.error.message}`);
   }
   const design = parsed.data;
+
+  await log.info(
+    "ontwerp",
+    `${design.chapters.length} hoofdstukken ontworpen op niveau ${design.difficultyLevel}.`,
+    {
+      hoofdstukken: design.chapters.map((chapter) => ({
+        positie: chapter.position,
+        titel: chapter.title,
+        onderwerpen: chapter.topicTags,
+        tentamen: chapter.isImportant,
+      })),
+    },
+  );
 
   await restService<Row[]>(`crawl_subjects?id=eq.${task.subjectId}`, {
     method: "PATCH",
@@ -219,6 +236,14 @@ export async function runCurriculumDesign(
     taskType: "readiness_check",
     status: "waiting",
   });
+
+  const withExam = design.chapters.filter((chapter) => chapter.isImportant).length;
+  await log.conclude(
+    `"${subject.name}" is opgedeeld in ${created.length} hoofdstukken op niveau ` +
+      `${design.difficultyLevel}, waarvan ${withExam} met een tentamen. Er staan nu ` +
+      `${created.length} zoektaken klaar om per hoofdstuk bronnen te verzamelen, plus een ` +
+      `startvragenlijst. De gereedheidscontrole wacht tot al dat werk klaar is.`,
+  );
 
   return {
     chapters: created.length,

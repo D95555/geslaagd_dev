@@ -5,6 +5,7 @@ import { modelList } from "../study-content";
 import { loadChapter, loadChapterSources, loadSubject } from "./context";
 import { setChapterSourceRelevance, setSourceStatus } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 const MAX_GAP_ROUNDS = 1;
 
@@ -57,8 +58,14 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
     charLimit: 2_000,
   });
 
+  const log = taskLog(task);
   let kept = 0;
+  let rejected = 0;
   let gapQueries: string[] = [];
+
+  await log.info("start", `${candidates.length} bronnen te beoordelen voor "${chapter.title}".`, {
+    onderwerpen: chapter.topicTags,
+  });
 
   if (candidates.length > 0) {
     const parsed = reviewSchema.safeParse(
@@ -87,9 +94,10 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
       throw new Error(`Source review returned unusable JSON: ${parsed.error.message}`);
     }
 
-    const known = new Set(candidates.map((source) => source.id));
+    const byId = new Map(candidates.map((source) => [source.id, source]));
     for (const decision of parsed.data.decisions) {
-      if (!known.has(decision.sourceId)) continue;
+      const source = byId.get(decision.sourceId);
+      if (!source) continue;
       if (decision.keep) {
         await setSourceStatus(decision.sourceId, "accepted");
         await setChapterSourceRelevance(
@@ -98,8 +106,17 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           decision.relevanceNote,
         );
         kept += 1;
+        await log.info("behouden", `Behouden: ${source.title}`, {
+          url: source.url,
+          waarvoorBruikbaar: decision.relevanceNote,
+        });
       } else {
         await setSourceStatus(decision.sourceId, "declined", decision.rejectReason);
+        rejected += 1;
+        await log.info("afgewezen", `Afgewezen: ${source.title}`, {
+          url: source.url,
+          reden: decision.rejectReason ?? "geen reden opgegeven",
+        });
       }
     }
     gapQueries = parsed.data.gapQueries.filter((query) => query.trim().length > 0);
@@ -120,6 +137,11 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
         gapRound: gapRound + 1,
       } as unknown as Record<string, unknown>,
     });
+    await log.conclude(
+      `Van ${candidates.length} bronnen voor "${chapter.title}" zijn er ${kept} behouden en ` +
+        `${rejected} afgewezen. De dekking is nog niet compleet, dus er volgt één extra ` +
+        `zoekronde voor: ${gapQueries.slice(0, 3).join("; ")}.`,
+    );
     return { chapter: chapter.title, kept, gapQueries: gapQueries.length, model: modelNameFor(MODEL_BY_TASK.source_review) };
   }
 
@@ -152,6 +174,12 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
       dependsOn: [summary.id],
     });
   }
+
+  await log.conclude(
+    `Van ${candidates.length} bronnen voor "${chapter.title}" zijn er ${kept} behouden en ` +
+      `${rejected} afgewezen. De dekking is voldoende, dus de samenvatting kan geschreven worden. ` +
+      `Daarna volgen kernpunten, oefenvragen${chapter.isImportant ? " en een tentamen" : ""}.`,
+  );
 
   return { chapter: chapter.title, kept, gapQueries: 0, model: modelNameFor(MODEL_BY_TASK.source_review) };
 }

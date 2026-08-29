@@ -8,6 +8,7 @@ import {
   saveStudyContent,
 } from "./context";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 /** Shared wording for both the exercise bank and the exam. */
 export function questionBankRules(count: string, points: string): string[] {
@@ -88,6 +89,14 @@ export async function runExerciseGeneration(
     model: modelNameFor(MODEL_BY_TASK.exercise_generation),
   });
   await refreshChapterStatus(task.chapterId);
+
+  const mc = bank.questions.filter((question) => question.type === "mc").length;
+  await taskLog(task).conclude(
+    `Oefenset voor "${chapter.title}": ${bank.questions.length} vragen (${mc} meerkeuze, ` +
+      `${bank.questions.length - mc} open) van samen ${bank.totalPoints} punten, geschat op ` +
+      `${bank.estimatedMinutes} minuten. De vragen zijn afgeleid van de samenvatting, dus ze ` +
+      `toetsen precies de stof die de student heeft gelezen.`,
+  );
 
   return { chapter: chapter.title, questions: bank.questions.length, totalPoints: bank.totalPoints };
 }

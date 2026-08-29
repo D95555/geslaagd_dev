@@ -1,6 +1,10 @@
 import { Router, type IRouter, type Request } from "express";
 import {
   CancelPipelineTaskParams,
+  GetPipelineTaskDetailParams,
+  GetPipelineTaskDetailResponse,
+  ListPipelineLogsQueryParams,
+  ListPipelineLogsResponse,
   CancelPipelineTaskResponse,
   GetAdminSubjectContentParams,
   GetAdminSubjectContentResponse,
@@ -14,6 +18,7 @@ import {
 } from "@workspace/api-zod";
 import { loadSubject, loadSubjectChapters } from "../lib/pipeline-tasks/context";
 import { toPipelineTask } from "../lib/pipeline-tasks/task-store";
+import { loadRecentLogs, loadTaskLogs } from "../lib/pipeline-tasks/task-log";
 import { pollAndProcess } from "../lib/pipeline-worker";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 
@@ -65,6 +70,76 @@ router.get("/admin/pipeline/tasks", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not list pipeline tasks");
     res.status(500).json({ error: "Taken konden niet worden geladen." });
+  }
+});
+
+router.get("/admin/pipeline/logs", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const query = ListPipelineLogsQueryParams.safeParse(req.query);
+  if (!query.success) {
+    res.status(400).json({ error: "Ongeldige filters." });
+    return;
+  }
+  try {
+    const logs = await loadRecentLogs({
+      ...(query.data.subjectId ? { subjectId: query.data.subjectId } : {}),
+      ...(query.data.level ? { level: query.data.level } : {}),
+      ...(query.data.limit ? { limit: query.data.limit } : {}),
+    });
+    res.json(ListPipelineLogsResponse.parse(logs));
+  } catch (error) {
+    req.log.warn({ error }, "Could not load pipeline logs");
+    res.status(500).json({ error: "Logboek kon niet worden geladen." });
+  }
+});
+
+router.get("/admin/pipeline/tasks/:taskId", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = GetPipelineTaskDetailParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Ongeldige taak." });
+    return;
+  }
+  try {
+    const rows = await restService<Row[]>(
+      `pipeline_tasks?id=eq.${params.data.taskId}` +
+        "&select=*,crawl_subjects(name),chapters(title)",
+    );
+    const row = rows[0];
+    if (!row) {
+      res.status(404).json({ error: "Taak niet gevonden." });
+      return;
+    }
+
+    const subjectEmbed = row.crawl_subjects as Row | Row[] | null | undefined;
+    const subject = Array.isArray(subjectEmbed) ? subjectEmbed[0] : subjectEmbed;
+    const chapterEmbed = row.chapters as Row | Row[] | null | undefined;
+    const chapter = Array.isArray(chapterEmbed) ? chapterEmbed[0] : chapterEmbed;
+
+    const task = toPipelineTask(row);
+    res.json(
+      GetPipelineTaskDetailResponse.parse({
+        ...toTaskResponse(row),
+        summary: (row.summary as string | null) ?? null,
+        subjectName: (subject?.name as string | undefined) ?? null,
+        chapterTitle: (chapter?.title as string | undefined) ?? null,
+        dependsOn: task.dependsOn,
+        config: task.config,
+        result: (row.result as Record<string, unknown> | null) ?? null,
+        logs: await loadTaskLogs(params.data.taskId),
+      }),
+    );
+  } catch (error) {
+    req.log.warn({ error }, "Could not load pipeline task detail");
+    res.status(500).json({ error: "Taakdetails konden niet worden geladen." });
   }
 });
 

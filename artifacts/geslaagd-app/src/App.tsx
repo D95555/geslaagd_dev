@@ -18,6 +18,7 @@ import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
 import AdminCrawlPendingPage from '@/pages/admin-crawl-pending-page';
 import AdminPipelinePage from '@/pages/admin-pipeline-page';
 import AdminOverviewPage from '@/pages/admin-overview-page';
+import AdminConsolePage from '@/pages/admin-console-page';
 import SubjectCatalogPage from '@/pages/subject-catalog-page';
 import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
@@ -285,6 +286,7 @@ function Router() {
         </Route>
         <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
         <Route path="/beheer/pipeline" component={AdminPipelinePage} />
+        <Route path="/beheer/console" component={AdminConsolePage} />
         <Route path="/beheer/accounts" component={AdminPage} />
         <Route path="/beheer" component={AdminOverviewPage} />
         <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldAlert,
+  Terminal,
   Users,
   Workflow,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { href: '/beheer/crawl', label: 'Vakken & crawls', hint: 'Aanvragen en zoekopdrachten', icon: Compass },
   { href: '/beheer/crawl/pending', label: 'Bronnen beoordelen', hint: 'Wachtrij met twijfelgevallen', icon: ClipboardList },
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },
+  { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
   { href: '/beheer/accounts', label: 'Accounts & sessies', hint: 'Gebruikers en broadcasts', icon: Users },
 ];
 

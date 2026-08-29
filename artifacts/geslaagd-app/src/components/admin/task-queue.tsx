@@ -11,18 +11,7 @@ const statusLabel: Record<PipelineTask['status'], string> = {
   failed: 'Mislukt',
 };
 
-const taskTypeLabel: Record<string, string> = {
-  triage: 'Beoordeling aanvraag',
-  curriculum_design: 'Curriculumontwerp',
-  source_gathering: 'Bronnen verzamelen',
-  source_review: 'Bronnen beoordelen',
-  summary_generation: 'Samenvatting',
-  key_notes_generation: 'Kernpunten',
-  exercise_generation: 'Oefenvragen',
-  exam_generation: 'Tentamen',
-  questionnaire_generation: 'Startvragenlijst',
-  readiness_check: 'Gereedheidscontrole',
-};
+import { taskTypeLabel } from './task-detail';
 
 function fmtDateTime(value: string) {
   return new Date(value).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' });
@@ -33,12 +22,14 @@ export function TaskQueue({
   subjectNames,
   onRetry,
   onCancel,
+  onOpen,
   busyTaskId,
 }: {
   tasks: PipelineTask[];
   subjectNames: Map<string, string>;
   onRetry: (task: PipelineTask) => void;
   onCancel: (task: PipelineTask) => void;
+  onOpen: (task: PipelineTask) => void;
   busyTaskId: string | null;
 }) {
   if (tasks.length === 0) {
@@ -61,7 +52,11 @@ export function TaskQueue({
         {tasks.map((task) => (
           <tr key={task.id} data-testid={`task-${task.id}`}>
             <td>{subjectNames.get(task.subjectId) ?? task.subjectId.slice(0, 8)}</td>
-            <td>{taskTypeLabel[task.taskType] ?? task.taskType}</td>
+            <td>
+              <button type="button" className="task-open" onClick={() => onOpen(task)}>
+                {taskTypeLabel[task.taskType] ?? task.taskType}
+              </button>
+            </td>
             <td>
               <Badge
                 variant={
@@ -79,6 +74,9 @@ export function TaskQueue({
             <td>{task.attempts}</td>
             <td>{fmtDateTime(task.updatedAt)}</td>
             <td className="task-actions">
+              <Button variant="ghost" size="sm" onClick={() => onOpen(task)}>
+                Details
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

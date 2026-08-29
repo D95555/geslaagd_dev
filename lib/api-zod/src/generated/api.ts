@@ -1597,6 +1597,69 @@ export const ListPipelineTasksResponse = zod.array(ListPipelineTasksResponseItem
 
 
 /**
+ * @summary One task with its full log and closing summary
+ */
+export const GetPipelineTaskDetailParams = zod.object({
+  "taskId": zod.string().uuid()
+})
+
+export const GetPipelineTaskDetailResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subjectId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "taskType": zod.string(),
+  "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
+  "attempts": zod.number().int(),
+  "lastError": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "summary": zod.string().nullable(),
+  "subjectName": zod.string().nullable(),
+  "chapterTitle": zod.string().nullable(),
+  "dependsOn": zod.array(zod.string().uuid()),
+  "config": zod.record(zod.string(), zod.unknown()).nullable(),
+  "result": zod.record(zod.string(), zod.unknown()).nullable(),
+  "logs": zod.array(zod.object({
+  "id": zod.string(),
+  "taskId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "level": zod.enum(['info', 'warn', 'error']),
+  "phase": zod.string(),
+  "message": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Newest log entries across all tasks, for the console
+ */
+export const listPipelineLogsQueryLimitMax = 500;
+
+
+
+export const ListPipelineLogsQueryParams = zod.object({
+  "subjectId": zod.string().uuid().optional(),
+  "level": zod.enum(['info', 'warn', 'error']).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listPipelineLogsQueryLimitMax).optional()
+})
+
+export const ListPipelineLogsResponseItem = zod.object({
+  "id": zod.string(),
+  "taskId": zod.string().uuid(),
+  "chapterId": zod.string().uuid().nullish(),
+  "level": zod.enum(['info', 'warn', 'error']),
+  "phase": zod.string(),
+  "message": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPipelineLogsResponse = zod.array(ListPipelineLogsResponseItem)
+
+
+/**
  * @summary Retry a failed pipeline task, optionally overriding its config
  */
 export const RetryPipelineTaskParams = zod.object({

@@ -3,6 +3,7 @@ import { logPipelineEvent } from "../slack";
 import { restService } from "../supabase";
 import { loadSubject, loadSubjectChapters } from "./context";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
 
@@ -79,6 +80,15 @@ export async function runReadinessCheck(task: PipelineTask): Promise<Record<stri
           detail: missing.slice(0, 10).join("\n"),
         },
   ).catch((error) => logger.warn({ error }, "Could not post readiness notification"));
+
+  await taskLog(task).conclude(
+    passed
+      ? `"${subject.name}" heeft de gereedheidscontrole doorstaan: ${chapters.length} hoofdstukken ` +
+        `met samenvatting, kernpunten en oefenvragen, tentamens waar nodig, bronnen per hoofdstuk ` +
+        `en een startvragenlijst. Het vak kan gepubliceerd worden.`
+      : `"${subject.name}" is nog niet compleet. Er ontbreken ${missing.length} onderdelen, ` +
+        `waaronder: ${missing.slice(0, 3).join(" ")}`,
+  );
 
   return { passed, missing };
 }

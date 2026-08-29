@@ -14,6 +14,8 @@ export type SourceInput = {
   declineReason?: string | null;
   contentPreview?: string | null;
   fullContent?: string | null;
+  /** The crawl that first turned this URL up, so a crawl can list its finds. */
+  firstCrawlId?: string | null;
 };
 
 /** Inserts a source, or returns the existing row when the URL is already known. */
@@ -30,6 +32,7 @@ export async function upsertSource(input: SourceInput): Promise<string | null> {
     decline_reason: input.declineReason ?? null,
     content_preview: input.contentPreview ?? null,
     full_content: input.fullContent ?? null,
+    first_crawl_id: input.firstCrawlId ?? null,
   };
 
   const inserted = await restService<Row[]>("sources?on_conflict=url", {

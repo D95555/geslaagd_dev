@@ -9,6 +9,7 @@ import {
 } from "./context";
 import { questionBankRules } from "./exercise-generation";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 const SYSTEM_PROMPT = [
   "Je bent een toetsontwikkelaar voor het studieplatform Geslaagd.",
@@ -79,6 +80,13 @@ export async function runExamGeneration(task: PipelineTask): Promise<Record<stri
   });
 
   await refreshChapterStatus(task.chapterId);
+
+  const mc = bank.questions.filter((question) => question.type === "mc").length;
+  await taskLog(task).conclude(
+    `Tentamen voor "${chapter.title}": ${bank.questions.length} vragen (${mc} meerkeuze, ` +
+      `${bank.questions.length - mc} open) van samen ${bank.totalPoints} punten. Het bijbehorende ` +
+      `beoordelingsformulier is opgeslagen, met 5,5 als voldoende op de schaal van 1 tot 10.`,
+  );
 
   return { chapter: chapter.title, questions: bank.questions.length, totalPoints: bank.totalPoints };
 }

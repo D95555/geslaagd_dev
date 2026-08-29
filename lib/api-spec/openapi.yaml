@@ -1232,6 +1232,52 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PipelineTask"
+  /admin/pipeline/tasks/{taskId}:
+    get:
+      operationId: getPipelineTaskDetail
+      tags: [admin-pipeline]
+      summary: One task with its full log and closing summary
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Task detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineTaskDetail"
+        "404":
+          description: Task not found
+  /admin/pipeline/logs:
+    get:
+      operationId: listPipelineLogs
+      tags: [admin-pipeline]
+      summary: Newest log entries across all tasks, for the console
+      parameters:
+        - name: subjectId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+        - name: level
+          in: query
+          required: false
+          schema: { type: string, enum: [info, warn, error] }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 500 }
+      responses:
+        "200":
+          description: Log entries, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PipelineLogEntry"
   /admin/pipeline/tasks/{taskId}/retry:
     post:
       operationId: retryPipelineTask
@@ -2150,6 +2196,41 @@ components:
         lastError: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    PipelineLogEntry:
+      type: object
+      required: [id, taskId, level, phase, message, createdAt]
+      properties:
+        id: { type: string }
+        taskId: { type: string, format: uuid }
+        chapterId: { type: ["string", "null"], format: uuid }
+        level: { type: string, enum: [info, warn, error] }
+        phase: { type: string }
+        message: { type: string }
+        data:
+          type: ["object", "null"]
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+    PipelineTaskDetail:
+      allOf:
+        - $ref: "#/components/schemas/PipelineTask"
+        - type: object
+          required: [summary, subjectName, chapterTitle, dependsOn, config, result, logs]
+          properties:
+            summary: { type: ["string", "null"] }
+            subjectName: { type: ["string", "null"] }
+            chapterTitle: { type: ["string", "null"] }
+            dependsOn:
+              type: array
+              items: { type: string, format: uuid }
+            config:
+              type: ["object", "null"]
+              additionalProperties: true
+            result:
+              type: ["object", "null"]
+              additionalProperties: true
+            logs:
+              type: array
+              items: { $ref: "#/components/schemas/PipelineLogEntry" }
     AdminSubjectContentPreview:
       type: object
       required: [subject, chapters]

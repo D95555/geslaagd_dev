@@ -5,6 +5,7 @@ import { restService } from "../supabase";
 import { loadChapter, loadSubject } from "./context";
 import { linkSourceToChapter, linkSourceToSubject, upsertSource } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
 
@@ -30,6 +31,15 @@ export async function runSourceGathering(
 
   const subject = await loadSubject(task.subjectId);
   const chapter = await loadChapter(task.chapterId);
+  const log = taskLog(task);
+
+  await log.info("zoeken", `Zoeken naar bronnen voor "${chapter.title}".`, {
+    zoekopdrachten: config.queries,
+    perZoekopdracht: config.limitPerQuery,
+    alleenDomeinen: config.includeDomains,
+    uitgesloten: config.excludeDomains,
+    wetenschappelijk: config.useResearchIndex,
+  });
 
   const crawlRows = await restService<Row[]>("crawls", {
     method: "POST",
@@ -67,6 +77,12 @@ export async function runSourceGathering(
 
     const candidates = results.filter((result) => result.url && !knownUrls.has(result.url));
 
+    await log.info(
+      "gevonden",
+      `${results.length} resultaten, waarvan ${candidates.length} nieuw voor dit hoofdstuk.`,
+      { alBekend: results.length - candidates.length, credits: creditsUsed, papers: papers.length },
+    );
+
     let accepted = 0;
     let stored = 0;
 
@@ -92,8 +108,20 @@ export async function runSourceGathering(
           declineReason: status === "declined" ? source.decline_reason : null,
           contentPreview: original?.markdown?.slice(0, 500) ?? null,
           fullContent: original?.markdown ?? null,
+          firstCrawlId: crawlId,
         });
         if (!sourceId) continue;
+
+        await log.info(
+          "beoordeeld",
+          `${status === "accepted" ? "Geaccepteerd" : status === "pending" ? "Twijfel" : "Afgewezen"}: ${source.title}`,
+          {
+            url: source.url,
+            kwaliteit: source.quality_score,
+            zekerheid: source.confidence,
+            ...(source.decline_reason ? { reden: source.decline_reason } : {}),
+          },
+        );
 
         await linkSourceToSubject(sourceId, task.subjectId);
         await linkSourceToChapter(sourceId, task.chapterId);
@@ -112,6 +140,7 @@ export async function runSourceGathering(
         status: "pending",
         contentPreview: paper.abstract?.slice(0, 500) ?? null,
         fullContent: paper.abstract ?? null,
+        firstCrawlId: crawlId,
       });
       if (!sourceId) continue;
       await linkSourceToSubject(sourceId, task.subjectId);
@@ -139,6 +168,13 @@ export async function runSourceGathering(
       status: "ready",
       config: { gapRound: Number((task.config as Row | null)?.gapRound ?? 0) },
     });
+
+    await log.conclude(
+      `Voor "${chapter.title}" leverden ${config.queries.length} zoekopdrachten ${candidates.length} ` +
+        `nieuwe bronnen op. Daarvan zijn er ${accepted} direct geaccepteerd en ` +
+        `${stored - accepted} als twijfelgeval of afwijzing opgeslagen. Dit kostte ${creditsUsed} ` +
+        `Firecrawl-credits. De bronbeoordeling bepaalt nu welke bronnen het hoofdstuk in gaan.`,
+    );
 
     return { chapter: chapter.title, found: candidates.length, stored, accepted, creditsUsed };
   } catch (error) {

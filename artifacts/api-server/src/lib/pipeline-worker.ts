@@ -15,6 +15,7 @@ import {
   type PipelineTask,
   type TaskType,
 } from "./pipeline-tasks/task-store";
+import { taskLog } from "./pipeline-tasks/task-log";
 import { runTriage } from "./pipeline-tasks/triage";
 import { logPipelineEvent } from "./slack";
 import { restService } from "./supabase";
@@ -123,16 +124,27 @@ async function recordFailure(task: PipelineTask, error: unknown): Promise<void> 
 
 async function runTask(task: PipelineTask): Promise<void> {
   const handler = handlers[task.taskType];
+  const log = taskLog(task);
+
   if (!handler) {
     await patchTask(task.id, { status: "failed", last_error: `Unknown task type ${task.taskType}` });
     return;
   }
 
+  const startedAt = Date.now();
+  await log.info("start", `Taak ${task.taskType} gestart.`, {
+    poging: task.attempts + 1,
+    van: task.maxAttempts,
+  });
+
   try {
     const result = await handler(task);
+    const seconds = Math.round((Date.now() - startedAt) / 1000);
     await patchTask(task.id, { status: "done", result, locked_until: null, last_error: null });
+    await log.info("klaar", `Taak afgerond in ${seconds} seconden.`, result);
     logger.info({ taskId: task.id, taskType: task.taskType }, "Pipeline task done");
   } catch (error) {
+    await log.error("mislukt", error instanceof Error ? error.message : String(error));
     await recordFailure(task, error);
   }
 

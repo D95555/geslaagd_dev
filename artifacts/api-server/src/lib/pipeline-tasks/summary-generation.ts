@@ -12,6 +12,7 @@ import {
   type SourceContext,
 } from "./context";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 const SYSTEM_PROMPT = [
   "Je bent een ervaren docent die samenvattingen schrijft voor het studieplatform",
@@ -108,6 +109,13 @@ export async function runSummaryGeneration(
   const subject = await loadSubject(task.subjectId);
   const chapter = await loadChapter(task.chapterId);
   const sources = await loadChapterSources(task.chapterId);
+  const log = taskLog(task);
+
+  await log.info(
+    "schrijven",
+    `Samenvatting schrijven voor "${chapter.title}" op basis van ${sources.length} bronnen.`,
+    { onderwerpen: chapter.topicTags, bronnen: sources.map((source) => source.title) },
+  );
 
   const parsed = summarySchema.safeParse(
     await callJsonForTask("summary_generation", {
@@ -171,6 +179,13 @@ export async function runSummaryGeneration(
       { chapter: chapter.title, stillMissing },
       "Summary does not cover every topic tag",
     );
+    await log.warn(
+      "dekking",
+      `Deze onderwerpen ontbreken nog in de samenvatting: ${stillMissing.join(", ")}.`,
+      { ontbreekt: stillMissing },
+    );
+  } else {
+    await log.info("dekking", "Alle onderwerpen van dit hoofdstuk komen aan bod.");
   }
 
   const summary = {
@@ -189,6 +204,16 @@ export async function runSummaryGeneration(
     model: modelNameFor(MODEL_BY_TASK.summary_generation),
   });
   await refreshChapterStatus(task.chapterId);
+
+  await log.conclude(
+    `De samenvatting van "${chapter.title}" telt ${summary.wordCount} woorden en ` +
+      `${summary.citations.length} bronverwijzingen, verdeeld over ${chapter.topicTags.length} ` +
+      `onderwerpen. ${
+        stillMissing.length > 0
+          ? `Let op: ${stillMissing.join(", ")} ontbreekt nog, ondanks een aanvulpoging.`
+          : "Alle onderwerpen zijn behandeld."
+      } Hierop worden nu de kernpunten, oefenvragen${chapter.isImportant ? " en het tentamen" : ""} gebaseerd.`,
+  );
 
   return { chapter: chapter.title, wordCount: summary.wordCount, citations: summary.citations.length };
 }

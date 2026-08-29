@@ -3,6 +3,7 @@ import { callFastJson, FAST_MODEL } from "../ai";
 import { restService } from "../supabase";
 import { loadSubject } from "./context";
 import { createTask, type PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
 
@@ -75,6 +76,15 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
       status: "ready",
     });
   }
+
+  await taskLog(task).conclude(
+    approved
+      ? `De aanvraag voor "${subject.name}" is goedgekeurd: ${reason} Het vak staat nu op actief ` +
+        `en het curriculumontwerp is in de wachtrij gezet.`
+      : `De aanvraag voor "${subject.name}" is afgewezen: ${reason}${
+          suggestions ? ` Advies aan de student: ${suggestions}` : ""
+        }`,
+  );
 
   return { approved, reason, suggestions: suggestions ?? null, model: FAST_MODEL };
 }

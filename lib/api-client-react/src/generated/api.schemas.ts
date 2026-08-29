@@ -1156,6 +1156,58 @@ export interface PipelineTask {
   updatedAt: string;
 }
 
+export type PipelineLogEntryLevel = typeof PipelineLogEntryLevel[keyof typeof PipelineLogEntryLevel];
+
+
+export const PipelineLogEntryLevel = {
+  info: 'info',
+  warn: 'warn',
+  error: 'error',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PipelineLogEntryData = { [key: string]: unknown } | null;
+
+export interface PipelineLogEntry {
+  id: string;
+  taskId: string;
+  /** @nullable */
+  chapterId?: string | null;
+  level: PipelineLogEntryLevel;
+  phase: string;
+  message: string;
+  /** @nullable */
+  data?: PipelineLogEntryData;
+  createdAt: string;
+}
+
+/**
+ * @nullable
+ */
+export type PipelineTaskDetailConfig = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type PipelineTaskDetailResult = { [key: string]: unknown } | null;
+
+export type PipelineTaskDetail = PipelineTask & ({
+  /** @nullable */
+  summary: string | null;
+  /** @nullable */
+  subjectName: string | null;
+  /** @nullable */
+  chapterTitle: string | null;
+  dependsOn: string[];
+  /** @nullable */
+  config: PipelineTaskDetailConfig;
+  /** @nullable */
+  result: PipelineTaskDetailResult;
+  logs: PipelineLogEntry[];
+});
+
 export type AdminSubjectContentPreviewChaptersItemContentItemStatus = typeof AdminSubjectContentPreviewChaptersItemContentItemStatus[keyof typeof AdminSubjectContentPreviewChaptersItemContentItemStatus];
 
 
@@ -1243,6 +1295,25 @@ export const ListPipelineTasksStatus = {
   running: 'running',
   done: 'done',
   failed: 'failed',
+} as const;
+
+export type ListPipelineLogsParams = {
+subjectId?: string;
+level?: ListPipelineLogsLevel;
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+limit?: number;
+};
+
+export type ListPipelineLogsLevel = typeof ListPipelineLogsLevel[keyof typeof ListPipelineLogsLevel];
+
+
+export const ListPipelineLogsLevel = {
+  info: 'info',
+  warn: 'warn',
+  error: 'error',
 } as const;
 
 export type RetryPipelineTaskBodyConfig = { [key: string]: unknown };

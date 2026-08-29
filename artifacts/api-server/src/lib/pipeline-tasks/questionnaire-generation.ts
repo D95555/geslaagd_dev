@@ -2,6 +2,7 @@ import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { questionnaireSchema } from "../study-content";
 import { loadSubject, loadSubjectChapters, saveStudyContent } from "./context";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 const SYSTEM_PROMPT = [
   "Je maakt een korte startvragenlijst voor het studieplatform Geslaagd.",
@@ -66,6 +67,11 @@ export async function runQuestionnaireGeneration(
     content: { questions },
     model: modelNameFor(MODEL_BY_TASK.questionnaire_generation),
   });
+
+  await taskLog(task).conclude(
+    `Startvragenlijst voor "${subject.name}": ${questions.length} zelfinschattingsvragen, ` +
+      `gekoppeld aan ${chapters.length} hoofdstukken. Studenten vullen die één keer in bij de start.`,
+  );
 
   return { questions: questions.length };
 }

@@ -8,6 +8,7 @@ import {
   saveStudyContent,
 } from "./context";
 import type { PipelineTask } from "./task-store";
+import { taskLog } from "./task-log";
 
 const SYSTEM_PROMPT = [
   "Je maakt het overzichtsblad voor een hoofdstuk op het studieplatform Geslaagd.",
@@ -70,5 +71,10 @@ export async function runKeyNotesGeneration(
   await refreshChapterStatus(task.chapterId);
 
   const items = parsed.data.sections.reduce((sum, section) => sum + section.items.length, 0);
+  await taskLog(task).conclude(
+    `Overzichtsblad voor "${chapter.title}": ${items} kernpunten verdeeld over ` +
+      `${parsed.data.sections.length} secties, overgenomen uit de samenvatting.`,
+  );
+
   return { chapter: chapter.title, sections: parsed.data.sections.length, items };
 }
