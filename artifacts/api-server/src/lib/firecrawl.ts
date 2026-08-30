@@ -88,6 +88,71 @@ export async function getGlobalExcludedDomains(): Promise<string[]> {
   }
 }
 
+// ─── Credit budget guardrails ───────────────────────────────────────────────
+//
+// Every network call in this file must be gated by budgetBlockReason() first
+// and followed by recordUsage(). A subject carries a credit_budget (300, or
+// 600 for a large-scope subject); firecrawl_usage logs every credit spent
+// since build_started_at, and the running total is checked before each call.
+// On a ledger-check error we fail CLOSED — block the spend rather than allow
+// it — because an uncapped miss here is exactly the failure this exists to
+// prevent. This is a deliberate departure from this file's other "fail open
+// and continue" patterns (e.g. getGlobalExcludedDomains): those protect
+// pipeline resilience, this protects the user's money.
+
+export type BudgetContext = { subjectId: string; crawlId?: string | null };
+
+const PDF_URL_RE = /\.pdf(?:[?#]|$)/i;
+export function isPdfUrl(url: string): boolean {
+  return PDF_URL_RE.test(url);
+}
+
+async function remainingBudget(subjectId: string): Promise<number> {
+  const subjectRows = await restService<Row[]>(
+    `crawl_subjects?id=eq.${subjectId}&select=credit_budget,build_started_at`,
+  );
+  const subject = subjectRows[0];
+  const budget = Number(subject?.credit_budget ?? 300);
+  const since = subject?.build_started_at as string | null | undefined;
+  const usageRows = await restService<Row[]>(
+    `firecrawl_usage?subject_id=eq.${subjectId}&select=credits` +
+      (since ? `&created_at=gte.${encodeURIComponent(since)}` : ""),
+  );
+  const spent = usageRows.reduce((sum, row) => sum + Number(row.credits ?? 0), 0);
+  return budget - spent;
+}
+
+/** Returns a Dutch block reason if this subject may not spend any more credits, or null if it may. */
+export async function budgetBlockReason(ctx: BudgetContext): Promise<string | null> {
+  try {
+    const remaining = await remainingBudget(ctx.subjectId);
+    if (remaining <= 0) {
+      return "Creditbudget voor dit vak is op; crawl gestopt om verdere kosten te voorkomen.";
+    }
+    return null;
+  } catch (error) {
+    logger.error({ error, ctx }, "Firecrawl budget check failed; blocking spend (fail-closed)");
+    return "Budgetcontrole kon niet worden uitgevoerd; crawl geblokkeerd uit voorzorg.";
+  }
+}
+
+export async function recordUsage(ctx: BudgetContext, operation: string, credits: number): Promise<void> {
+  if (credits <= 0) return;
+  try {
+    await restService("firecrawl_usage", {
+      method: "POST",
+      body: JSON.stringify({
+        subject_id: ctx.subjectId,
+        crawl_id: ctx.crawlId ?? null,
+        operation,
+        credits,
+      }),
+    });
+  } catch (error) {
+    logger.error({ error, ctx, operation, credits }, "Failed to record Firecrawl usage");
+  }
+}
+
 // ─── Search ─────────────────────────────────────────────────────────────────
 
 async function searchOnce(
@@ -130,7 +195,10 @@ async function searchOnce(
  * A single failing query does not abort the whole crawl — the remaining
  * queries still contribute their results.
  */
-export async function firecrawlSearch(config: CrawlConfig): Promise<FirecrawlSearchResponse> {
+export async function firecrawlSearch(
+  config: CrawlConfig,
+  ctx: BudgetContext,
+): Promise<FirecrawlSearchResponse> {
   const globalExcluded = await getGlobalExcludedDomains();
   const excludeDomains = [...new Set([...config.excludeDomains, ...globalExcluded])];
 
@@ -138,9 +206,15 @@ export async function firecrawlSearch(config: CrawlConfig): Promise<FirecrawlSea
   let creditsUsed = 0;
 
   for (const query of config.queries) {
+    const blockReason = await budgetBlockReason(ctx);
+    if (blockReason) {
+      logger.warn({ ctx, query }, `Firecrawl search stopped: ${blockReason}`);
+      break;
+    }
     try {
       const outcome = await searchOnce(query, config, excludeDomains);
       creditsUsed += outcome.creditsUsed;
+      await recordUsage(ctx, "search", outcome.creditsUsed);
       for (const result of outcome.results) {
         if (!result.url || byUrl.has(result.url)) continue;
         byUrl.set(result.url, result);
@@ -198,7 +272,10 @@ async function discoverOnce(
 }
 
 /** Phase A: gather candidate snippets across every query, deduped by URL. */
-export async function firecrawlDiscover(config: CrawlConfig): Promise<FirecrawlSearchResponse> {
+export async function firecrawlDiscover(
+  config: CrawlConfig,
+  ctx: BudgetContext,
+): Promise<FirecrawlSearchResponse> {
   const globalExcluded = await getGlobalExcludedDomains();
   const excludeDomains = [...new Set([...config.excludeDomains, ...globalExcluded])];
 
@@ -206,9 +283,15 @@ export async function firecrawlDiscover(config: CrawlConfig): Promise<FirecrawlS
   let creditsUsed = 0;
 
   for (const query of config.queries) {
+    const blockReason = await budgetBlockReason(ctx);
+    if (blockReason) {
+      logger.warn({ ctx, query }, `Firecrawl discover stopped: ${blockReason}`);
+      break;
+    }
     try {
       const outcome = await discoverOnce(query, config, excludeDomains);
       creditsUsed += outcome.creditsUsed;
+      await recordUsage(ctx, "discover", outcome.creditsUsed);
       for (const result of outcome.results) {
         if (!result.url || byUrl.has(result.url)) continue;
         byUrl.set(result.url, result);
@@ -225,15 +308,36 @@ export async function firecrawlDiscover(config: CrawlConfig): Promise<FirecrawlS
  * Phase B: scrape only the URLs that survived scoring. Failures are per-URL and
  * non-fatal — a page that will not scrape simply keeps whatever snippet text it
  * already had. Returns a url→markdown map plus the credits the scrapes cost.
+ *
+ * PDF URLs are skipped here entirely (Firecrawl bills per PDF page, which is
+ * the single largest cost driver behind the credit blow-ups this guardrail
+ * exists to prevent) — they keep whatever snippet they already had. A free,
+ * self-fetched full-text path for accepted PDFs is planned separately.
+ *
+ * Each scrape is budget-gated individually since Promise.all fires them
+ * concurrently; a subject that runs out of budget mid-batch simply stops
+ * getting scraped, the rest keep their snippet text.
  */
 export async function firecrawlScrapeUrls(
   urls: string[],
+  ctx: BudgetContext,
 ): Promise<{ markdownByUrl: Map<string, string>; creditsUsed: number }> {
   const markdownByUrl = new Map<string, string>();
   let creditsUsed = 0;
 
+  const pdfUrls = urls.filter(isPdfUrl);
+  const scrapableUrls = urls.filter((url) => !isPdfUrl(url));
+  if (pdfUrls.length) {
+    logger.info({ ctx, count: pdfUrls.length }, "Skipping Firecrawl scrape for PDF URLs (snippet-only)");
+  }
+
   await Promise.all(
-    urls.map(async (url) => {
+    scrapableUrls.map(async (url) => {
+      const blockReason = await budgetBlockReason(ctx);
+      if (blockReason) {
+        logger.warn({ ctx, url }, `Firecrawl scrape skipped: ${blockReason}`);
+        return;
+      }
       try {
         const response = await fetch("https://api.firecrawl.dev/v2/scrape", {
           method: "POST",
@@ -251,7 +355,9 @@ export async function firecrawlScrapeUrls(
           data?: { markdown?: string };
           creditsUsed?: number;
         };
-        creditsUsed += Number(body.creditsUsed ?? 0);
+        const spent = Number(body.creditsUsed ?? 0);
+        creditsUsed += spent;
+        await recordUsage(ctx, "scrape", spent);
         const markdown = body.data?.markdown;
         if (markdown) markdownByUrl.set(url, markdown);
       } catch (error) {

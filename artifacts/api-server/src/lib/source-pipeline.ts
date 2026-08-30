@@ -6,6 +6,7 @@ import { z } from "zod";
 import { logger } from "./logger";
 import { restService } from "./supabase";
 import { enqueuePendingSourceEvent } from "./source-event-outbox";
+import { budgetBlockReason, isPdfUrl, recordUsage, type BudgetContext } from "./firecrawl";
 
 
 const RAW_STORAGE_DIR = path.join(process.cwd(), "crawl-raw");
@@ -133,9 +134,19 @@ async function generateCrawlPrompt(
 
 // ─── Firecrawl search ───────────────────────────────────────────────────────
 
+// Snippet-only (no scrapeOptions): scoring runs on title/description first,
+// and only PDF-free winners get a real scrape later — this single change is
+// what stopped this path from unconditionally billing a full scrape for
+// every one of the 20 results regardless of relevance.
 async function runFirecrawlSearch(
   query: string,
+  ctx: BudgetContext,
 ): Promise<{ data: FirecrawlResult[]; creditsUsed: number }> {
+  const blockReason = await budgetBlockReason(ctx);
+  if (blockReason) {
+    logger.warn({ ctx, query }, `Firecrawl search blocked: ${blockReason}`);
+    return { data: [], creditsUsed: 0 };
+  }
   const response = await fetch("https://api.firecrawl.dev/v2/search", {
     method: "POST",
     headers: {
@@ -145,7 +156,6 @@ async function runFirecrawlSearch(
     body: JSON.stringify({
       query,
       limit: 20,
-      scrapeOptions: { formats: ["markdown"] },
     }),
   });
   if (!response.ok) {
@@ -155,7 +165,10 @@ async function runFirecrawlSearch(
     data?: { web?: FirecrawlResult[] };
     creditsUsed?: number;
   };
-  return { data: body.data?.web ?? [], creditsUsed: Number(body.creditsUsed ?? 0) };
+  const creditsUsed = Number(body.creditsUsed ?? 0);
+  await recordUsage(ctx, "search", creditsUsed);
+  const results = (body.data?.web ?? []).filter((result) => !isPdfUrl(result.url));
+  return { data: results, creditsUsed };
 }
 
 async function storeRawResponse(crawlId: string, data: unknown): Promise<void> {
@@ -367,7 +380,10 @@ export async function runCrawl(input: {
       body: JSON.stringify({ prompt_used: prompt }),
     });
 
-    const { data: firecrawlResults, creditsUsed } = await runFirecrawlSearch(prompt);
+    const { data: firecrawlResults, creditsUsed } = await runFirecrawlSearch(prompt, {
+      subjectId: subject.id,
+      crawlId,
+    });
 
     await storeRawResponse(crawlId, { data: firecrawlResults, creditsUsed });
     await restService<Row[]>(`crawls?id=eq.${crawlId}`, {

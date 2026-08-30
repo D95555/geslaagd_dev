@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { modelList, modelText } from "../study-content";
-import { defaultCrawlConfig, firecrawlSearch, type CrawlConfig } from "../firecrawl";
+import { defaultCrawlConfig, firecrawlDiscover, type CrawlConfig } from "../firecrawl";
 import { logger } from "../logger";
 import { restService } from "../supabase";
 import { loadSubject } from "./context";
@@ -81,7 +81,10 @@ const SYSTEM_PROMPT = [
   '    "includeDomains": [], "useResearchIndex": false }] }',
 ].join("\n");
 
-async function researchSubject(name: string, yearLevel: string): Promise<string> {
+// Overview-only research: only chapter-planning context is needed here, not
+// full page content, so this uses the free/cheap discover (snippet) call
+// rather than a full scrape of every result.
+async function researchSubject(name: string, yearLevel: string, subjectId: string): Promise<string> {
   const config = defaultCrawlConfig([
     `${name} ${yearLevel === "vwo" ? "VWO" : "bachelor"} examenprogramma hoofdstukken`,
     `${name} samenvatting lesstof`,
@@ -89,13 +92,13 @@ async function researchSubject(name: string, yearLevel: string): Promise<string>
   config.limitPerQuery = 8;
 
   try {
-    const { results } = await firecrawlSearch(config);
+    const { results } = await firecrawlDiscover(config, { subjectId });
     if (results.length === 0) return "(geen zoekresultaten beschikbaar)";
     return results
       .map(
         (result, index) =>
           `[${index + 1}] ${result.title ?? result.url}\nURL: ${result.url}\n` +
-          `${(result.markdown ?? result.description ?? "").slice(0, 1500)}`,
+          `${(result.description ?? "").slice(0, 1500)}`,
       )
       .join("\n\n");
   } catch (error) {
@@ -116,7 +119,7 @@ export async function runCurriculumDesign(
   const log = taskLog(task);
 
   await log.info("onderzoek", `Vooronderzoek naar "${subject.name}" via Firecrawl.`);
-  const research = await researchSubject(subject.name, subject.yearLevel);
+  const research = await researchSubject(subject.name, subject.yearLevel, task.subjectId);
 
   const parsed = curriculumSchema.safeParse(
     await callJsonForTask("curriculum_design", {

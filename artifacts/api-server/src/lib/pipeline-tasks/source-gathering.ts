@@ -85,10 +85,11 @@ export async function runSourceGathering(
     }),
   });
   const crawlId = (crawlRows[0]?.id as string) ?? null;
+  const budgetCtx = { subjectId: task.subjectId, crawlId };
 
   try {
     // Phase A — discover snippets only (no scrape), so declined pages cost nothing.
-    const { results, creditsUsed: discoverCredits } = await firecrawlDiscover(config);
+    const { results, creditsUsed: discoverCredits } = await firecrawlDiscover(config, budgetCtx);
 
     // Academic subjects can additionally pull from the research index.
     const papers = config.useResearchIndex
@@ -158,7 +159,10 @@ export async function runSourceGathering(
     const winnerUrls = scoredList
       .filter((entry) => entry.status !== "declined")
       .map((entry) => entry.source.url);
-    const { markdownByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(winnerUrls);
+    const { markdownByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(
+      winnerUrls,
+      budgetCtx,
+    );
     const creditsUsed = discoverCredits + scrapeCredits;
 
     await log.info(
