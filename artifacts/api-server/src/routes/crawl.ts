@@ -46,6 +46,7 @@ function toSubject(row: Row) {
     description: (row.description as string | null) ?? null,
     emphasis: (row.emphasis as string | null) ?? null,
     preferredSourceTypes: (row.preferred_source_types as string | null) ?? null,
+    creditBudget: Number(row.credit_budget ?? 300),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -65,6 +66,7 @@ function toSubjectRequest(row: Row) {
     description: (subject?.description as string | null) ?? null,
     emphasis: (subject?.emphasis as string | null) ?? null,
     preferredSourceTypes: (subject?.preferred_source_types as string | null) ?? null,
+    creditBudget: (subject?.credit_budget as number | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -156,7 +158,8 @@ router.get("/admin/crawl/subject-requests", async (req, res): Promise<void> => {
   }
   try {
     const rows = await restService<Row[]>(
-      "subject_requests?select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types)&status=eq.pending&order=created_at.desc",
+      "subject_requests?select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types,credit_budget)" +
+        "&status=in.(pending,needs_refinement)&order=created_at.desc",
     );
     res.json(ListCrawlSubjectRequestsResponse.parse(rows.map(toSubjectRequest)));
   } catch (error) {

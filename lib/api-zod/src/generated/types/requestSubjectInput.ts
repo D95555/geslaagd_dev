@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { RequestSubjectInputCreditTier } from './requestSubjectInputCreditTier';
 import type { RequestSubjectInputYearLevel } from './requestSubjectInputYearLevel';
 
 export interface RequestSubjectInput {
@@ -20,4 +21,5 @@ export interface RequestSubjectInput {
   emphasis?: string;
   /** @maxLength 300 */
   preferred_source_types?: string;
+  credit_tier: RequestSubjectInputCreditTier;
 }

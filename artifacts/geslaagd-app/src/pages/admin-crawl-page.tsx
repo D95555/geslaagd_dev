@@ -242,7 +242,7 @@ export default function AdminCrawlPage() {
                     </button>
                     <div className="request-row-actions">
                       <Badge variant="secondary">{requestStatusLabel[request.status]}</Badge>
-                      {request.status === 'pending' && (
+                      {(request.status === 'pending' || request.status === 'needs_refinement') && (
                         <>
                           <Button variant="ghost" onClick={() => void approve(request.id)}><Check size={14} /> Goedkeuren</Button>
                           <Button variant="ghost" onClick={() => openRefinement(request.id, 'refine')}>Aanpassing vragen</Button>
@@ -267,7 +267,7 @@ export default function AdminCrawlPage() {
             : undefined
         }
         footer={
-          detailRequest?.status === 'pending' && (
+          (detailRequest?.status === 'pending' || detailRequest?.status === 'needs_refinement') && (
             <div className="request-row-actions">
               <Button variant="outline" onClick={() => void approve(detailRequest.id)}><Check size={14} /> Goedkeuren</Button>
               <Button variant="outline" onClick={() => openRefinement(detailRequest.id, 'refine')}>Aanpassing vragen</Button>
@@ -287,6 +287,9 @@ export default function AdminCrawlPage() {
             )}
             {detailRequest.preferredSourceTypes && (
               <p><strong>Gewenste brontypes</strong><br />{detailRequest.preferredSourceTypes}</p>
+            )}
+            {detailRequest.creditBudget !== null && (
+              <p><strong>Zoekbudget</strong><br />{detailRequest.creditBudget} credits</p>
             )}
             {detailRequest.adminNote && (
               <p><strong>Toelichting aan student</strong><br />{detailRequest.adminNote}</p>

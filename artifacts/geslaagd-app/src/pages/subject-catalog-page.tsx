@@ -42,6 +42,7 @@ const emptyRequestForm = {
   emphasis: '',
   yearLevel: 'havo_vwo_bovenbouw' as RequestSubjectInputYearLevel,
   preferredSourceTypes: '',
+  creditTier: 300 as 300 | 600,
 };
 
 export default function SubjectCatalogPage() {
@@ -101,6 +102,7 @@ export default function SubjectCatalogPage() {
         description: requestForm.description.trim() || undefined,
         emphasis: requestForm.emphasis.trim() || undefined,
         preferred_source_types: requestForm.preferredSourceTypes.trim() || undefined,
+        credit_tier: requestForm.creditTier,
       });
       setRequestSent(true);
     } catch (error) {
@@ -277,6 +279,25 @@ export default function SubjectCatalogPage() {
                     <SelectItem value="universitair">Universitair</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="request-subject-tier">Zoekbudget</Label>
+                <Select
+                  value={String(requestForm.creditTier)}
+                  onValueChange={(value) =>
+                    setRequestForm((form) => ({ ...form, creditTier: Number(value) as 300 | 600 }))
+                  }
+                >
+                  <SelectTrigger id="request-subject-tier" aria-label="Zoekbudget"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="300">Klein of algemeen vak (300)</SelectItem>
+                    <SelectItem value="600">Groot vak of specifieke kennis (600)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="study-hint">
+                  Bepaalt hoeveel zoekbudget dit vak krijgt. We controleren of dit past bij de omvang
+                  van je aanvraag.
+                </p>
               </div>
               <div>
                 <Label htmlFor="request-subject-sources">Type bronnen gewenst</Label>

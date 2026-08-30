@@ -26,6 +26,8 @@ export interface CrawlSubjectRequest {
   emphasis: string | null;
   /** @nullable */
   preferredSourceTypes: string | null;
+  /** @nullable */
+  creditBudget: number | null;
   createdAt: string;
   updatedAt: string;
 }

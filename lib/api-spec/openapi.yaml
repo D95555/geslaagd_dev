@@ -1953,7 +1953,7 @@ components:
         idempotencyKey: { type: string, minLength: 1, maxLength: 160 }
     CrawlSubject:
       type: object
-      required: [id, name, yearLevel, status, publishStatus, requestedBy, approvedBy, adminNote, description, emphasis, preferredSourceTypes, createdAt, updatedAt]
+      required: [id, name, yearLevel, status, publishStatus, requestedBy, approvedBy, adminNote, description, emphasis, preferredSourceTypes, creditBudget, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -1966,6 +1966,7 @@ components:
         description: { type: ["string", "null"] }
         emphasis: { type: ["string", "null"] }
         preferredSourceTypes: { type: ["string", "null"] }
+        creditBudget: { type: integer }
         createdAt: { type: string }
         updatedAt: { type: string }
     CrawlSubjectCreateInput:
@@ -1976,7 +1977,7 @@ components:
         year_level: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
     CrawlSubjectRequest:
       type: object
-      required: [id, subjectId, subjectName, yearLevel, studentId, status, adminNote, description, emphasis, preferredSourceTypes, createdAt, updatedAt]
+      required: [id, subjectId, subjectName, yearLevel, studentId, status, adminNote, description, emphasis, preferredSourceTypes, creditBudget, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         subjectId: { type: ["string", "null"] }
@@ -1988,6 +1989,7 @@ components:
         description: { type: ["string", "null"] }
         emphasis: { type: ["string", "null"] }
         preferredSourceTypes: { type: ["string", "null"] }
+        creditBudget: { type: ["integer", "null"] }
         createdAt: { type: string }
         updatedAt: { type: string }
     AdminNoteInput:
@@ -2064,13 +2066,14 @@ components:
         reason: { type: string, minLength: 1, maxLength: 1000 }
     RequestSubjectInput:
       type: object
-      required: [name, year_level]
+      required: [name, year_level, credit_tier]
       properties:
         name: { type: string, minLength: 1, maxLength: 160 }
         year_level: { type: string, enum: [havo_vwo_bovenbouw, universitair] }
         description: { type: string, maxLength: 1000 }
         emphasis: { type: string, maxLength: 300 }
         preferred_source_types: { type: string, maxLength: 300 }
+        credit_tier: { type: integer, enum: [300, 600] }
     RequestSubjectResult:
       type: object
       required: [requestId, subjectId]

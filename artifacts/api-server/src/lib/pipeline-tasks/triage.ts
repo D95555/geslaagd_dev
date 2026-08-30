@@ -11,6 +11,8 @@ const triageSchema = z.object({
   approved: z.boolean(),
   reason: z.string(),
   suggestions: z.string().nullable().optional(),
+  tierFits: z.boolean(),
+  tierReason: z.string().nullable().optional(),
 });
 
 const SYSTEM_PROMPT = [
@@ -22,9 +24,17 @@ const SYSTEM_PROMPT = [
   "2. Kan er via 2-3 zoekopdrachten voldoende studiemateriaal worden gevonden?",
   "3. Past het bij VWO- of bachelorstudenten?",
   "",
+  "Beoordeel daarnaast of het gekozen creditbudget (300 of 600) realistisch is voor",
+  "de omvang van dit vak. 300 credits is bedoeld voor een klein of algemeen vak;",
+  "600 credits is bedoeld voor een groot vak of een vak dat specifieke, diepgaande",
+  "kennis vereist (bijv. een universitaire specialisatie of subvak). Als de keuze",
+  "niet bij de geschatte omvang past (te ruim of te krap), zet tierFits op false en",
+  "leg in tierReason uit waarom, zodat een admin dit handmatig kan beoordelen.",
+  "",
   "Antwoord ALLEEN met JSON:",
   '{ "approved": boolean, "reason": "korte toelichting in het Nederlands",',
-  '  "suggestions": "als afgewezen: tips voor een beter verzoek, anders null" }',
+  '  "suggestions": "als afgewezen: tips voor een beter verzoek, anders null",',
+  '  "tierFits": boolean, "tierReason": "bij tierFits=false: uitleg, anders null" }',
 ].join("\n");
 
 /**
@@ -40,6 +50,7 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
     `Niveau: ${subject.yearLevel}`,
     subject.description ? `Beschrijving: ${subject.description}` : null,
     subject.emphasis ? `Nadruk: ${subject.emphasis}` : null,
+    `Gekozen creditbudget: ${subject.creditBudget}`,
   ].filter((line): line is string => line !== null);
 
   const parsed = triageSchema.safeParse(
@@ -51,16 +62,23 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
   if (!parsed.success) {
     throw new Error(`Triage returned unusable JSON: ${parsed.error.message}`);
   }
-  const { approved, reason, suggestions } = parsed.data;
+  const { approved, reason, suggestions, tierFits, tierReason } = parsed.data;
 
-  const adminNote = approved
-    ? reason
-    : [reason, suggestions].filter(Boolean).join(" — ");
+  // Three outcomes: denied (not workable at all), needs_refinement (workable,
+  // but the chosen credit tier doesn't match the estimated scope — an admin
+  // decides manually), or active (both checks pass, curriculum design starts).
+  const status = !approved ? "denied" : tierFits ? "active" : "needs_refinement";
+  const adminNote =
+    status === "denied"
+      ? [reason, suggestions].filter(Boolean).join(" — ")
+      : status === "needs_refinement"
+        ? tierReason ?? reason
+        : reason;
 
   await restService<Row[]>(`crawl_subjects?id=eq.${task.subjectId}`, {
     method: "PATCH",
     body: JSON.stringify({
-      status: approved ? "active" : "denied",
+      status,
       admin_note: adminNote,
       updated_at: new Date().toISOString(),
     }),
@@ -70,13 +88,13 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
   await restService<Row[]>(`subject_requests?subject_id=eq.${task.subjectId}&status=eq.pending`, {
     method: "PATCH",
     body: JSON.stringify({
-      status: approved ? "approved" : "denied",
+      status: status === "active" ? "approved" : status,
       admin_note: adminNote,
       updated_at: new Date().toISOString(),
     }),
   }).catch(() => undefined);
 
-  if (approved) {
+  if (status === "active") {
     await createTask({
       subjectId: task.subjectId,
       taskType: "curriculum_design",
@@ -85,13 +103,17 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
   }
 
   await taskLog(task).conclude(
-    approved
+    status === "active"
       ? `De aanvraag voor "${subject.name}" is goedgekeurd: ${reason} Het vak staat nu op actief ` +
         `en het curriculumontwerp is in de wachtrij gezet.`
-      : `De aanvraag voor "${subject.name}" is afgewezen: ${reason}${
-          suggestions ? ` Advies aan de student: ${suggestions}` : ""
-        }`,
+      : status === "needs_refinement"
+        ? `De aanvraag voor "${subject.name}" is haalbaar, maar het gekozen creditbudget ` +
+          `(${subject.creditBudget}) sluit niet aan bij de geschatte omvang: ${tierReason ?? reason} ` +
+          `Een admin moet dit handmatig beoordelen.`
+        : `De aanvraag voor "${subject.name}" is afgewezen: ${reason}${
+            suggestions ? ` Advies aan de student: ${suggestions}` : ""
+          }`,
   );
 
-  return { approved, reason, suggestions: suggestions ?? null, model: FAST_MODEL };
+  return { approved, status, reason, suggestions: suggestions ?? null, tierFits, tierReason: tierReason ?? null, model: FAST_MODEL };
 }

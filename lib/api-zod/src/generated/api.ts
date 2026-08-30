@@ -858,6 +858,7 @@ export const CreateCrawlSubjectResponse = zod.object({
   "description": zod.string().nullable(),
   "emphasis": zod.string().nullable(),
   "preferredSourceTypes": zod.string().nullable(),
+  "creditBudget": zod.number().int(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -878,6 +879,7 @@ export const ListCrawlSubjectsResponseItem = zod.object({
   "description": zod.string().nullable(),
   "emphasis": zod.string().nullable(),
   "preferredSourceTypes": zod.string().nullable(),
+  "creditBudget": zod.number().int(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1151,6 +1153,7 @@ export const ListCrawlSubjectRequestsResponseItem = zod.object({
   "description": zod.string().nullable(),
   "emphasis": zod.string().nullable(),
   "preferredSourceTypes": zod.string().nullable(),
+  "creditBudget": zod.number().int().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1382,7 +1385,8 @@ export const RequestSourceSubjectBody = zod.object({
   "year_level": zod.enum(['havo_vwo_bovenbouw', 'universitair']),
   "description": zod.string().max(requestSourceSubjectBodyDescriptionMax).optional(),
   "emphasis": zod.string().max(requestSourceSubjectBodyEmphasisMax).optional(),
-  "preferred_source_types": zod.string().max(requestSourceSubjectBodyPreferredSourceTypesMax).optional()
+  "preferred_source_types": zod.string().max(requestSourceSubjectBodyPreferredSourceTypesMax).optional(),
+  "credit_tier": zod.union([zod.literal(300),zod.literal(600)])
 })
 
 export const RequestSourceSubjectResponse = zod.object({
@@ -1405,6 +1409,7 @@ export const ListMySourceSubjectRequestsResponseItem = zod.object({
   "description": zod.string().nullable(),
   "emphasis": zod.string().nullable(),
   "preferredSourceTypes": zod.string().nullable(),
+  "creditBudget": zod.number().int().nullable(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })

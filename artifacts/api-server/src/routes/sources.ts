@@ -37,6 +37,7 @@ function toSubjectRequest(row: Row) {
     description: (subject?.description as string | null) ?? null,
     emphasis: (subject?.emphasis as string | null) ?? null,
     preferredSourceTypes: (subject?.preferred_source_types as string | null) ?? null,
+    creditBudget: (subject?.credit_budget as number | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -85,6 +86,7 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
         description: input.data.description ?? null,
         emphasis: input.data.emphasis ?? null,
         preferred_source_types: input.data.preferred_source_types ?? null,
+        credit_budget: input.data.credit_tier,
         status: "pending",
         requested_by: identity.user.id,
       }),
@@ -131,7 +133,7 @@ router.get("/sources/subject-requests", async (req, res): Promise<void> => {
   }
   try {
     const rows = await restService<Row[]>(
-      `subject_requests?student_id=eq.${identity.user.id}&select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types)&order=created_at.desc`,
+      `subject_requests?student_id=eq.${identity.user.id}&select=*,crawl_subjects(name,year_level,description,emphasis,preferred_source_types,credit_budget)&order=created_at.desc`,
     );
     res.json(ListMySourceSubjectRequestsResponse.parse(rows.map(toSubjectRequest)));
   } catch (error) {

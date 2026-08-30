@@ -639,6 +639,7 @@ export interface CrawlSubject {
   emphasis: string | null;
   /** @nullable */
   preferredSourceTypes: string | null;
+  creditBudget: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -699,6 +700,8 @@ export interface CrawlSubjectRequest {
   emphasis: string | null;
   /** @nullable */
   preferredSourceTypes: string | null;
+  /** @nullable */
+  creditBudget: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -823,6 +826,14 @@ export const RequestSubjectInputYearLevel = {
   universitair: 'universitair',
 } as const;
 
+export type RequestSubjectInputCreditTier = typeof RequestSubjectInputCreditTier[keyof typeof RequestSubjectInputCreditTier];
+
+
+export const RequestSubjectInputCreditTier = {
+  NUMBER_300: 300,
+  NUMBER_600: 600,
+} as const;
+
 export interface RequestSubjectInput {
   /**
      * @minLength 1
@@ -836,6 +847,7 @@ export interface RequestSubjectInput {
   emphasis?: string;
   /** @maxLength 300 */
   preferred_source_types?: string;
+  credit_tier: RequestSubjectInputCreditTier;
 }
 
 export interface RequestSubjectResult {

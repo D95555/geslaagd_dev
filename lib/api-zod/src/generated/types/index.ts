@@ -95,6 +95,7 @@ export * from './questionnaireSubmissionInputAnswersItem';
 export * from './reconsiderSourceInput';
 export * from './reorderSelectedStudySubjectsInput';
 export * from './requestSubjectInput';
+export * from './requestSubjectInputCreditTier';
 export * from './requestSubjectInputYearLevel';
 export * from './requestSubjectResult';
 export * from './retryPipelineTaskBody';
