@@ -6,6 +6,33 @@ beslissingen die al genomen zijn (niet opnieuw bediscussiëren — dit zijn
 bindende keuzes van de gebruiker), wat er al gebouwd is (Fase 1, klaar en
 gepusht), en een concreet stappenplan voor de rest.
 
+---
+
+## ▶ START HIER (lees eerst dit blok)
+
+**In één zin:** de credit-blowout is gestopt (Fase 1, gebouwd + gepusht in
+commit `7e36aea`). Jouw taak is het afmaken van het grotere plan — begin bij
+**Fase 1.5** in sectie 4, en check bij mij in vóór Fase 2b.
+
+**Doe in deze volgorde:**
+1. Lees dit hele document (vooral sectie 2 = bindende keuzes, en sectie 3 =
+   wat al af is).
+2. Lees `CLAUDE.md` in de repo-root (gedragsregels van dit project).
+3. Oriënteer je kort op de codebase met de bestandenkaart in sectie 6 — lees
+   alleen wat je nodig hebt, wees zuinig met tokens.
+4. Begin met **Fase 1.5** (sectie 4). Laat je aanpak kort zien vóór je aan
+   Fase 2b (het crawl-brein) begint.
+
+**Randvoorwaarden (altijd):**
+- Branch: `claude/repo-replit-sync-vgwk3g`.
+- `pnpm --filter api-server run typecheck` groen vóór elke commit.
+- Supabase-migraties: toepassen via de Supabase MCP-tool
+  (`mcp__Supabase__apply_migration`) ÉN als bestand wegschrijven in
+  `supabase/migrations/` (repo en live-database gesynchroniseerd houden).
+- Bouw in fasen, niet alles in één keer. Overleg bij elke grote stap.
+- De nieuwe Firecrawl-key staat al in de Replit-secrets; je hoeft die niet te
+  zetten en hij hoort **niet** in de repo.
+
 ## Waarom dit bestaat
 
 De gebruiker kreeg torenhoge Firecrawl-rekeningen (crawls die 1312, 600+
@@ -15,7 +42,8 @@ prioriteit boven al het andere werk aan dit systeem.
 
 ## 1. Oorspronkelijke vraag van de gebruiker (verbatim)
 
-> "fc-66e189bb50bf440e8b1d493829667661 is de nieuwe firecrawl api key, er werd
+> "[nieuwe firecrawl api key — geredigeerd, staat in de Replit-secrets] is de
+> nieuwe firecrawl api key, er werd
 > enorm veel gebruikt credits bij sommige crawls dus moest ik een nieuw account
 > aanmaken want alle credits waren gebruikt (is al aangepast bij de secrets in
 > replit)? 1312, 600, enz. Dit kan niet meer gebeuren, kost enorm veel geld en
@@ -62,7 +90,7 @@ binnen invullen, maar niet de keuze zelf heropenen.
    of de gekozen tier past bij de daadwerkelijke scope van het vak; bij
    onenigheid: reden geven + terugvallen op het bestaande
    `needs_refinement`/`admin_note`-patroon (admin beslist handmatig in beheer).
-   **Nog niet gebouwd (zie stap 3 hieronder).**
+   **Nog niet gebouwd — zie Fase 2a in sectie 4.**
 
 2. **PDF-beleid** — gekozen: "Alleen snippet gebruiken (aanbevolen)" —
    PDF's niet volledig scrapen via Firecrawl, alleen scoren op de snippet.
@@ -288,3 +316,91 @@ verplichtingen):
   studenten-omgeving/homepage, zie `docs/redesign-handoff.md`) — dat is apart
   van dit crawl-werk en hoeft niet opgepakt te worden tenzij de gebruiker daar
   expliciet om vraagt.
+
+## 6. Bestandenkaart (waar staat wat) — zodat je niet hoeft te zoeken
+
+Alle paden relatief aan de repo-root. Backend = `artifacts/api-server/src/`.
+
+**Firecrawl + budget (Fase 1, al klaar):**
+- `lib/firecrawl.ts` — alle Firecrawl-aanroepen + de nieuwe budget-guardrails
+  (`BudgetContext`, `budgetBlockReason`, `recordUsage`, `isPdfUrl`,
+  `firecrawlSearch`, `firecrawlDiscover`, `firecrawlScrapeUrls`,
+  `firecrawlResearchSearch`, `firecrawlReadPaperPassages`). Dit is de
+  centrale plek waar élke credit langsloopt.
+- `lib/supabase.ts` — `restService<T>(path, init)` is de service-role
+  PostgREST-helper die je overal gebruikt om de DB te lezen/schrijven.
+
+**Crawl-pipeline (taak-queue):**
+- `lib/pipeline-worker.ts` — dispatcht `pipeline_tasks` op `taskType`.
+- `lib/pipeline-tasks/curriculum-design.ts` — `runCurriculumDesign()`: plant
+  hoofdstukken, fan-out van één `source_gathering`-taak per hoofdstuk.
+- `lib/pipeline-tasks/source-gathering.ts` — `runSourceGathering()`: het
+  goede twee-fasen-pad (discover → score → scrape-alleen-winnaars).
+- `lib/pipeline-tasks/source-review.ts` — `runSourceReview()`: de huidige
+  **bronbeoordelaar** (keep/reject + gap-queries). Dit is de component die in
+  Fase 2b samensmelt met de crawlhandler tot het crawl-brein.
+- `lib/pipeline-tasks/task-log.ts` — `taskLog()`/`logTask()` schrijven naar
+  `pipeline_task_logs` (al zichtbaar in de admin-console). Fundament voor de
+  traceerbaarheids-ask (Fase 2d).
+- `lib/pipeline-tasks/source-store.ts` — `upsertSource()`,
+  `linkSourceToSubject/Chapter()`, `setSourceStatus()`.
+- `lib/pipeline-tasks/context.ts` — `loadSubject/Chapter/...`,
+  `saveStudyContent()`. Let op de bewuste cost-caps hier (max 5 bronnen,
+  3000 tekens) — goed precedent voor kostenbewust ontwerp.
+
+**Legacy admin-crawl-pad (ook al gebudget-gate in Fase 1):**
+- `lib/source-pipeline.ts` — `runCrawl()` / `runFirecrawlSearch()` +
+  `scoreBatch()` / `determineAcceptance()` / `rescoreSource()`.
+- `routes/crawl.ts` — admin REST-routes: subject-CRUD/approve/deny/refine,
+  `POST /admin/crawl/run`, crawl-historie, de **twijfelbron**-lijst
+  (`GET /admin/crawl/pending`), en `accept/decline/rescore`. Het
+  `decline`-endpoint neemt al een `reason` aan — dat is de haak voor Fase 2d.
+
+**AI-laag:**
+- `lib/ai.ts` — `STRONG_MODEL`/`FAST_MODEL` + `callStrongJson`/`callFastJson`/
+  `callFastText`. Nog géén PDF/document-input — dat moet je in Fase 1.5
+  toevoegen (`@anthropic-ai/sdk` is al een dependency).
+
+**Frontend (admin-UI, waar nieuwe zichtbaarheid moet komen):**
+- `artifacts/geslaagd-app/src/pages/admin-crawl-page.tsx` — de "Crawl
+  starten"-knop, crawl-historie, en de plek voor tier-keuze (2a) en de
+  per-vak memory-view (2c).
+
+**DB / migraties:**
+- `supabase/migrations/` — chronologische SQL-bestanden. De veiligheids-
+  migratie is `2026083001_firecrawl_credit_guardrails.sql`. Nieuwe tabellen
+  (crawl-memory in 2c) komen hier als nieuw genummerd bestand bij.
+
+## 7. Kant-en-klare startprompt voor de nieuwe sessie
+
+Plak dit als eerste bericht in de nieuwe Claude-sessie (samen met dit document
+in de repo):
+
+```
+Je gaat verder werken aan het crawl-systeem van geslaagd.app. Een vorige sessie
+heeft de urgente veiligheidsfix (Fase 1) al gebouwd en gepusht, plus een
+volledig overdrachtsdocument achtergelaten.
+
+EERSTE STAP — verplicht voordat je iets anders doet:
+Lees `docs/crawl-safety-handoff.md` volledig en grondig. Begin bij het blok
+"▶ START HIER" bovenaan. Daarin staan mijn oorspronkelijke vraag (verbatim),
+vier bindende beslissingen (die NIET opnieuw bediscussieerd mogen worden),
+precies wat Fase 1 al heeft opgeleverd (commit 7e36aea), een bestandenkaart,
+en een concreet stappenplan voor Fase 1.5 t/m 2d. Lees ook `CLAUDE.md` in de
+repo-root.
+
+Werk op branch `claude/repo-replit-sync-vgwk3g`. Migraties via de Supabase
+MCP-tool toepassen ÉN als bestand in `supabase/migrations/` wegschrijven. Draai
+`pnpm --filter api-server run typecheck` vóór elke commit.
+
+Begin met Fase 1.5 (gratis PDF-volledige-tekst voor geaccepteerde bronnen,
+buiten Firecrawl om). Laat me eerst kort je aanpak zien vóór je aan Fase 2b
+(het samengevoegde crawl-brein) begint — dat is de grootste architecturale
+stap en die wil ik meebeslissen.
+
+Bouw in fasen, niet alles in één keer. Check tussentijds bij mij in bij elke
+grote stap. Stel gerust zoveel vragen als nodig — ik geef liever input zodat
+het resultaat beter wordt. En als je zelf een beter idee hebt (over crawls of
+andere systemen), zeg het. Wees zuinig met tokens: lees gericht, niet meer
+bestanden dan nodig.
+```
