@@ -114,6 +114,42 @@ export async function callFastJson(input: {
   return extractJson(text);
 }
 
+/**
+ * Reads a PDF as native document input instead of a Firecrawl scrape — free
+ * (no Firecrawl credits), used for PDFs that already passed source scoring.
+ * This SDK version (0.32.1) only exposes PDF document blocks through the
+ * beta Messages namespace, hence `anthropic.beta.messages.create`.
+ */
+export async function callStrongTextWithDocument(input: {
+  system: string;
+  user: string;
+  documentBase64: string;
+  maxTokens?: number;
+}): Promise<string> {
+  const response = await anthropic.beta.messages.create({
+    model: STRONG_MODEL,
+    betas: ["pdfs-2024-09-25"],
+    max_tokens: input.maxTokens ?? 8_000,
+    system: input.system,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: input.documentBase64 },
+          },
+          { type: "text", text: input.user },
+        ],
+      },
+    ],
+  });
+  const block = response.content.find((item) => item.type === "text");
+  const text = block && "text" in block ? block.text : "";
+  if (!text.trim()) throw new Error("Document extraction returned an empty response.");
+  return text;
+}
+
 export async function callFastText(input: {
   system: string;
   messages: Array<{ role: "user" | "assistant"; content: string }>;

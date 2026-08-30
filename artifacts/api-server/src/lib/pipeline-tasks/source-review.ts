@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
 import { defaultCrawlConfig } from "../firecrawl";
+import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { modelList } from "../study-content";
 import { loadChapter, loadChapterSources, loadSubject } from "./context";
 import { setChapterSourceRelevance, setSourceStatus } from "./source-store";
@@ -105,6 +106,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           decision.sourceId,
           decision.relevanceNote,
         );
+        await enrichAcceptedPdfSource(decision.sourceId, source.url);
         kept += 1;
         await log.info("behouden", `Behouden: ${source.title}`, {
           url: source.url,

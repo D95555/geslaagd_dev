@@ -88,6 +88,22 @@ export async function setSourceStatus(
   });
 }
 
+/** Overwrites a source's stored text, e.g. once free PDF full text comes in later. */
+export async function setSourceFullContent(
+  sourceId: string,
+  fullContent: string,
+  contentPreview: string,
+): Promise<void> {
+  await restService<Row[]>(`sources?id=eq.${sourceId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      full_content: fullContent,
+      content_preview: contentPreview,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+}
+
 export async function setChapterSourceRelevance(
   chapterId: string,
   sourceId: string,

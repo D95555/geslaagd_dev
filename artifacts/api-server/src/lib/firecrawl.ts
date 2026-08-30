@@ -311,8 +311,9 @@ export async function firecrawlDiscover(
  *
  * PDF URLs are skipped here entirely (Firecrawl bills per PDF page, which is
  * the single largest cost driver behind the credit blow-ups this guardrail
- * exists to prevent) — they keep whatever snippet they already had. A free,
- * self-fetched full-text path for accepted PDFs is planned separately.
+ * exists to prevent) — they keep whatever snippet they already had. Accepted
+ * PDFs get real full text afterwards via the free, self-fetched path in
+ * `pdf-fetch.ts` (plain `fetch()` + Claude's document input, no Firecrawl).
  *
  * Each scrape is budget-gated individually since Promise.all fires them
  * concurrently; a subject that runs out of budget mid-batch simply stops

@@ -6,6 +6,7 @@ import {
   type FirecrawlSearchResult,
 } from "../firecrawl";
 import { logger } from "../logger";
+import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { determineAcceptance, scoreBatch } from "../source-pipeline";
 import { restService } from "../supabase";
 import { loadChapter, loadSubject } from "./context";
@@ -206,6 +207,10 @@ export async function runSourceGathering(
       await linkSourceToSubject(sourceId, task.subjectId);
       await linkSourceToChapter(sourceId, task.chapterId);
       stored += 1;
+
+      if (status === "accepted") {
+        await enrichAcceptedPdfSource(sourceId, source.url);
+      }
     }
 
     for (const paper of papers) {
