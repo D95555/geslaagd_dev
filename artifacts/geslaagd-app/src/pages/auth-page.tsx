@@ -14,6 +14,7 @@ import { appUrl, supabase } from '@/lib/supabase';
 import { logAuthEvent, requestPasswordReset } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 
 type AuthMode = 'login' | 'signup' | 'forgot' | 'verify';
 
@@ -419,6 +420,7 @@ export function PasswordRecoveryPage() {
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
+  useSurfaceTheme('dark');
 
   return (
     <main className="auth-page">
@@ -435,6 +437,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 }
 
 function AuthLoading() {
+  useSurfaceTheme('dark');
   return (
     <main className="auth-page auth-loading-page">
       <div className="auth-brand" aria-label="geslaagd.app">

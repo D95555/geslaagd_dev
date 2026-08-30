@@ -3,13 +3,15 @@ import { useLocation } from 'wouter';
 import {
   ArrowUpRight,
   BookOpen,
+  ChevronRight,
+  Landmark,
   ListChecks,
   Menu,
-  MoveRight,
   ShieldCheck,
   X,
 } from 'lucide-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 
 const VALUES = [
@@ -52,6 +54,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  useSurfaceTheme('dark');
 
   const openAuth = () => {
     setIsMenuOpen(false);
@@ -102,7 +105,7 @@ export default function HomePage() {
               Zo werkt het
             </a>
             <a href="#voor-wie" onClick={(event) => jumpTo(event, 'voor-wie')} data-testid="link-voor-wie">
-              Voor wie
+              Mogelijkheden
             </a>
           </nav>
           <div className="nav-actions">
@@ -143,7 +146,7 @@ export default function HomePage() {
         {isMenuOpen && (
           <div className="mobile-menu" data-testid="menu-mobile">
             <a href="#werking" onClick={(event) => jumpTo(event, 'werking')}>Zo werkt het</a>
-            <a href="#voor-wie" onClick={(event) => jumpTo(event, 'voor-wie')}>Voor wie</a>
+            <a href="#voor-wie" onClick={(event) => jumpTo(event, 'voor-wie')}>Mogelijkheden</a>
             {user ? (
               <>
                 <button onClick={openLearningArea} data-testid="button-mobile-dashboard">Mijn leeromgeving</button>
@@ -163,18 +166,18 @@ export default function HomePage() {
           <div className="section-wrap home-hero-inner">
             <div className="home-hero-copy">
               <p className="eyebrow">
-                <span className="eyebrow-dot" /> leren met overzicht
+                <span className="eyebrow-dot" /> voor de laatste loodjes
               </p>
               <h1 className="home-hero-title">
-                Van vraag naar <span className="home-accent-text">inzicht.</span>
+                Studeren met <span className="home-accent-text">voorsprong.</span>
               </h1>
               <p className="home-hero-sub">
-                Geslaagd maakt lastige leerstof kleiner. Vind de kern, zie waar die vandaan komt
-                en ga met vertrouwen verder.
+                Geslaagd brengt het internet terug tot wat jij moet weten. Slim verzameld,
+                kritisch bekeken en helder samengevat — voor 6 VWO en het begin van je bachelor.
               </p>
               <div className="home-hero-actions">
                 <Button className="button-large" onClick={startLearning} data-testid="button-start-hero">
-                  {user ? 'Open leeromgeving' : 'Begin gratis'} <MoveRight size={17} />
+                  {user ? 'Open leeromgeving' : 'Probeer geslaagd.app'} <ArrowUpRight size={17} />
                 </Button>
                 <a
                   className="home-hero-link"
@@ -182,28 +185,47 @@ export default function HomePage() {
                   onClick={(event) => jumpTo(event, 'werking')}
                   data-testid="link-discover-hero"
                 >
-                  Zo werkt het <MoveRight size={14} />
+                  Ontdek hoe het werkt <ChevronRight size={14} />
                 </a>
               </div>
+              <p className="home-hero-microcopy">AI-ondersteund. Altijd gecontroleerd. Geen ruis.</p>
             </div>
 
-            {/* A real product moment, not a generic mockup: the same citation
-                tag component the study chat uses, so what a visitor sees here
-                is literally what the product does. */}
+            {/* A real product moment, not a generic mockup: the same source
+                list students see once a chapter summary is ready. */}
             <div className="home-preview" aria-hidden="true" data-testid="visual-summary">
               <div className="home-preview-frame">
-                <div className="home-preview-dots">
-                  <span />
-                  <span />
-                  <span />
+                <div className="home-preview-titlebar">
+                  <div className="home-preview-dots">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <span className="home-preview-url">geslaagd.app / jouw overzicht</span>
                 </div>
-                <div className="home-preview-question">
-                  Waarom werkt een SSRI pas na een paar weken?
+                <p className="home-preview-label">samenvatting klaar</p>
+                <h3 className="home-preview-heading">De Nederlandse rechtsstaat</h3>
+                <div className="home-preview-sources">
+                  <div className="home-preview-source-row">
+                    <Landmark className="home-preview-source-icon" size={16} />
+                    <div className="home-preview-source-copy">
+                      <span className="home-preview-source-title">Rijksoverheid · Grondwet</span>
+                      <span className="home-preview-source-meta">bron 01 · gecontroleerd</span>
+                    </div>
+                    <span className="home-preview-badge">· relevant</span>
+                  </div>
+                  <div className="home-preview-source-row">
+                    <BookOpen className="home-preview-source-icon" size={16} />
+                    <div className="home-preview-source-copy">
+                      <span className="home-preview-source-title">Examenprogramma maatschappijleer</span>
+                      <span className="home-preview-source-meta">bron 02 · gecontroleerd</span>
+                    </div>
+                    <span className="home-preview-badge">· relevant</span>
+                  </div>
                 </div>
-                <div className="home-preview-answer">
-                  SSRI&apos;s verhogen serotonine meteen, maar het therapeutisch effect ontstaat pas
-                  door langzame aanpassing van receptoren in de synaps.
-                  <span className="citation-tag">Bron 1</span>
+                <div className="home-preview-footer-bar">
+                  <span>samenvatting · 6 min leestijd</span>
+                  <span className="home-preview-cta">klaar om te leren</span>
                 </div>
               </div>
             </div>
@@ -212,11 +234,11 @@ export default function HomePage() {
 
         <div className="logo-strip">
           <div className="section-wrap logo-strip-inner">
-            <p>Voor leren met een helder vertrekpunt</p>
+            <p>Gebouwd voor nieuwsgierige mensen</p>
             <div className="signal-list" aria-label="Doelgroepen">
               <span><i /> 6 VWO</span>
-              <span><i /> Eerstejaars</span>
-              <span><i /> Bronbewust</span>
+              <span><i /> Eindexamen</span>
+              <span><i /> Eerstejaars bachelor</span>
             </div>
           </div>
         </div>
