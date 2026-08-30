@@ -887,6 +887,25 @@ export const ListCrawlSubjectsResponse = zod.array(ListCrawlSubjectsResponseItem
 
 
 /**
+ * @summary Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
+ */
+export const SetCrawlSubjectBudgetParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const setCrawlSubjectBudgetBodyCreditBudgetMin = 50;
+export const setCrawlSubjectBudgetBodyCreditBudgetMax = 2000;
+
+
+
+export const SetCrawlSubjectBudgetBody = zod.object({
+  "creditBudget": zod.number().int().min(setCrawlSubjectBudgetBodyCreditBudgetMin).max(setCrawlSubjectBudgetBodyCreditBudgetMax)
+})
+
+export const SetCrawlSubjectBudgetResponse = zod.unknown()
+
+
+/**
  * @summary Search subjects for the Verkenner
  */
 export const ListVerkennerSubjectsQueryParams = zod.object({

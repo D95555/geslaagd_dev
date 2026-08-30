@@ -73,6 +73,7 @@ import type {
   SendChatMessageInput,
   SessionHeartbeat,
   SessionRegistration,
+  SetSubjectBudgetInput,
   StudentExam,
   StudentProgress,
   StudentSource,
@@ -2341,6 +2342,78 @@ export function useListCrawlSubjects<TData = Awaited<ReturnType<typeof listCrawl
 
 
 
+
+export const getSetCrawlSubjectBudgetUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subjects/${subjectId}/budget`
+}
+
+/**
+ * @summary Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
+ */
+export const setCrawlSubjectBudget = async (subjectId: string,
+    setSubjectBudgetInput: SetSubjectBudgetInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getSetCrawlSubjectBudgetUrl(subjectId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setSubjectBudgetInput)
+  }
+);}
+
+
+
+
+
+export const getSetCrawlSubjectBudgetMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCrawlSubjectBudget>>, TError,{subjectId: string;data: BodyType<SetSubjectBudgetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setCrawlSubjectBudget>>, TError,{subjectId: string;data: BodyType<SetSubjectBudgetInput>}, TContext> => {
+
+const mutationKey = ['setCrawlSubjectBudget'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCrawlSubjectBudget>>, {subjectId: string;data: BodyType<SetSubjectBudgetInput>}> = (props) => {
+          const {subjectId,data} = props ?? {};
+
+          return  setCrawlSubjectBudget(subjectId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCrawlSubjectBudgetMutationResult = NonNullable<Awaited<ReturnType<typeof setCrawlSubjectBudget>>>
+    export type SetCrawlSubjectBudgetMutationBody = BodyType<SetSubjectBudgetInput>
+    export type SetCrawlSubjectBudgetMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
+ */
+export const useSetCrawlSubjectBudget = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCrawlSubjectBudget>>, TError,{subjectId: string;data: BodyType<SetSubjectBudgetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setCrawlSubjectBudget>>,
+        TError,
+        {subjectId: string;data: BodyType<SetSubjectBudgetInput>},
+        TContext
+      > => {
+      return useMutation(getSetCrawlSubjectBudgetMutationOptions(options));
+    }
 
 export const getListVerkennerSubjectsUrl = (params?: ListVerkennerSubjectsParams,) => {
   const normalizedParams = new URLSearchParams();

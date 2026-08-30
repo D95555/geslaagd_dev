@@ -8,6 +8,7 @@ import {
   listCrawls,
   requestCrawlSubjectRefinement,
   runCrawl,
+  setCrawlSubjectBudget,
   type CrawlSubject,
   type CrawlSubjectRequest,
   type CrawlSummary,
@@ -21,6 +22,7 @@ import { CrawlCharts } from '@/components/admin/crawl-charts';
 import { DetailSheet } from '@/components/admin/detail-sheet';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
+import { Label } from '@workspace/geslaagd-momentum/components/ui/label';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/geslaagd-momentum/components/ui/tabs';
@@ -83,6 +85,12 @@ export default function AdminCrawlPage() {
   const [refinement, setRefinement] = useState<RefinementAction | null>(null);
   const [adminNote, setAdminNote] = useState('');
   const [refining, setRefining] = useState(false);
+  const [budgetDraft, setBudgetDraft] = useState('');
+  const [savingBudget, setSavingBudget] = useState(false);
+
+  useEffect(() => {
+    setBudgetDraft(detailRequest?.creditBudget != null ? String(detailRequest.creditBudget) : '');
+  }, [detailRequest?.id]);
 
   // `silent` keeps background polling from flashing the loading state.
   const load = async (silent = false) => {
@@ -149,6 +157,19 @@ export default function AdminCrawlPage() {
     await approveCrawlSubjectRequest(requestId);
     setDetailRequest(null);
     await load();
+  };
+
+  const saveBudget = async () => {
+    const subjectId = detailRequest?.subjectId;
+    const value = Number(budgetDraft);
+    if (!subjectId || !Number.isFinite(value) || value <= 0) return;
+    setSavingBudget(true);
+    try {
+      await setCrawlSubjectBudget(subjectId, { creditBudget: value });
+      await load();
+    } finally {
+      setSavingBudget(false);
+    }
   };
 
   const openRefinement = (requestId: string, kind: RefinementAction['kind']) => {
@@ -288,8 +309,28 @@ export default function AdminCrawlPage() {
             {detailRequest.preferredSourceTypes && (
               <p><strong>Gewenste brontypes</strong><br />{detailRequest.preferredSourceTypes}</p>
             )}
-            {detailRequest.creditBudget !== null && (
-              <p><strong>Zoekbudget</strong><br />{detailRequest.creditBudget} credits</p>
+            {detailRequest.subjectId && (
+              <div>
+                <Label htmlFor="request-budget-input">Zoekbudget</Label>
+                <div className="request-row-actions">
+                  <Input
+                    id="request-budget-input"
+                    type="number"
+                    min={50}
+                    max={2000}
+                    value={budgetDraft}
+                    onChange={(e) => setBudgetDraft(e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={savingBudget || !budgetDraft || Number(budgetDraft) === detailRequest.creditBudget}
+                    onClick={() => void saveBudget()}
+                  >
+                    {savingBudget ? <Loader2 className="spin" size={14} /> : null} Opslaan
+                  </Button>
+                </div>
+              </div>
             )}
             {detailRequest.adminNote && (
               <p><strong>Toelichting aan student</strong><br />{detailRequest.adminNote}</p>

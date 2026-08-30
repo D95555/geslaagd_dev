@@ -579,6 +579,27 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CrawlSubject"
+  /admin/crawl/subjects/{subjectId}/budget:
+    post:
+      operationId: setCrawlSubjectBudget
+      tags: [crawl]
+      summary: Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetSubjectBudgetInput"
+      responses:
+        "200":
+          description: Budget updated
   /admin/verkenner/subjects:
     get:
       operationId: listVerkennerSubjects
@@ -1997,6 +2018,11 @@ components:
       required: [adminNote]
       properties:
         adminNote: { type: string, minLength: 1, maxLength: 1000 }
+    SetSubjectBudgetInput:
+      type: object
+      required: [creditBudget]
+      properties:
+        creditBudget: { type: integer, minimum: 50, maximum: 2000 }
     RunCrawlInput:
       type: object
       required: [subjectId]

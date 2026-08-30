@@ -110,6 +110,7 @@ export * from './selectedSubject';
 export * from './sendChatMessageInput';
 export * from './sessionHeartbeat';
 export * from './sessionRegistration';
+export * from './setSubjectBudgetInput';
 export * from './studentExam';
 export * from './studentProgress';
 export * from './studentSource';

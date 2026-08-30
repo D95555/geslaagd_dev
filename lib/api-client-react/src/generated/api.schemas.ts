@@ -714,6 +714,14 @@ export interface AdminNoteInput {
   adminNote: string;
 }
 
+export interface SetSubjectBudgetInput {
+  /**
+     * @minimum 50
+     * @maximum 2000
+     */
+  creditBudget: number;
+}
+
 export interface RunCrawlInput {
   subjectId: string;
 }
