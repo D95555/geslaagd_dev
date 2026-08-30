@@ -11,6 +11,7 @@ import {
   DenyCrawlSubjectRequestParams,
   GetCrawlDetailParams,
   GetCrawlDetailResponse,
+  GetCrawlSubjectMemoryParams,
   ListCrawlSubjectRequestsResponse,
   ListCrawlSubjectsResponse,
   ListCrawlsResponse,
@@ -21,7 +22,11 @@ import {
   RunCrawlResponse,
   SetCrawlSubjectBudgetBody,
   SetCrawlSubjectBudgetParams,
+  UpdateCrawlSubjectMemoryBody,
+  UpdateCrawlSubjectMemoryParams,
+  UpdateGlobalCrawlMemoryBody,
 } from "@workspace/api-zod";
+import { getMemoryContent, setMemoryContent } from "../lib/crawl-memory";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { rescoreSource, runCrawl } from "../lib/source-pipeline";
 
@@ -176,6 +181,80 @@ router.post("/admin/crawl/subjects/:subjectId/budget", async (req, res): Promise
   } catch (error) {
     req.log.warn({ error }, "Could not update subject budget");
     res.status(500).json({ error: "Could not update subject budget." });
+  }
+});
+
+router.get("/admin/crawl/memory/global", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  try {
+    res.json({ content: await getMemoryContent(null) });
+  } catch (error) {
+    req.log.warn({ error }, "Could not load global crawl memory");
+    res.status(500).json({ error: "Could not load global crawl memory." });
+  }
+});
+
+router.post("/admin/crawl/memory/global", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const input = UpdateGlobalCrawlMemoryBody.safeParse(req.body);
+  if (!input.success) {
+    res.status(400).json({ error: "Invalid memory content." });
+    return;
+  }
+  try {
+    await setMemoryContent(null, input.data.content);
+    res.sendStatus(200);
+  } catch (error) {
+    req.log.warn({ error }, "Could not update global crawl memory");
+    res.status(500).json({ error: "Could not update global crawl memory." });
+  }
+});
+
+router.get("/admin/crawl/subjects/:subjectId/memory", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = GetCrawlSubjectMemoryParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid request." });
+    return;
+  }
+  try {
+    res.json({ content: await getMemoryContent(params.data.subjectId) });
+  } catch (error) {
+    req.log.warn({ error }, "Could not load subject crawl memory");
+    res.status(500).json({ error: "Could not load subject crawl memory." });
+  }
+});
+
+router.post("/admin/crawl/subjects/:subjectId/memory", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = UpdateCrawlSubjectMemoryParams.safeParse(req.params);
+  const input = UpdateCrawlSubjectMemoryBody.safeParse(req.body);
+  if (!params.success || !input.success) {
+    res.status(400).json({ error: "Invalid memory content." });
+    return;
+  }
+  try {
+    await setMemoryContent(params.data.subjectId, input.data.content);
+    res.sendStatus(200);
+  } catch (error) {
+    req.log.warn({ error }, "Could not update subject crawl memory");
+    res.status(500).json({ error: "Could not update subject crawl memory." });
   }
 });
 

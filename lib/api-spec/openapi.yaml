@@ -579,6 +579,66 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CrawlSubject"
+  /admin/crawl/memory/global:
+    get:
+      operationId: getGlobalCrawlMemory
+      tags: [crawl]
+      summary: Read the global crawl memory shared across every subject
+      responses:
+        "200":
+          description: Global memory
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CrawlMemory" }
+    post:
+      operationId: updateGlobalCrawlMemory
+      tags: [crawl]
+      summary: Edit the global crawl memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCrawlMemoryInput" }
+      responses:
+        "200":
+          description: Updated
+  /admin/crawl/subjects/{subjectId}/memory:
+    get:
+      operationId: getCrawlSubjectMemory
+      tags: [crawl]
+      summary: Read a subject's crawl memory
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Subject memory
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CrawlMemory" }
+    post:
+      operationId: updateCrawlSubjectMemory
+      tags: [crawl]
+      summary: Edit a subject's crawl memory
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCrawlMemoryInput" }
+      responses:
+        "200":
+          description: Updated
   /admin/crawl/subjects/{subjectId}/budget:
     post:
       operationId: setCrawlSubjectBudget
@@ -2023,6 +2083,16 @@ components:
       required: [creditBudget]
       properties:
         creditBudget: { type: integer, minimum: 50, maximum: 2000 }
+    CrawlMemory:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+    UpdateCrawlMemoryInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, maxLength: 20000 }
     RunCrawlInput:
       type: object
       required: [subjectId]

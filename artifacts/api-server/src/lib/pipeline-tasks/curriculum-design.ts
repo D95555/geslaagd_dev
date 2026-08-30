@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
+import { loadMemory } from "../crawl-memory";
 import { modelList, modelText } from "../study-content";
 import { defaultCrawlConfig, firecrawlDiscover, type CrawlConfig } from "../firecrawl";
 import { logger } from "../logger";
@@ -67,6 +68,10 @@ const SYSTEM_PROMPT = [
   "5. Bepaal het moeilijkheidsniveau (bijv. 'VWO 5', 'VWO 6', 'Bachelor 1').",
   "6. Geef per hoofdstuk 2-3 gerichte zoekopdrachten in crawlConfigs.",
   "",
+  "Als hieronder geleerde lessen van eerdere crawls staan, gebruik die om betere",
+  "zoekopdrachten te schrijven (bijv. domeinen of type zoekopdracht vermijden die",
+  "eerder weinig opleverden).",
+  "",
   "Voor vakken met een standaard lesboek (bijv. Getal & Ruimte, NOVA, Memo),",
   "volg de hoofdstukindeling van het boek. Voor minder gestandaardiseerde vakken,",
   "kies een logische volgorde. De hoofdstukken moeten samen het VOLLEDIGE",
@@ -120,6 +125,13 @@ export async function runCurriculumDesign(
 
   await log.info("onderzoek", `Vooronderzoek naar "${subject.name}" via Firecrawl.`);
   const research = await researchSubject(subject.name, subject.yearLevel, task.subjectId);
+  const memory = await loadMemory(task.subjectId);
+  const memoryContext = [
+    memory.global && `Geleerde lessen (alle vakken, meest recent laatst):\n${memory.global.slice(-2_000)}`,
+    memory.subject && `Geleerde lessen (dit vak, meest recent laatst):\n${memory.subject.slice(-2_000)}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const parsed = curriculumSchema.safeParse(
     await callJsonForTask("curriculum_design", {
@@ -127,6 +139,7 @@ export async function runCurriculumDesign(
       user: [
         `Vak: ${subject.name}`,
         `Niveau: ${subject.yearLevel}`,
+        memoryContext,
         "",
         "Zoekresultaten:",
         research,

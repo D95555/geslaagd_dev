@@ -722,6 +722,15 @@ export interface SetSubjectBudgetInput {
   creditBudget: number;
 }
 
+export interface CrawlMemory {
+  content: string;
+}
+
+export interface UpdateCrawlMemoryInput {
+  /** @maxLength 20000 */
+  content: string;
+}
+
 export interface RunCrawlInput {
   subjectId: string;
 }

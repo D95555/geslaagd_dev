@@ -5,6 +5,7 @@ import {
   type CrawlConfig,
   type FirecrawlSearchResult,
 } from "../firecrawl";
+import { recordDomainOutcome } from "../domain-reputation";
 import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { determineAcceptance, scoreBatch } from "../source-pipeline";
@@ -192,6 +193,10 @@ export async function runSourceGathering(
         firstCrawlId: crawlId,
       });
       if (!sourceId) continue;
+
+      if (status === "accepted" || status === "declined") {
+        await recordDomainOutcome(source.url, status);
+      }
 
       await log.info(
         "beoordeeld",

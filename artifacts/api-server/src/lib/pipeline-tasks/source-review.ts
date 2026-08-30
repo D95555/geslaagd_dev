@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
+import { appendMemoryEntry, loadMemory } from "../crawl-memory";
+import { recordDomainOutcome } from "../domain-reputation";
 import { defaultCrawlConfig } from "../firecrawl";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { modelList } from "../study-content";
@@ -24,6 +26,7 @@ const reviewSchema = z.object({
     )
     .default([]),
   gapQueries: modelList(z.string()),
+  lessonsLearned: z.string().nullish().transform((value) => value ?? ""),
 });
 
 const SYSTEM_PROMPT = [
@@ -40,9 +43,14 @@ const SYSTEM_PROMPT = [
   "die door geen enkele goedgekeurde bron worden gedekt. Laat de lijst leeg als",
   "de dekking voldoende is.",
   "",
+  "Schrijf ook lessonsLearned: 1-3 zinnen in het Nederlands over wat deze ronde",
+  "laat zien voor toekomstige crawls van dit vak (bijv. welk type bron of domein",
+  "wel/niet werkte, of een patroon in de zoekopdrachten). Laat leeg als er niets",
+  "noemenswaardigs is — verzin niets.",
+  "",
   "Antwoord ALLEEN met JSON:",
   '{ "decisions": [{ "sourceId": "...", "keep": true, "relevanceNote": "...",',
-  '  "rejectReason": null }], "gapQueries": ["..."] }',
+  '  "rejectReason": null }], "gapQueries": ["..."], "lessonsLearned": "..." }',
 ].join("\n");
 
 /**
@@ -68,6 +76,14 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
     onderwerpen: chapter.topicTags,
   });
 
+  const memory = await loadMemory(task.subjectId);
+  const memoryContext = [
+    memory.global && `Geleerde lessen (alle vakken, meest recent laatst):\n${memory.global.slice(-2_000)}`,
+    memory.subject && `Geleerde lessen (dit vak, meest recent laatst):\n${memory.subject.slice(-2_000)}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
   if (candidates.length > 0) {
     const parsed = reviewSchema.safeParse(
       await callJsonForTask("source_review", {
@@ -77,6 +93,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           `Hoofdstuk: ${chapter.title}`,
           `Beschrijving: ${chapter.description}`,
           `Onderwerpen: ${chapter.topicTags.join(", ")}`,
+          memoryContext,
           "",
           "Bronnen:",
           ...candidates.map((source) =>
@@ -107,6 +124,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           decision.relevanceNote,
         );
         await enrichAcceptedPdfSource(decision.sourceId, source.url);
+        await recordDomainOutcome(source.url, "accepted");
         kept += 1;
         await log.info("behouden", `Behouden: ${source.title}`, {
           url: source.url,
@@ -114,6 +132,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
         });
       } else {
         await setSourceStatus(decision.sourceId, "declined", decision.rejectReason);
+        await recordDomainOutcome(source.url, "declined");
         rejected += 1;
         await log.info("afgewezen", `Afgewezen: ${source.title}`, {
           url: source.url,
@@ -122,6 +141,11 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
       }
     }
     gapQueries = parsed.data.gapQueries.filter((query) => query.trim().length > 0);
+
+    if (parsed.data.lessonsLearned.trim()) {
+      const entry = `Hoofdstuk "${chapter.title}": ${parsed.data.lessonsLearned.trim()}`;
+      await appendMemoryEntry(task.subjectId, entry, entry);
+    }
   }
 
   const gapRound = Number((task.config as Record<string, unknown> | null)?.gapRound ?? 0);

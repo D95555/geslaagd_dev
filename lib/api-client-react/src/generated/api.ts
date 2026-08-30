@@ -33,6 +33,7 @@ import type {
   ChapterContent,
   ChatMessage,
   CrawlDetail,
+  CrawlMemory,
   CrawlRunResult,
   CrawlSource,
   CrawlSubject,
@@ -91,6 +92,7 @@ import type {
   SubjectDetail,
   SubjectSummary,
   TrackedSession,
+  UpdateCrawlMemoryInput,
   UpdateVerkennerChapterTitleInput,
   UpdateVerkennerSubjectTitleInput,
   VerkennerLookupResponse,
@@ -2342,6 +2344,303 @@ export function useListCrawlSubjects<TData = Awaited<ReturnType<typeof listCrawl
 
 
 
+
+export const getGetGlobalCrawlMemoryUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/memory/global`
+}
+
+/**
+ * @summary Read the global crawl memory shared across every subject
+ */
+export const getGlobalCrawlMemory = async ( options?: Parameters<typeof customFetch>[1]): Promise<CrawlMemory> => {
+
+  return customFetch<CrawlMemory>(getGetGlobalCrawlMemoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGlobalCrawlMemoryQueryKey = () => {
+    return [
+    `/api/admin/crawl/memory/global`
+    ] as const;
+    }
+
+
+export const getGetGlobalCrawlMemoryQueryOptions = <TData = Awaited<ReturnType<typeof getGlobalCrawlMemory>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGlobalCrawlMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGlobalCrawlMemoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGlobalCrawlMemory>>> = ({ signal }) => getGlobalCrawlMemory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGlobalCrawlMemory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGlobalCrawlMemoryQueryResult = NonNullable<Awaited<ReturnType<typeof getGlobalCrawlMemory>>>
+export type GetGlobalCrawlMemoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read the global crawl memory shared across every subject
+ */
+
+export function useGetGlobalCrawlMemory<TData = Awaited<ReturnType<typeof getGlobalCrawlMemory>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGlobalCrawlMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGlobalCrawlMemoryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateGlobalCrawlMemoryUrl = () => {
+
+
+
+
+  return `/api/admin/crawl/memory/global`
+}
+
+/**
+ * @summary Edit the global crawl memory
+ */
+export const updateGlobalCrawlMemory = async (updateCrawlMemoryInput: UpdateCrawlMemoryInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUpdateGlobalCrawlMemoryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateCrawlMemoryInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateGlobalCrawlMemoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGlobalCrawlMemory>>, TError,{data: BodyType<UpdateCrawlMemoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateGlobalCrawlMemory>>, TError,{data: BodyType<UpdateCrawlMemoryInput>}, TContext> => {
+
+const mutationKey = ['updateGlobalCrawlMemory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGlobalCrawlMemory>>, {data: BodyType<UpdateCrawlMemoryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateGlobalCrawlMemory(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateGlobalCrawlMemoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateGlobalCrawlMemory>>>
+    export type UpdateGlobalCrawlMemoryMutationBody = BodyType<UpdateCrawlMemoryInput>
+    export type UpdateGlobalCrawlMemoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit the global crawl memory
+ */
+export const useUpdateGlobalCrawlMemory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGlobalCrawlMemory>>, TError,{data: BodyType<UpdateCrawlMemoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateGlobalCrawlMemory>>,
+        TError,
+        {data: BodyType<UpdateCrawlMemoryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateGlobalCrawlMemoryMutationOptions(options));
+    }
+
+export const getGetCrawlSubjectMemoryUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subjects/${subjectId}/memory`
+}
+
+/**
+ * @summary Read a subject's crawl memory
+ */
+export const getCrawlSubjectMemory = async (subjectId: string, options?: Parameters<typeof customFetch>[1]): Promise<CrawlMemory> => {
+
+  return customFetch<CrawlMemory>(getGetCrawlSubjectMemoryUrl(subjectId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCrawlSubjectMemoryQueryKey = (subjectId: string,) => {
+    return [
+    `/api/admin/crawl/subjects/${subjectId}/memory`
+    ] as const;
+    }
+
+
+export const getGetCrawlSubjectMemoryQueryOptions = <TData = Awaited<ReturnType<typeof getCrawlSubjectMemory>>, TError = ErrorType<unknown>>(subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCrawlSubjectMemoryQueryKey(subjectId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCrawlSubjectMemory>>> = ({ signal }) => getCrawlSubjectMemory(subjectId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: subjectId !== null && subjectId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectMemory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCrawlSubjectMemoryQueryResult = NonNullable<Awaited<ReturnType<typeof getCrawlSubjectMemory>>>
+export type GetCrawlSubjectMemoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read a subject's crawl memory
+ */
+
+export function useGetCrawlSubjectMemory<TData = Awaited<ReturnType<typeof getCrawlSubjectMemory>>, TError = ErrorType<unknown>>(
+ subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCrawlSubjectMemoryQueryOptions(subjectId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCrawlSubjectMemoryUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subjects/${subjectId}/memory`
+}
+
+/**
+ * @summary Edit a subject's crawl memory
+ */
+export const updateCrawlSubjectMemory = async (subjectId: string,
+    updateCrawlMemoryInput: UpdateCrawlMemoryInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUpdateCrawlSubjectMemoryUrl(subjectId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateCrawlMemoryInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateCrawlSubjectMemoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCrawlSubjectMemory>>, TError,{subjectId: string;data: BodyType<UpdateCrawlMemoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCrawlSubjectMemory>>, TError,{subjectId: string;data: BodyType<UpdateCrawlMemoryInput>}, TContext> => {
+
+const mutationKey = ['updateCrawlSubjectMemory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCrawlSubjectMemory>>, {subjectId: string;data: BodyType<UpdateCrawlMemoryInput>}> = (props) => {
+          const {subjectId,data} = props ?? {};
+
+          return  updateCrawlSubjectMemory(subjectId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCrawlSubjectMemoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateCrawlSubjectMemory>>>
+    export type UpdateCrawlSubjectMemoryMutationBody = BodyType<UpdateCrawlMemoryInput>
+    export type UpdateCrawlSubjectMemoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit a subject's crawl memory
+ */
+export const useUpdateCrawlSubjectMemory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCrawlSubjectMemory>>, TError,{subjectId: string;data: BodyType<UpdateCrawlMemoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCrawlSubjectMemory>>,
+        TError,
+        {subjectId: string;data: BodyType<UpdateCrawlMemoryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateCrawlSubjectMemoryMutationOptions(options));
+    }
 
 export const getSetCrawlSubjectBudgetUrl = (subjectId: string,) => {
 

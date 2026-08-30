@@ -887,6 +887,58 @@ export const ListCrawlSubjectsResponse = zod.array(ListCrawlSubjectsResponseItem
 
 
 /**
+ * @summary Read the global crawl memory shared across every subject
+ */
+export const GetGlobalCrawlMemoryResponse = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Edit the global crawl memory
+ */
+export const updateGlobalCrawlMemoryBodyContentMax = 20000;
+
+
+
+export const UpdateGlobalCrawlMemoryBody = zod.object({
+  "content": zod.string().max(updateGlobalCrawlMemoryBodyContentMax)
+})
+
+export const UpdateGlobalCrawlMemoryResponse = zod.unknown()
+
+
+/**
+ * @summary Read a subject's crawl memory
+ */
+export const GetCrawlSubjectMemoryParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetCrawlSubjectMemoryResponse = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Edit a subject's crawl memory
+ */
+export const UpdateCrawlSubjectMemoryParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const updateCrawlSubjectMemoryBodyContentMax = 20000;
+
+
+
+export const UpdateCrawlSubjectMemoryBody = zod.object({
+  "content": zod.string().max(updateCrawlSubjectMemoryBodyContentMax)
+})
+
+export const UpdateCrawlSubjectMemoryResponse = zod.unknown()
+
+
+/**
  * @summary Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
  */
 export const SetCrawlSubjectBudgetParams = zod.object({
