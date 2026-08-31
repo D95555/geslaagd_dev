@@ -306,6 +306,47 @@ export async function firecrawlDiscover(
   return { results: [...byUrl.values()], creditsUsed };
 }
 
+export type MapResult = { url: string; title?: string; description?: string };
+
+/**
+ * Maps a single (trusted) domain for URLs matching a topic. Firecrawl bills
+ * this at a flat 1 credit regardless of how many URLs come back — far
+ * cheaper than a search when a domain already has a strong track record
+ * (see domain-reputation.ts), since there is no per-result cost to avoid.
+ */
+export async function firecrawlMap(
+  domain: string,
+  search: string,
+  ctx: BudgetContext,
+): Promise<{ results: MapResult[]; creditsUsed: number }> {
+  const blockReason = await budgetBlockReason(ctx);
+  if (blockReason) {
+    logger.warn({ ctx, domain }, `Firecrawl map skipped: ${blockReason}`);
+    return { results: [], creditsUsed: 0 };
+  }
+  try {
+    const response = await fetch("https://api.firecrawl.dev/v2/map", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey()}`,
+      },
+      body: JSON.stringify({ url: `https://${domain}`, search, limit: 15 }),
+    });
+    if (!response.ok) {
+      logger.warn({ domain, status: response.status }, "Firecrawl map failed; skipping");
+      return { results: [], creditsUsed: 0 };
+    }
+    const body = (await response.json()) as { links?: MapResult[]; creditsUsed?: number };
+    const spent = Number(body.creditsUsed ?? 1);
+    await recordUsage(ctx, "map", spent);
+    return { results: body.links ?? [], creditsUsed: spent };
+  } catch (error) {
+    logger.warn({ error, domain }, "Firecrawl map errored; skipping");
+    return { results: [], creditsUsed: 0 };
+  }
+}
+
 /**
  * Phase B: scrape only the URLs that survived scoring. Failures are per-URL and
  * non-fatal — a page that will not scrape simply keeps whatever snippet text it

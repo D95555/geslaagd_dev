@@ -1,12 +1,13 @@
 import {
   firecrawlDiscover,
+  firecrawlMap,
   firecrawlResearchSearch,
   firecrawlScrapeUrls,
   type CrawlConfig,
   type FirecrawlSearchResult,
 } from "../firecrawl";
 import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
-import { recordDomainOutcome } from "../domain-reputation";
+import { getTrustedDomains, recordDomainOutcome } from "../domain-reputation";
 import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { restService } from "../supabase";
@@ -92,6 +93,31 @@ export async function runSourceGathering(
   try {
     // Phase A — discover snippets only (no scrape), so declined pages cost nothing.
     const { results, creditsUsed: discoverCredits } = await firecrawlDiscover(config, budgetCtx);
+    let mapCreditsUsed = 0;
+
+    // Phase A2 — trusted-domain fast-track: a Firecrawl map call is a flat 1
+    // credit no matter how many URLs it returns, far cheaper than search for a
+    // domain that has already proven itself across earlier crawls.
+    const trustedDomains = await getTrustedDomains();
+    for (const domain of trustedDomains) {
+      const { results: mapResults, creditsUsed: mapCredits } = await firecrawlMap(
+        domain,
+        config.queries[0]!,
+        budgetCtx,
+      );
+      mapCreditsUsed += mapCredits;
+      for (const mapResult of mapResults) {
+        if (!mapResult.url || results.some((existing) => existing.url === mapResult.url)) continue;
+        results.push({ url: mapResult.url, title: mapResult.title, description: mapResult.description });
+      }
+    }
+    if (trustedDomains.length > 0) {
+      await log.info(
+        "vertrouwde-domeinen",
+        `${trustedDomains.length} vertrouwde domeinen gecheckt via map (${mapCreditsUsed} credits).`,
+        { domeinen: trustedDomains },
+      );
+    }
 
     // Academic subjects can additionally pull from the research index.
     const papers = config.useResearchIndex
@@ -165,7 +191,7 @@ export async function runSourceGathering(
       winnerUrls,
       budgetCtx,
     );
-    let creditsUsed = discoverCredits + scrapeCredits;
+    let creditsUsed = discoverCredits + mapCreditsUsed + scrapeCredits;
 
     await log.info(
       "gescraped",
