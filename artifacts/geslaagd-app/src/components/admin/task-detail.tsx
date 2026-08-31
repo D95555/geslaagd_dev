@@ -35,7 +35,7 @@ export function LogLine({ entry }: { entry: PipelineLogEntry }) {
   const hasData = entry.data && Object.keys(entry.data).length > 0;
 
   return (
-    <li className={`log-line log-${entry.level}`}>
+    <div className={`log-line log-${entry.level}`}>
       <span className="log-time">{fmtTime(entry.createdAt)}</span>
       <span className="log-phase">{entry.phase || '—'}</span>
       <span className="log-message">
@@ -49,7 +49,7 @@ export function LogLine({ entry }: { entry: PipelineLogEntry }) {
           <pre className="log-data">{JSON.stringify(entry.data, null, 2)}</pre>
         )}
       </span>
-    </li>
+    </div>
   );
 }
 
@@ -148,7 +148,9 @@ export function TaskDetailSheet({
             ) : (
               <ul className="log-list">
                 {detail.logs.map((entry) => (
-                  <LogLine key={entry.id} entry={entry} />
+                  <li key={entry.id}>
+                    <LogLine entry={entry} />
+                  </li>
                 ))}
               </ul>
             )}
