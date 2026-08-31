@@ -4,9 +4,15 @@ import {
   ArrowUpRight,
   BookOpen,
   ChevronRight,
+  FileText,
+  GraduationCap,
+  Highlighter,
   Landmark,
+  Link2,
   ListChecks,
   Menu,
+  PencilLine,
+  Route,
   ShieldCheck,
   X,
 } from 'lucide-react';
@@ -29,6 +35,39 @@ const VALUES = [
     icon: ListChecks,
     title: 'Van vraag naar oefening',
     body: 'Dezelfde hoofdstukken leveren meteen oefenvragen en een tentamen op maat.',
+  },
+];
+
+const CAPABILITIES = [
+  {
+    icon: FileText,
+    title: 'Een samenvatting per hoofdstuk',
+    body: 'Geen dertig tabbladen meer: de kern van elk hoofdstuk, helder op een rij.',
+  },
+  {
+    icon: Highlighter,
+    title: 'Kernpunten om snel te herhalen',
+    body: 'Het overzicht dat je erbij pakt vlak voor een toets of tentamen.',
+  },
+  {
+    icon: PencilLine,
+    title: 'Oefenvragen die aansluiten op de stof',
+    body: 'Geen losse vragenbank — oefening die precies bij dit hoofdstuk hoort.',
+  },
+  {
+    icon: GraduationCap,
+    title: 'Een proeftentamen bij grote hoofdstukken',
+    body: 'Voor de onderdelen die er echt toe doen, oefen je alsof het al menens is.',
+  },
+  {
+    icon: Route,
+    title: 'Een studieplan dat meebeweegt',
+    body: 'Zie in één oogopslag wat je al af hebt en wat nog moet.',
+  },
+  {
+    icon: Link2,
+    title: 'Bronnen die je zelf kunt natrekken',
+    body: 'Elke uitleg is te herleiden naar waar hij vandaan komt.',
   },
 ];
 
@@ -264,6 +303,29 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="home-capabilities">
+          <div className="section-wrap">
+            <div className="home-section-head">
+              <p className="eyebrow">wat je krijgt</p>
+              <h2 className="home-section-title">Per vak meteen bruikbaar.</h2>
+              <p className="home-section-sub">
+                Geen kale samenvatting: elk hoofdstuk levert meteen het hele pakket op.
+              </p>
+            </div>
+            <div className="home-capability-grid">
+              {CAPABILITIES.map((capability) => (
+                <div className="home-capability-row" key={capability.title}>
+                  <capability.icon className="home-capability-icon" size={17} aria-hidden="true" />
+                  <div>
+                    <h3>{capability.title}</h3>
+                    <p>{capability.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="home-process" id="werking">
           <div className="section-wrap">
             <div className="home-section-head">
@@ -296,6 +358,10 @@ export default function HomePage() {
               {user ? 'Open mijn leeromgeving' : 'Maak een leeromgeving'} <ArrowUpRight size={16} />
             </Button>
           </div>
+          <p className="home-cta-note">
+            Geslaagd is een project van één student, niet van een bedrijf — gebouwd voor
+            medestudenten. Een eventuele eenmalige bijdrage gaat rechtstreeks naar hosting, niet naar winst.
+          </p>
         </section>
       </main>
 

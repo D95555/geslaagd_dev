@@ -91,8 +91,8 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Paper is the default; the study and admin shells declare themselves dark. */}
-      <ThemeProvider defaultTheme="light">
+      {/* Every surface in the app declares itself dark; this default just avoids a light flash before that runs. */}
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <AuthProvider>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>

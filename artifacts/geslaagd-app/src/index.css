@@ -270,6 +270,16 @@
 .home-value-card h3 { margin: 0 0 8px; color: hsl(var(--foreground)); font: 600 1.05rem var(--app-font-serif); letter-spacing: -.02em; }
 .home-value-card p { margin: 0; color: hsl(var(--muted-foreground)); font-size: .88rem; line-height: 1.6; }
 
+/* A compact checklist rather than another card grid, so a six-item feature
+   list reads as one dense section instead of doubling the "voor jou" cards
+   above it. */
+.home-capabilities { padding: clamp(28px, 3vw, 42px) 0; }
+.home-capability-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 32px; }
+.home-capability-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-top: 1px solid hsl(var(--border)); }
+.home-capability-icon { flex-shrink: 0; margin-top: 3px; color: hsl(var(--primary)); }
+.home-capability-row h3 { margin: 0 0 4px; color: hsl(var(--foreground)); font: 600 .95rem var(--app-font-serif); letter-spacing: -.01em; }
+.home-capability-row p { margin: 0; color: hsl(var(--muted-foreground)); font-size: .84rem; line-height: 1.55; }
+
 /* Numbered rows sharing one border, dividers between them -- the same
    pattern the redesigned chapter list uses, so the site and the product
    read as one visual language rather than two different templates. */
@@ -298,10 +308,12 @@
 }
 .home-cta-sub { max-width: 440px; margin: 0 auto 28px; color: hsl(var(--primary-foreground) / .85); line-height: 1.6; }
 .home-cta-box .button-large { background: hsl(var(--primary-foreground)); color: hsl(var(--primary)); border-color: transparent; }
+.home-cta-note { max-width: 480px; margin: 20px auto 0; color: hsl(var(--muted-foreground)); font-size: .78rem; line-height: 1.6; text-align: center; }
 
 @media (max-width: 900px) {
   .home-hero-inner { grid-template-columns: 1fr; }
   .home-value-grid { grid-template-columns: 1fr; }
+  .home-capability-grid { grid-template-columns: 1fr; }
   .home-process-row { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
 

@@ -58,7 +58,7 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
   const [open, setOpen] = useSidebarOpenState();
   const railContent = useRailSlotContent();
 
-  useSurfaceTheme('light');
+  useSurfaceTheme('dark');
   useSuppressSidebarHotkeyInEditable();
 
   const leave = async () => {

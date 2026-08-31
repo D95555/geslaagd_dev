@@ -1,10 +1,12 @@
 import { Card, CardContent } from '@workspace/geslaagd-momentum/components/ui/card';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { ArrowLeft, Compass } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
+  useSurfaceTheme('dark');
   return (
     <main className="not-found-page">
       <Card className="not-found-card">
