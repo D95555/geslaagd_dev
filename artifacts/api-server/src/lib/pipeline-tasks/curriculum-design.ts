@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
+import { aiUsageRecorder } from "../ai-usage";
 import { loadMemory } from "../crawl-memory";
 import { modelList, modelText } from "../study-content";
 import { defaultCrawlConfig, firecrawlDiscover, type CrawlConfig } from "../firecrawl";
@@ -149,6 +150,7 @@ export async function runCurriculumDesign(
         research,
       ].join("\n"),
       maxTokens: 16_000,
+      onUsage: aiUsageRecorder(task.subjectId, "curriculum_design"),
     }),
   );
   if (!parsed.success) {

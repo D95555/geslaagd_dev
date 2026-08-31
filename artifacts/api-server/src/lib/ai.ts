@@ -37,10 +37,12 @@ export function modelNameFor(tier: ModelTier): string {
   return tier === "strong" ? STRONG_MODEL : FAST_MODEL;
 }
 
+export type AiUsage = { model: string; inputTokens: number; outputTokens: number };
+
 /** Runs a JSON prompt on whichever tier the task is configured for. */
 export async function callJsonForTask(
   task: keyof typeof MODEL_BY_TASK,
-  input: { system: string; user: string; maxTokens?: number },
+  input: { system: string; user: string; maxTokens?: number; onUsage?: (usage: AiUsage) => void },
 ): Promise<unknown> {
   return MODEL_BY_TASK[task] === "strong" ? callStrongJson(input) : callFastJson(input);
 }
@@ -82,12 +84,18 @@ export async function callStrongJson(input: {
   system: string;
   user: string;
   maxTokens?: number;
+  onUsage?: (usage: AiUsage) => void;
 }): Promise<unknown> {
   const response = await anthropic.messages.create({
     model: STRONG_MODEL,
     max_tokens: input.maxTokens ?? 16_000,
     system: input.system,
     messages: [{ role: "user", content: input.user }],
+  });
+  input.onUsage?.({
+    model: STRONG_MODEL,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
   });
   const block = response.content.find((item) => item.type === "text");
   const text = block && "text" in block ? block.text : "";
@@ -99,6 +107,7 @@ export async function callFastJson(input: {
   system: string;
   user: string;
   maxTokens?: number;
+  onUsage?: (usage: AiUsage) => void;
 }): Promise<unknown> {
   const completion = await openai.chat.completions.create({
     model: FAST_MODEL,
@@ -109,6 +118,13 @@ export async function callFastJson(input: {
       { role: "user", content: input.user },
     ],
   });
+  if (completion.usage) {
+    input.onUsage?.({
+      model: FAST_MODEL,
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+    });
+  }
   const text = completion.choices[0]?.message.content ?? "";
   if (!text.trim()) throw new Error("Fast model returned an empty response.");
   return extractJson(text);
@@ -125,6 +141,7 @@ export async function callStrongTextWithDocument(input: {
   user: string;
   documentBase64: string;
   maxTokens?: number;
+  onUsage?: (usage: AiUsage) => void;
 }): Promise<string> {
   const response = await anthropic.beta.messages.create({
     model: STRONG_MODEL,
@@ -144,6 +161,11 @@ export async function callStrongTextWithDocument(input: {
       },
     ],
   });
+  input.onUsage?.({
+    model: STRONG_MODEL,
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  });
   const block = response.content.find((item) => item.type === "text");
   const text = block && "text" in block ? block.text : "";
   if (!text.trim()) throw new Error("Document extraction returned an empty response.");
@@ -154,12 +176,20 @@ export async function callFastText(input: {
   system: string;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   maxTokens?: number;
+  onUsage?: (usage: AiUsage) => void;
 }): Promise<string> {
   const completion = await openai.chat.completions.create({
     model: FAST_MODEL,
     ...(input.maxTokens ? { max_completion_tokens: input.maxTokens } : {}),
     messages: [{ role: "system", content: input.system }, ...input.messages],
   });
+  if (completion.usage) {
+    input.onUsage?.({
+      model: FAST_MODEL,
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+    });
+  }
   const text = completion.choices[0]?.message.content ?? "";
   if (!text.trim()) throw new Error("Fast model returned an empty response.");
   return text;

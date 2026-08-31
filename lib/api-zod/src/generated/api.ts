@@ -939,6 +939,29 @@ export const UpdateCrawlSubjectMemoryResponse = zod.unknown()
 
 
 /**
+ * @summary Firecrawl credit and AI token usage breakdown for a subject
+ */
+export const GetCrawlSubjectCostsParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const GetCrawlSubjectCostsResponse = zod.object({
+  "creditBudget": zod.number().int(),
+  "firecrawlTotal": zod.number().int(),
+  "firecrawlByOperation": zod.array(zod.object({
+  "operation": zod.string(),
+  "credits": zod.number().int()
+})),
+  "aiByTask": zod.array(zod.object({
+  "taskType": zod.string(),
+  "model": zod.string(),
+  "inputTokens": zod.number().int(),
+  "outputTokens": zod.number().int()
+}))
+})
+
+
+/**
  * @summary Manually override a subject's credit budget, e.g. after the AI flagged a tier mismatch
  */
 export const SetCrawlSubjectBudgetParams = zod.object({

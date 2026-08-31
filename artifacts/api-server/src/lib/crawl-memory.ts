@@ -1,4 +1,5 @@
 import { callFastText } from "./ai";
+import { aiUsageRecorder } from "./ai-usage";
 import { logger } from "./logger";
 import { restService } from "./supabase";
 
@@ -69,7 +70,7 @@ const COMPRESS_SYSTEM_PROMPT = [
 ].join("\n");
 
 /** Compresses everything except the most recent entries once memory grows too long. */
-async function compressIfNeeded(content: string): Promise<string> {
+async function compressIfNeeded(content: string, subjectId: string | null): Promise<string> {
   if (content.length <= MAX_MEMORY_CHARS) return content;
 
   const entries = splitEntries(content);
@@ -83,6 +84,7 @@ async function compressIfNeeded(content: string): Promise<string> {
       system: COMPRESS_SYSTEM_PROMPT,
       messages: [{ role: "user", content: joinEntries(older) }],
       maxTokens: 1_500,
+      onUsage: aiUsageRecorder(subjectId, "memory_compression"),
     });
     const summaryEntry = `## Samengevatte lessen (ouder)\n${compressed.trim()}`;
     return joinEntries([summaryEntry, ...recent]);
@@ -108,6 +110,7 @@ export async function appendMemoryEntry(
     const subjectRow = await loadMemoryRow(subjectId);
     const nextSubjectContent = await compressIfNeeded(
       joinEntries([...splitEntries(subjectRow.content), `${dateHeading}\n${subjectEntry}`]),
+      subjectId,
     );
     await saveMemoryRow(subjectId, subjectRow.id, nextSubjectContent);
 
@@ -115,6 +118,7 @@ export async function appendMemoryEntry(
       const globalRow = await loadMemoryRow(null);
       const nextGlobalContent = await compressIfNeeded(
         joinEntries([...splitEntries(globalRow.content), `${dateHeading}\n${globalEntry}`]),
+        null,
       );
       await saveMemoryRow(null, globalRow.id, nextGlobalContent);
     }

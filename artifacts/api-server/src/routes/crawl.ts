@@ -11,6 +11,7 @@ import {
   DenyCrawlSubjectRequestParams,
   GetCrawlDetailParams,
   GetCrawlDetailResponse,
+  GetCrawlSubjectCostsParams,
   GetCrawlSubjectMemoryParams,
   ListCrawlSubjectRequestsResponse,
   ListCrawlSubjectsResponse,
@@ -26,7 +27,8 @@ import {
   UpdateCrawlSubjectMemoryParams,
   UpdateGlobalCrawlMemoryBody,
 } from "@workspace/api-zod";
-import { getMemoryContent, setMemoryContent } from "../lib/crawl-memory";
+import { appendMemoryEntry, getMemoryContent, setMemoryContent } from "../lib/crawl-memory";
+import { recordDomainOutcome } from "../lib/domain-reputation";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { rescoreSource, runCrawl } from "../lib/source-pipeline";
 
@@ -181,6 +183,60 @@ router.post("/admin/crawl/subjects/:subjectId/budget", async (req, res): Promise
   } catch (error) {
     req.log.warn({ error }, "Could not update subject budget");
     res.status(500).json({ error: "Could not update subject budget." });
+  }
+});
+
+router.get("/admin/crawl/subjects/:subjectId/costs", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = GetCrawlSubjectCostsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid request." });
+    return;
+  }
+  try {
+    const [subjectRows, firecrawlRows, aiRows] = await Promise.all([
+      restService<Row[]>(`crawl_subjects?id=eq.${params.data.subjectId}&select=credit_budget`),
+      restService<Row[]>(
+        `firecrawl_usage?subject_id=eq.${params.data.subjectId}&select=operation,credits`,
+      ),
+      restService<Row[]>(
+        `ai_usage?subject_id=eq.${params.data.subjectId}&select=task_type,model,input_tokens,output_tokens`,
+      ),
+    ]);
+
+    const byOperation = new Map<string, number>();
+    let firecrawlTotal = 0;
+    for (const row of firecrawlRows) {
+      const credits = Number(row.credits ?? 0);
+      firecrawlTotal += credits;
+      const operation = row.operation as string;
+      byOperation.set(operation, (byOperation.get(operation) ?? 0) + credits);
+    }
+
+    const byTask = new Map<string, { taskType: string; model: string; inputTokens: number; outputTokens: number }>();
+    for (const row of aiRows) {
+      const taskType = row.task_type as string;
+      const model = row.model as string;
+      const key = `${taskType}::${model}`;
+      const existing = byTask.get(key) ?? { taskType, model, inputTokens: 0, outputTokens: 0 };
+      existing.inputTokens += Number(row.input_tokens ?? 0);
+      existing.outputTokens += Number(row.output_tokens ?? 0);
+      byTask.set(key, existing);
+    }
+
+    res.json({
+      creditBudget: Number(subjectRows[0]?.credit_budget ?? 300),
+      firecrawlTotal,
+      firecrawlByOperation: [...byOperation.entries()].map(([operation, credits]) => ({ operation, credits })),
+      aiByTask: [...byTask.values()],
+    });
+  } catch (error) {
+    req.log.warn({ error }, "Could not load subject costs");
+    res.status(500).json({ error: "Could not load subject costs." });
   }
 });
 
@@ -510,6 +566,33 @@ router.get("/admin/crawl/pending", async (req, res): Promise<void> => {
   }
 });
 
+async function subjectIdsForSource(sourceId: string): Promise<string[]> {
+  const rows = await restService<Row[]>(`source_subjects?source_id=eq.${sourceId}&select=subject_id`);
+  return rows.map((row) => row.subject_id as string).filter(Boolean);
+}
+
+/**
+ * Feeds a manual twijfelbron decision back into learning: the domain's
+ * accept/decline tally, and a memory entry so a similar future case is less
+ * likely to need a human review — the exact ask behind this endpoint.
+ */
+async function recordManualReviewFeedback(
+  sourceId: string,
+  source: { url: string; title: string },
+  outcome: "accepted" | "declined",
+  reason: string | null,
+): Promise<void> {
+  await recordDomainOutcome(source.url, outcome);
+
+  const subjectIds = await subjectIdsForSource(sourceId);
+  const label = outcome === "accepted" ? "Handmatig geaccepteerd" : "Handmatig afgewezen";
+  const entry = `Twijfelgeval — ${label}: "${source.title}" (${source.url})${reason ? ` — reden: ${reason}` : ""}.`;
+
+  for (const [index, subjectId] of subjectIds.entries()) {
+    await appendMemoryEntry(subjectId, entry, index === 0 ? entry : undefined);
+  }
+}
+
 router.post("/admin/crawl/sources/:sourceId/accept", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) {
@@ -527,11 +610,18 @@ router.post("/admin/crawl/sources/:sourceId/accept", async (req, res): Promise<v
       headers: { prefer: "return=representation" },
       body: JSON.stringify({ status: "accepted", updated_at: new Date().toISOString() }),
     });
-    if (!rows[0]) {
+    const source = rows[0];
+    if (!source) {
       res.status(404).json({ error: "Source not found." });
       return;
     }
-    res.json(toSource(rows[0]));
+    await recordManualReviewFeedback(
+      params.data.sourceId,
+      { url: source.url as string, title: source.title as string },
+      "accepted",
+      null,
+    ).catch((error) => req.log.warn({ error }, "Could not record manual review feedback"));
+    res.json(toSource(source));
   } catch (error) {
     req.log.warn({ error }, "Could not accept source");
     res.status(500).json({ error: "Could not accept source." });
@@ -560,11 +650,18 @@ router.post("/admin/crawl/sources/:sourceId/decline", async (req, res): Promise<
         updated_at: new Date().toISOString(),
       }),
     });
-    if (!rows[0]) {
+    const source = rows[0];
+    if (!source) {
       res.status(404).json({ error: "Source not found." });
       return;
     }
-    res.json(DeclinePendingSourceResponse.parse(toSource(rows[0])));
+    await recordManualReviewFeedback(
+      params.data.sourceId,
+      { url: source.url as string, title: source.title as string },
+      "declined",
+      input.data.reason,
+    ).catch((error) => req.log.warn({ error }, "Could not record manual review feedback"));
+    res.json(DeclinePendingSourceResponse.parse(toSource(source)));
   } catch (error) {
     req.log.warn({ error }, "Could not decline source");
     res.status(500).json({ error: "Could not decline source." });

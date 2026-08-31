@@ -639,6 +639,24 @@ paths:
       responses:
         "200":
           description: Updated
+  /admin/crawl/subjects/{subjectId}/costs:
+    get:
+      operationId: getCrawlSubjectCosts
+      tags: [crawl]
+      summary: Firecrawl credit and AI token usage breakdown for a subject
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cost breakdown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubjectCostBreakdown" }
   /admin/crawl/subjects/{subjectId}/budget:
     post:
       operationId: setCrawlSubjectBudget
@@ -2093,6 +2111,30 @@ components:
       required: [content]
       properties:
         content: { type: string, maxLength: 20000 }
+    SubjectCostBreakdown:
+      type: object
+      required: [creditBudget, firecrawlTotal, firecrawlByOperation, aiByTask]
+      properties:
+        creditBudget: { type: integer }
+        firecrawlTotal: { type: integer }
+        firecrawlByOperation:
+          type: array
+          items:
+            type: object
+            required: [operation, credits]
+            properties:
+              operation: { type: string }
+              credits: { type: integer }
+        aiByTask:
+          type: array
+          items:
+            type: object
+            required: [taskType, model, inputTokens, outputTokens]
+            properties:
+              taskType: { type: string }
+              model: { type: string }
+              inputTokens: { type: integer }
+              outputTokens: { type: integer }
     RunCrawlInput:
       type: object
       required: [subjectId]

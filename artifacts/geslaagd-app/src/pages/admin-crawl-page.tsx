@@ -3,6 +3,7 @@ import {
   approveCrawlSubjectRequest,
   createCrawlSubject,
   denyCrawlSubjectRequest,
+  getCrawlSubjectCosts,
   getCrawlSubjectMemory,
   getGlobalCrawlMemory,
   listCrawlSubjectRequests,
@@ -16,6 +17,7 @@ import {
   type CrawlSubject,
   type CrawlSubjectRequest,
   type CrawlSummary,
+  type SubjectCostBreakdown,
 } from '@workspace/api-client-react';
 import { ArrowLeft, Check, Loader2, Play, Plus, Save, ShieldAlert, X } from 'lucide-react';
 import { useLocation } from 'wouter';
@@ -117,6 +119,20 @@ export default function AdminCrawlPage() {
       await updateGlobalCrawlMemory({ content: globalMemory });
     } finally {
       setSavingGlobalMemory(false);
+    }
+  };
+
+  const [costsSubjectId, setCostsSubjectId] = useState('');
+  const [costs, setCosts] = useState<SubjectCostBreakdown | null>(null);
+  const [loadingCosts, setLoadingCosts] = useState(false);
+
+  const loadCosts = async (subjectId: string) => {
+    if (!subjectId) return;
+    setLoadingCosts(true);
+    try {
+      setCosts(await getCrawlSubjectCosts(subjectId));
+    } finally {
+      setLoadingCosts(false);
     }
   };
 
@@ -260,6 +276,7 @@ export default function AdminCrawlPage() {
             <TabsTrigger value="crawls">Crawls</TabsTrigger>
             <TabsTrigger value="requests">Vakaanvragen</TabsTrigger>
             <TabsTrigger value="memory">Geheugen</TabsTrigger>
+            <TabsTrigger value="costs">Kosten</TabsTrigger>
           </TabsList>
 
           <TabsContent value="crawls">
@@ -378,6 +395,53 @@ export default function AdminCrawlPage() {
                     >
                       {savingSubjectMemory ? <Loader2 className="spin" size={14} /> : <Save size={14} />} Opslaan
                     </Button>
+                  </>
+                )
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="costs">
+            <div className="verkenner-card">
+              <Select
+                value={costsSubjectId}
+                onValueChange={(value) => { setCostsSubjectId(value); void loadCosts(value); }}
+              >
+                <SelectTrigger aria-label="Vak"><SelectValue placeholder="Kies een vak" /></SelectTrigger>
+                <SelectContent>
+                  {activeSubjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {costsSubjectId && (
+                loadingCosts || !costs ? (
+                  <p className="admin-empty"><Loader2 className="spin" size={15} /> Kosten laden…</p>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Firecrawl-credits</strong><br />
+                      {costs.firecrawlTotal} van {costs.creditBudget} verbruikt
+                    </p>
+                    {costs.firecrawlByOperation.length > 0 && (
+                      <ul>
+                        {costs.firecrawlByOperation.map((entry) => (
+                          <li key={entry.operation}>{entry.operation}: {entry.credits} credits</li>
+                        ))}
+                      </ul>
+                    )}
+                    <p><strong>AI-tokens</strong><br />per taak, geen geschatte kosten in euro's</p>
+                    {costs.aiByTask.length > 0 ? (
+                      <ul>
+                        {costs.aiByTask.map((entry) => (
+                          <li key={`${entry.taskType}-${entry.model}`}>
+                            {entry.taskType} ({entry.model}): {entry.inputTokens} in / {entry.outputTokens} uit
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="study-hint">Nog geen AI-gebruik geregistreerd voor dit vak.</p>
+                    )}
                   </>
                 )
               )}

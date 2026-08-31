@@ -731,6 +731,25 @@ export interface UpdateCrawlMemoryInput {
   content: string;
 }
 
+export type SubjectCostBreakdownFirecrawlByOperationItem = {
+  operation: string;
+  credits: number;
+};
+
+export type SubjectCostBreakdownAiByTaskItem = {
+  taskType: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+};
+
+export interface SubjectCostBreakdown {
+  creditBudget: number;
+  firecrawlTotal: number;
+  firecrawlByOperation: SubjectCostBreakdownFirecrawlByOperationItem[];
+  aiByTask: SubjectCostBreakdownAiByTaskItem[];
+}
+
 export interface RunCrawlInput {
   subjectId: string;
 }

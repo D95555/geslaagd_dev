@@ -89,6 +89,7 @@ import type {
   StudySpaceInput,
   StudySpaceUpdate,
   StudySubjectDetail,
+  SubjectCostBreakdown,
   SubjectDetail,
   SubjectSummary,
   TrackedSession,
@@ -2641,6 +2642,83 @@ export const useUpdateCrawlSubjectMemory = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdateCrawlSubjectMemoryMutationOptions(options));
     }
+
+export const getGetCrawlSubjectCostsUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subjects/${subjectId}/costs`
+}
+
+/**
+ * @summary Firecrawl credit and AI token usage breakdown for a subject
+ */
+export const getCrawlSubjectCosts = async (subjectId: string, options?: Parameters<typeof customFetch>[1]): Promise<SubjectCostBreakdown> => {
+
+  return customFetch<SubjectCostBreakdown>(getGetCrawlSubjectCostsUrl(subjectId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCrawlSubjectCostsQueryKey = (subjectId: string,) => {
+    return [
+    `/api/admin/crawl/subjects/${subjectId}/costs`
+    ] as const;
+    }
+
+
+export const getGetCrawlSubjectCostsQueryOptions = <TData = Awaited<ReturnType<typeof getCrawlSubjectCosts>>, TError = ErrorType<unknown>>(subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCrawlSubjectCostsQueryKey(subjectId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCrawlSubjectCosts>>> = ({ signal }) => getCrawlSubjectCosts(subjectId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: subjectId !== null && subjectId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectCosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCrawlSubjectCostsQueryResult = NonNullable<Awaited<ReturnType<typeof getCrawlSubjectCosts>>>
+export type GetCrawlSubjectCostsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Firecrawl credit and AI token usage breakdown for a subject
+ */
+
+export function useGetCrawlSubjectCosts<TData = Awaited<ReturnType<typeof getCrawlSubjectCosts>>, TError = ErrorType<unknown>>(
+ subjectId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCrawlSubjectCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCrawlSubjectCostsQueryOptions(subjectId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getSetCrawlSubjectBudgetUrl = (subjectId: string,) => {
 

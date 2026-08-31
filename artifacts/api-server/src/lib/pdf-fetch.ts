@@ -1,4 +1,5 @@
 import { callStrongTextWithDocument } from "./ai";
+import { aiUsageRecorder } from "./ai-usage";
 import { isPdfUrl } from "./firecrawl";
 import { logger } from "./logger";
 import { setSourceFullContent } from "./pipeline-tasks/source-store";
@@ -35,7 +36,11 @@ async function fetchPdfBytes(url: string): Promise<Buffer | null> {
  * this is a bonus on top of an already-accepted source, not a dependency of
  * the pipeline.
  */
-export async function enrichAcceptedPdfSource(sourceId: string, url: string): Promise<void> {
+export async function enrichAcceptedPdfSource(
+  sourceId: string,
+  url: string,
+  subjectId: string | null = null,
+): Promise<void> {
   if (!isPdfUrl(url)) return;
   try {
     const buffer = await fetchPdfBytes(url);
@@ -45,6 +50,7 @@ export async function enrichAcceptedPdfSource(sourceId: string, url: string): Pr
       user: "Geef de volledige inhoudelijke tekst van dit document.",
       documentBase64: buffer.toString("base64"),
       maxTokens: 8_000,
+      onUsage: aiUsageRecorder(subjectId, "pdf_extraction"),
     });
     await setSourceFullContent(sourceId, text, text.slice(0, 500));
     logger.info({ url }, "PDF full text fetched for free (no Firecrawl credits)");

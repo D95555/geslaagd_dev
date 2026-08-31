@@ -240,7 +240,7 @@ export async function runSourceGathering(
       stored += 1;
 
       if (status === "accepted") {
-        await enrichAcceptedPdfSource(sourceId, source.url);
+        await enrichAcceptedPdfSource(sourceId, source.url, task.subjectId);
       }
     }
 
@@ -320,7 +320,7 @@ export async function runSourceGathering(
           stored += 1;
 
           if (status === "accepted") {
-            await enrichAcceptedPdfSource(sourceId, source.url);
+            await enrichAcceptedPdfSource(sourceId, source.url, task.subjectId);
           }
         }
       }

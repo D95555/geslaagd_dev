@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { callJsonForTask, MODEL_BY_TASK, modelNameFor } from "../ai";
+import { aiUsageRecorder } from "../ai-usage";
 import { appendMemoryEntry, loadMemory } from "../crawl-memory";
 import { recordDomainOutcome } from "../domain-reputation";
 import { defaultCrawlConfig } from "../firecrawl";
@@ -106,6 +107,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           ),
         ].join("\n\n"),
         maxTokens: 8_000,
+        onUsage: aiUsageRecorder(task.subjectId, "source_review"),
       }),
     );
     if (!parsed.success) {
@@ -123,7 +125,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
           decision.sourceId,
           decision.relevanceNote,
         );
-        await enrichAcceptedPdfSource(decision.sourceId, source.url);
+        await enrichAcceptedPdfSource(decision.sourceId, source.url, task.subjectId);
         await recordDomainOutcome(source.url, "accepted");
         kept += 1;
         await log.info("behouden", `Behouden: ${source.title}`, {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FAST_MODEL, openai } from "../ai";
+import { recordAiUsage } from "../ai-usage";
 import { getDomainReputation } from "../domain-reputation";
 import { logger } from "../logger";
 
@@ -97,6 +98,14 @@ export async function scoreBatch(
       },
     ],
   });
+
+  if (completion.usage) {
+    void recordAiUsage(subject.id, "source_scoring", {
+      model: FAST_MODEL,
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+    });
+  }
 
   const raw = JSON.parse(completion.choices[0]?.message.content ?? "{}") as unknown;
   const sourcesRaw = (raw as { sources?: unknown }).sources ?? raw;
