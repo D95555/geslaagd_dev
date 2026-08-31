@@ -155,6 +155,238 @@ export const CreateActivationKeysResponse = zod.object({
 
 
 /**
+ * @summary List the signed-in user's own support tickets
+ */
+export const ListSupportTicketsResponse = zod.object({
+  "tickets": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Open a new support ticket; the AI replies immediately
+ */
+export const createSupportTicketBodySubjectMax = 160;
+
+export const createSupportTicketBodyMessageMax = 4000;
+
+
+
+export const CreateSupportTicketBody = zod.object({
+  "subject": zod.string().min(1).max(createSupportTicketBodySubjectMax),
+  "message": zod.string().min(1).max(createSupportTicketBodyMessageMax)
+})
+
+export const CreateSupportTicketResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Full thread for one ticket (owner or admin)
+ */
+export const GetSupportTicketParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const GetSupportTicketResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Reply in a ticket (owner or admin); an admin reply takes the ticket over from the AI
+ */
+export const AddSupportMessageParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const addSupportMessageBodyMessageMax = 4000;
+
+
+
+export const AddSupportMessageBody = zod.object({
+  "message": zod.string().min(1).max(addSupportMessageBodyMessageMax)
+})
+
+export const AddSupportMessageResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary List every support ticket
+ */
+export const ListAdminSupportTicketsQueryParams = zod.object({
+  "status": zod.enum(['open', 'closed']).optional(),
+  "flagged": zod.coerce.boolean().optional()
+})
+
+export const ListAdminSupportTicketsResponse = zod.object({
+  "tickets": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Stop the AI and hand the ticket to an admin
+ */
+export const TakeoverSupportTicketParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const TakeoverSupportTicketResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Close a ticket
+ */
+export const CloseSupportTicketParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const CloseSupportTicketResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Reopen a closed ticket
+ */
+export const ReopenSupportTicketParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const ReopenSupportTicketResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "handledBy": zod.enum(['ai', 'admin']),
+  "flagged": zod.boolean(),
+  "flagReason": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
  * @summary List tracked browser sessions
  */
 export const ListAdminSessionsResponseItem = zod.object({

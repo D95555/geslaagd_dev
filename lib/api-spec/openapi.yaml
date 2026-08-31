@@ -30,6 +30,8 @@ tags:
     description: Progress tracking, weakness detection, exam scheduling and study planning
   - name: admin-pipeline
     description: Pipeline task monitoring and content publishing
+  - name: support
+    description: Support ticket operations, for students and admins
 paths:
   /healthz:
     get:
@@ -164,6 +166,173 @@ paths:
                 $ref: "#/components/schemas/ListActivationKeysResponse"
         "403":
           description: Forbidden
+  /support/tickets:
+    get:
+      operationId: listSupportTickets
+      tags: [support]
+      summary: List the signed-in user's own support tickets
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSupportTicketsResponse"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createSupportTicket
+      tags: [support]
+      summary: Open a new support ticket; the AI replies immediately
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSupportTicketInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "401":
+          description: Unauthorized
+  /support/tickets/{ticketId}:
+    get:
+      operationId: getSupportTicket
+      tags: [support]
+      summary: Full thread for one ticket (owner or admin)
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /support/tickets/{ticketId}/messages:
+    post:
+      operationId: addSupportMessage
+      tags: [support]
+      summary: Reply in a ticket (owner or admin); an admin reply takes the ticket over from the AI
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSupportMessageInput"
+      responses:
+        "201":
+          description: Updated thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/support/tickets:
+    get:
+      operationId: listAdminSupportTickets
+      tags: [support]
+      summary: List every support ticket
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [open, closed] }
+        - name: flagged
+          in: query
+          required: false
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSupportTicketsResponse"
+        "403":
+          description: Forbidden
+  /admin/support/tickets/{ticketId}/takeover:
+    post:
+      operationId: takeoverSupportTicket
+      tags: [support]
+      summary: Stop the AI and hand the ticket to an admin
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/support/tickets/{ticketId}/close:
+    post:
+      operationId: closeSupportTicket
+      tags: [support]
+      summary: Close a ticket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/support/tickets/{ticketId}/reopen:
+    post:
+      operationId: reopenSupportTicket
+      tags: [support]
+      summary: Reopen a closed ticket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
   /admin/sessions:
     get:
       operationId: listAdminSessions
@@ -1788,6 +1957,56 @@ components:
       required: [count]
       properties:
         count: { type: integer, minimum: 1, maximum: 100 }
+    SupportMessage:
+      type: object
+      required: [id, sender, senderUserId, body, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        sender: { type: string, enum: [user, ai, admin] }
+        senderUserId: { type: ["string", "null"], format: uuid }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+    SupportTicketSummary:
+      type: object
+      required: [id, subject, status, handledBy, flagged, flagReason, userEmail, createdAt, updatedAt, lastMessageAt]
+      properties:
+        id: { type: string, format: uuid }
+        subject: { type: string }
+        status: { type: string, enum: [open, closed] }
+        handledBy: { type: string, enum: [ai, admin] }
+        flagged: { type: boolean }
+        flagReason: { type: ["string", "null"] }
+        userEmail: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        lastMessageAt: { type: string, format: date-time }
+    SupportTicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicketSummary"
+        - type: object
+          required: [messages]
+          properties:
+            messages:
+              type: array
+              items: { $ref: "#/components/schemas/SupportMessage" }
+    ListSupportTicketsResponse:
+      type: object
+      required: [tickets]
+      properties:
+        tickets:
+          type: array
+          items: { $ref: "#/components/schemas/SupportTicketSummary" }
+    CreateSupportTicketInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 160 }
+        message: { type: string, minLength: 1, maxLength: 4000 }
+    AddSupportMessageInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 4000 }
     TrackedSession:
       type: object
       required: [clientSessionId, userId, email, deviceLabel, createdAt, lastSeenAt, revokedAt]

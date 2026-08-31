@@ -104,6 +104,83 @@ export interface CreateActivationKeysInput {
   count: number;
 }
 
+export type SupportMessageSender = typeof SupportMessageSender[keyof typeof SupportMessageSender];
+
+
+export const SupportMessageSender = {
+  user: 'user',
+  ai: 'ai',
+  admin: 'admin',
+} as const;
+
+export interface SupportMessage {
+  id: string;
+  sender: SupportMessageSender;
+  /** @nullable */
+  senderUserId: string | null;
+  body: string;
+  createdAt: string;
+}
+
+export type SupportTicketSummaryStatus = typeof SupportTicketSummaryStatus[keyof typeof SupportTicketSummaryStatus];
+
+
+export const SupportTicketSummaryStatus = {
+  open: 'open',
+  closed: 'closed',
+} as const;
+
+export type SupportTicketSummaryHandledBy = typeof SupportTicketSummaryHandledBy[keyof typeof SupportTicketSummaryHandledBy];
+
+
+export const SupportTicketSummaryHandledBy = {
+  ai: 'ai',
+  admin: 'admin',
+} as const;
+
+export interface SupportTicketSummary {
+  id: string;
+  subject: string;
+  status: SupportTicketSummaryStatus;
+  handledBy: SupportTicketSummaryHandledBy;
+  flagged: boolean;
+  /** @nullable */
+  flagReason: string | null;
+  userEmail: string;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string;
+}
+
+export type SupportTicketDetail = SupportTicketSummary & {
+  messages: SupportMessage[];
+};
+
+export interface ListSupportTicketsResponse {
+  tickets: SupportTicketSummary[];
+}
+
+export interface CreateSupportTicketInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  subject: string;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  message: string;
+}
+
+export interface AddSupportMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  message: string;
+}
+
 export interface TrackedSession {
   clientSessionId: string;
   userId: string;
@@ -1702,6 +1779,19 @@ export type ListActivationKeysStatus = typeof ListActivationKeysStatus[keyof typ
 export const ListActivationKeysStatus = {
   open: 'open',
   used: 'used',
+} as const;
+
+export type ListAdminSupportTicketsParams = {
+status?: ListAdminSupportTicketsStatus;
+flagged?: boolean;
+};
+
+export type ListAdminSupportTicketsStatus = typeof ListAdminSupportTicketsStatus[keyof typeof ListAdminSupportTicketsStatus];
+
+
+export const ListAdminSupportTicketsStatus = {
+  open: 'open',
+  closed: 'closed',
 } as const;
 
 export type ListAdminAccountsParams = {

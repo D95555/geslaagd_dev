@@ -5,6 +5,7 @@ import {
   Compass,
   KeyRound,
   LayoutDashboard,
+  MessageCircleQuestion,
   Sparkles,
   Terminal,
   Users,
@@ -37,6 +38,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
   { href: '/beheer/accounts', label: 'Accounts & sessies', hint: 'Gebruikers en broadcasts', icon: Users },
   { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken', icon: KeyRound },
+  { href: '/beheer/support', label: 'Support', hint: 'Tickets van studenten, AI reageert vanzelf', icon: MessageCircleQuestion },
 ];
 
 function isActive(current: string, href: string): boolean {
