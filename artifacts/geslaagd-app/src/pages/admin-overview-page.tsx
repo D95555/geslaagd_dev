@@ -63,7 +63,7 @@ export default function AdminOverviewPage() {
         {
           label: 'Bronnen te beoordelen',
           count: pending.length,
-          href: '/beheer/crawl/pending',
+          href: '/beheer/crawl?tab=review',
           detail: 'De scorer twijfelde en wacht op jouw oordeel',
           urgent: pending.length > 0,
         },

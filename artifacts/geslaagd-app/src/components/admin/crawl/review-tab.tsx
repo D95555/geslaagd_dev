@@ -1,0 +1,160 @@
+import { useEffect, useState } from 'react';
+import {
+  acceptPendingSource,
+  declinePendingSource,
+  listPendingSources,
+  type PendingSource,
+} from '@workspace/api-client-react';
+import { Check, CircleHelp, Loader2, X } from 'lucide-react';
+import { useLivePoll } from '@/lib/use-live-poll';
+import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
+import { Progress } from '@workspace/geslaagd-momentum/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@workspace/geslaagd-momentum/components/ui/dialog';
+
+/** The pipeline sends a source here specifically when the scorer was under this threshold. */
+const CONFIDENCE_REVIEW_THRESHOLD = 0.65;
+
+function QualityDots({ score }: { score: number | null }) {
+  return (
+    <span className="source-quality-dots" aria-label={score !== null ? `Kwaliteitsscore ${score} van 5` : 'Kwaliteitsscore onbekend'}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={score !== null && n <= score ? 'source-quality-dot filled' : 'source-quality-dot'} />
+      ))}
+    </span>
+  );
+}
+
+export function ReviewTab() {
+  const [sources, setSources] = useState<PendingSource[]>([]);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = async (silent = false) => {
+    if (!silent) setState('loading');
+    try {
+      setSources(await listPendingSources());
+      setState('ready');
+    } catch {
+      setState('error');
+    }
+  };
+  useEffect(() => { void load(); }, []);
+  useLivePoll(() => load(true), { enabled: state === 'ready' });
+
+  const accept = async (sourceId: string) => {
+    setBusy(true);
+    try {
+      await acceptPendingSource(sourceId);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitDecline = async () => {
+    if (!declineTarget || !declineReason.trim()) return;
+    setBusy(true);
+    try {
+      await declinePendingSource(declineTarget, { reason: declineReason.trim() });
+      setDeclineTarget(null);
+      setDeclineReason('');
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      {state === 'loading' ? (
+        <p className="admin-empty"><Loader2 className="spin" size={15} /> Wachtrij laden…</p>
+      ) : state === 'error' ? (
+        <p className="admin-empty">Wachtrij kon niet geladen worden.</p>
+      ) : sources.length === 0 ? (
+        <p className="admin-empty">Geen bronnen in de wachtrij.</p>
+      ) : (
+        <div className="source-list">
+          {sources.map((source) => (
+            <div className="source-row" key={source.id}>
+              <div className="source-row-main">
+                <div>
+                  <strong>{source.title ?? source.url}</strong>
+                  <a href={source.url} target="_blank" rel="noreferrer">{source.url}</a>
+                </div>
+              </div>
+              <div className="source-row-meta">
+                <span>{source.type ?? 'onbekend type'}</span>
+                {source.subjectNames.length > 0 && <span>Vakken: {source.subjectNames.join(', ')}</span>}
+              </div>
+
+              <div className="source-uncertainty">
+                <div className="source-uncertainty-metric">
+                  <span className="source-uncertainty-label">Kwaliteit</span>
+                  <QualityDots score={source.qualityScore} />
+                  <span className="source-uncertainty-value">{source.qualityScore ?? '—'}/5</span>
+                </div>
+                <div className="source-uncertainty-metric">
+                  <span className="source-uncertainty-label">Zekerheid</span>
+                  <Progress
+                    value={source.confidenceScore !== null ? Math.round(source.confidenceScore * 100) : 0}
+                    className="source-confidence-bar"
+                  />
+                  <span className="source-uncertainty-value">
+                    {source.confidenceScore !== null ? `${Math.round(source.confidenceScore * 100)}%` : '—'}
+                  </span>
+                </div>
+                <p className="source-uncertainty-note">
+                  <CircleHelp size={13} aria-hidden="true" />
+                  De AI-scorer was voor deze bron minder dan {Math.round(CONFIDENCE_REVIEW_THRESHOLD * 100)}%
+                  zeker van de kwaliteitsscore — daarom staat hij in de wachtrij voor jouw oordeel in
+                  plaats van automatisch te worden geaccepteerd of afgewezen.
+                </p>
+              </div>
+
+              {source.aiSummary && (
+                <p className="source-summary">
+                  <strong>Waarom deze bron: </strong>
+                  {expanded === source.id || source.aiSummary.length <= 160 ? source.aiSummary : `${source.aiSummary.slice(0, 160)}…`}
+                  {source.aiSummary.length > 160 && (
+                    <button type="button" onClick={() => setExpanded(expanded === source.id ? null : source.id)}>
+                      {expanded === source.id ? 'minder' : 'meer'}
+                    </button>
+                  )}
+                </p>
+              )}
+              <div className="source-row-actions">
+                <Button variant="ghost" disabled={busy} onClick={() => void accept(source.id)}><Check size={14} /> Accepteren</Button>
+                <Button variant="ghost" disabled={busy} onClick={() => { setDeclineTarget(source.id); setDeclineReason(''); }}><X size={14} /> Afwijzen</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!declineTarget} onOpenChange={(open) => { if (!open) setDeclineTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bron afwijzen</DialogTitle>
+          </DialogHeader>
+          <Textarea value={declineReason} maxLength={1000} onChange={(e) => setDeclineReason(e.target.value)} placeholder="Reden…" />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeclineTarget(null)} disabled={busy}>Annuleren</Button>
+            <Button variant="destructive" onClick={() => void submitDecline()} disabled={!declineReason.trim() || busy}>
+              {busy ? <Loader2 className="spin" size={14} /> : <X size={14} />} Afwijzen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

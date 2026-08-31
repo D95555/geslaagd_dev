@@ -1,36 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
-  approveCrawlSubjectRequest,
   createCrawlSubject,
-  denyCrawlSubjectRequest,
-  getCrawlSubjectCosts,
-  getCrawlSubjectMemory,
-  getGlobalCrawlMemory,
-  listCrawlSubjectRequests,
   listCrawlSubjects,
-  listCrawls,
-  requestCrawlSubjectRefinement,
   runCrawl,
-  setCrawlSubjectBudget,
-  updateCrawlSubjectMemory,
-  updateGlobalCrawlMemory,
   type CrawlSubject,
-  type CrawlSubjectRequest,
-  type CrawlSummary,
-  type SubjectCostBreakdown,
 } from '@workspace/api-client-react';
-import { ArrowLeft, Check, Loader2, Play, Plus, Save, ShieldAlert, X } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { Loader2, Play, Plus } from 'lucide-react';
+import { useLocation, useSearch } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
-import { useLivePoll } from '@/lib/use-live-poll';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
-import { CrawlCharts } from '@/components/admin/crawl-charts';
-import { DetailSheet } from '@/components/admin/detail-sheet';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
-import { Label } from '@workspace/geslaagd-momentum/components/ui/label';
-import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
-import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/geslaagd-momentum/components/ui/tabs';
 import {
   Select,
@@ -47,35 +27,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/geslaagd-momentum/components/ui/dialog';
+import { CrawlsTab } from '@/components/admin/crawl/crawls-tab';
+import { ReviewTab } from '@/components/admin/crawl/review-tab';
+import { RequestsTab } from '@/components/admin/crawl/requests-tab';
+import { MemoryTab } from '@/components/admin/crawl/memory-tab';
+import { CostsTab } from '@/components/admin/crawl/costs-tab';
 
-function fmtDateTime(value: string | null) {
-  if (!value) return 'onbekend';
-  return new Date(value).toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+const TAB_VALUES = ['crawls', 'review', 'requests', 'memory', 'costs'] as const;
+type Tab = (typeof TAB_VALUES)[number];
+
+function tabFromSearch(search: string): Tab {
+  const value = new URLSearchParams(search).get('tab');
+  return (TAB_VALUES as readonly string[]).includes(value ?? '') ? (value as Tab) : 'crawls';
 }
-
-const requestStatusLabel: Record<CrawlSubjectRequest['status'], string> = {
-  pending: 'In behandeling',
-  approved: 'Goedgekeurd',
-  denied: 'Afgewezen',
-  needs_refinement: 'Aanpassing gevraagd',
-};
-
-const crawlStatusLabel: Record<CrawlSummary['status'], string> = {
-  running: 'Bezig',
-  complete: 'Voltooid',
-  failed: 'Mislukt',
-};
-
-type RefinementAction = { requestId: string; kind: 'deny' | 'refine' };
 
 export default function AdminCrawlPage() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const { user, isLoading } = useAuth();
-
-  const [crawls, setCrawls] = useState<CrawlSummary[]>([]);
-  const [subjectRequests, setSubjectRequests] = useState<CrawlSubjectRequest[]>([]);
+  const [state, setState] = useState<'loading' | 'ready' | 'forbidden'>('loading');
   const [activeSubjects, setActiveSubjects] = useState<CrawlSubject[]>([]);
-  const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
 
   const [runOpen, setRunOpen] = useState(false);
   const [runSubjectId, setRunSubjectId] = useState<string>('');
@@ -87,99 +58,19 @@ export default function AdminCrawlPage() {
   const [newSubjectYearLevel, setNewSubjectYearLevel] = useState<'havo_vwo_bovenbouw' | 'universitair'>('havo_vwo_bovenbouw');
   const [creating, setCreating] = useState(false);
 
-  const [detailRequest, setDetailRequest] = useState<CrawlSubjectRequest | null>(null);
-  const [refinement, setRefinement] = useState<RefinementAction | null>(null);
-  const [adminNote, setAdminNote] = useState('');
-  const [refining, setRefining] = useState(false);
-  const [budgetDraft, setBudgetDraft] = useState('');
-  const [savingBudget, setSavingBudget] = useState(false);
-
-  useEffect(() => {
-    setBudgetDraft(detailRequest?.creditBudget != null ? String(detailRequest.creditBudget) : '');
-  }, [detailRequest?.id]);
-
-  const [globalMemory, setGlobalMemory] = useState('');
-  const [globalMemoryLoaded, setGlobalMemoryLoaded] = useState(false);
-  const [savingGlobalMemory, setSavingGlobalMemory] = useState(false);
-
-  const [memorySubjectId, setMemorySubjectId] = useState('');
-  const [subjectMemory, setSubjectMemory] = useState('');
-  const [loadingSubjectMemory, setLoadingSubjectMemory] = useState(false);
-  const [savingSubjectMemory, setSavingSubjectMemory] = useState(false);
-
-  const loadGlobalMemory = async () => {
-    if (globalMemoryLoaded) return;
-    const { content } = await getGlobalCrawlMemory();
-    setGlobalMemory(content);
-    setGlobalMemoryLoaded(true);
-  };
-  const saveGlobalMemory = async () => {
-    setSavingGlobalMemory(true);
+  const loadSubjects = async () => {
     try {
-      await updateGlobalCrawlMemory({ content: globalMemory });
-    } finally {
-      setSavingGlobalMemory(false);
-    }
-  };
-
-  const [costsSubjectId, setCostsSubjectId] = useState('');
-  const [costs, setCosts] = useState<SubjectCostBreakdown | null>(null);
-  const [loadingCosts, setLoadingCosts] = useState(false);
-
-  const loadCosts = async (subjectId: string) => {
-    if (!subjectId) return;
-    setLoadingCosts(true);
-    try {
-      setCosts(await getCrawlSubjectCosts(subjectId));
-    } finally {
-      setLoadingCosts(false);
-    }
-  };
-
-  const loadSubjectMemory = async (subjectId: string) => {
-    if (!subjectId) return;
-    setLoadingSubjectMemory(true);
-    try {
-      const { content } = await getCrawlSubjectMemory(subjectId);
-      setSubjectMemory(content);
-    } finally {
-      setLoadingSubjectMemory(false);
-    }
-  };
-  const saveSubjectMemory = async () => {
-    if (!memorySubjectId) return;
-    setSavingSubjectMemory(true);
-    try {
-      await updateCrawlSubjectMemory(memorySubjectId, { content: subjectMemory });
-    } finally {
-      setSavingSubjectMemory(false);
-    }
-  };
-
-  // `silent` keeps background polling from flashing the loading state.
-  const load = async (silent = false) => {
-    if (!silent) setState('loading');
-    try {
-      const [nextCrawls, nextRequests, subjects] = await Promise.all([
-        listCrawls(),
-        listCrawlSubjectRequests(),
-        listCrawlSubjects(),
-      ]);
-      setCrawls(nextCrawls);
-      setSubjectRequests(nextRequests);
+      const subjects = await listCrawlSubjects();
       setActiveSubjects(subjects.filter((subject) => subject.status === 'active'));
       setState('ready');
     } catch (error) {
-      setState((error as { status?: number }).status === 403 ? 'forbidden' : 'error');
-      throw error;
+      setState((error as { status?: number }).status === 403 ? 'forbidden' : 'ready');
     }
   };
   useEffect(() => {
-    if (!isLoading && user) void load().catch(() => undefined);
+    if (!isLoading && user) void loadSubjects();
     else if (!isLoading) setState('forbidden');
   }, [isLoading, user?.id]);
-
-  useLivePoll(() => load(true), { enabled: state === 'ready' });
 
   const openRunDialog = () => {
     setRunSubjectId(activeSubjects[0]?.id ?? '');
@@ -193,7 +84,6 @@ export default function AdminCrawlPage() {
     try {
       const result = await runCrawl({ subjectId: runSubjectId });
       setRunNotice(`Crawl voltooid: ${result.sourcesAccepted}/${result.sourcesFound} bronnen geaccepteerd.`);
-      await load();
     } catch {
       setRunNotice('De crawl kon niet worden gestart of is mislukt.');
     } finally {
@@ -209,51 +99,11 @@ export default function AdminCrawlPage() {
       await createCrawlSubject({ name: trimmed, year_level: newSubjectYearLevel });
       setNewSubjectName('');
       setCreateOpen(false);
-      await load();
+      await loadSubjects();
     } catch {
       // Kept open on failure so the admin can retry.
     } finally {
       setCreating(false);
-    }
-  };
-
-  const approve = async (requestId: string) => {
-    await approveCrawlSubjectRequest(requestId);
-    setDetailRequest(null);
-    await load();
-  };
-
-  const saveBudget = async () => {
-    const subjectId = detailRequest?.subjectId;
-    const value = Number(budgetDraft);
-    if (!subjectId || !Number.isFinite(value) || value <= 0) return;
-    setSavingBudget(true);
-    try {
-      await setCrawlSubjectBudget(subjectId, { creditBudget: value });
-      await load();
-    } finally {
-      setSavingBudget(false);
-    }
-  };
-
-  const openRefinement = (requestId: string, kind: RefinementAction['kind']) => {
-    setRefinement({ requestId, kind });
-    setAdminNote('');
-  };
-  const submitRefinement = async () => {
-    if (!refinement || !adminNote.trim()) return;
-    setRefining(true);
-    try {
-      if (refinement.kind === 'deny') {
-        await denyCrawlSubjectRequest(refinement.requestId, { adminNote: adminNote.trim() });
-      } else {
-        await requestCrawlSubjectRefinement(refinement.requestId, { adminNote: adminNote.trim() });
-      }
-      setRefinement(null);
-      setDetailRequest(null);
-      await load();
-    } finally {
-      setRefining(false);
     }
   };
 
@@ -262,256 +112,32 @@ export default function AdminCrawlPage() {
   return (
     <AdminShell
       title="Vakken & crawls"
-      intro="Start crawls, keur nieuwe vakaanvragen goed en volg wat er is opgehaald."
+      intro="Start crawls, keur nieuwe vakaanvragen goed, beoordeel twijfelgevallen en volg wat er is opgehaald."
     >
+      <div className="crawl-toolbar">
+        <Button onClick={openRunDialog} disabled={activeSubjects.length === 0}><Play size={15} /> Crawl starten</Button>
+        <Button variant="outline" onClick={() => setCreateOpen(true)}><Plus size={15} /> Nieuw vak toevoegen</Button>
+      </div>
 
-        <div className="crawl-toolbar">
-          <Button onClick={openRunDialog} disabled={activeSubjects.length === 0}><Play size={15} /> Crawl starten</Button>
-          <Button variant="outline" onClick={() => setCreateOpen(true)}><Plus size={15} /> Nieuw vak toevoegen</Button>
-          <Button variant="ghost" onClick={() => setLocation('/beheer/crawl/pending')}>Wachtrij bekijken</Button>
-        </div>
-
-        <Tabs defaultValue="crawls" className="admin-tabs" onValueChange={(value) => { if (value === 'memory') void loadGlobalMemory(); }}>
-          <TabsList className="admin-tabs-list">
-            <TabsTrigger value="crawls">Crawls</TabsTrigger>
-            <TabsTrigger value="requests">Vakaanvragen</TabsTrigger>
-            <TabsTrigger value="memory">Geheugen</TabsTrigger>
-            <TabsTrigger value="costs">Kosten</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="crawls">
-            {state === 'loading' ? (
-              <p className="admin-empty"><Loader2 className="spin" size={15} /> Crawls laden…</p>
-            ) : state === 'error' ? (
-              <p className="admin-empty">Crawls konden niet geladen worden.</p>
-            ) : crawls.length === 0 ? (
-              <p className="admin-empty">Nog geen crawls uitgevoerd.</p>
-            ) : (
-              <>
-              <CrawlCharts crawls={crawls} />
-              <div className="account-list">
-                {crawls.map((crawl) => (
-                  <button
-                    key={crawl.id}
-                    className="account-row crawl-row"
-                    onClick={() => setLocation(`/beheer/crawl/${crawl.id}`)}
-                  >
-                    <div>
-                      <strong>{crawl.subjectName}</strong>
-                      <span>
-                        {fmtDateTime(crawl.createdAt)} · {crawl.sourcesFound ?? 0} gevonden · {crawl.sourcesAccepted ?? 0} geaccepteerd
-                        {crawl.creditsUsed !== null ? ` · ${crawl.creditsUsed} credits` : ''}
-                        {crawl.efficiencyRatio !== null ? ` · efficiëntie ${crawl.efficiencyRatio.toFixed(2)}` : ''}
-                      </span>
-                    </div>
-                    <Badge variant={crawl.status === 'failed' ? 'destructive' : crawl.status === 'running' ? 'secondary' : 'default'}>
-                      {crawlStatusLabel[crawl.status]}
-                    </Badge>
-                  </button>
-                ))}
-              </div>
-              </>
-            )}
-          </TabsContent>
-
-          <TabsContent value="requests">
-            {state === 'loading' ? (
-              <p className="admin-empty"><Loader2 className="spin" size={15} /> Aanvragen laden…</p>
-            ) : subjectRequests.length === 0 ? (
-              <p className="admin-empty">Geen openstaande vakaanvragen.</p>
-            ) : (
-              <div className="account-list">
-                {subjectRequests.map((request) => (
-                  <div key={request.id} className="account-row request-row">
-                    <button type="button" className="request-row-summary" onClick={() => setDetailRequest(request)}>
-                      <strong>{request.subjectName ?? 'Onbekend vak'}</strong>
-                      <span>{request.yearLevel === 'universitair' ? 'Universitair' : 'HAVO/VWO Bovenbouw'} · aangevraagd {fmtDateTime(request.createdAt)}</span>
-                    </button>
-                    <div className="request-row-actions">
-                      <Badge variant="secondary">{requestStatusLabel[request.status]}</Badge>
-                      {(request.status === 'pending' || request.status === 'needs_refinement') && (
-                        <>
-                          <Button variant="ghost" onClick={() => void approve(request.id)}><Check size={14} /> Goedkeuren</Button>
-                          <Button variant="ghost" onClick={() => openRefinement(request.id, 'refine')}>Aanpassing vragen</Button>
-                          <Button variant="ghost" onClick={() => openRefinement(request.id, 'deny')}><X size={14} /> Afwijzen</Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="memory">
-            <div className="verkenner-card">
-              <h3>Globaal geheugen</h3>
-              <p className="study-hint">Lessen die voor elk vak gelden, geleerd uit eerdere crawls.</p>
-              <Textarea
-                rows={10}
-                value={globalMemory}
-                onChange={(e) => setGlobalMemory(e.target.value)}
-                placeholder="Nog geen globale lessen vastgelegd."
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={savingGlobalMemory}
-                onClick={() => void saveGlobalMemory()}
-              >
-                {savingGlobalMemory ? <Loader2 className="spin" size={14} /> : <Save size={14} />} Opslaan
-              </Button>
-            </div>
-
-            <div className="verkenner-card">
-              <h3>Geheugen per vak</h3>
-              <Select
-                value={memorySubjectId}
-                onValueChange={(value) => { setMemorySubjectId(value); void loadSubjectMemory(value); }}
-              >
-                <SelectTrigger aria-label="Vak"><SelectValue placeholder="Kies een vak" /></SelectTrigger>
-                <SelectContent>
-                  {activeSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {memorySubjectId && (
-                loadingSubjectMemory ? (
-                  <p className="admin-empty"><Loader2 className="spin" size={15} /> Geheugen laden…</p>
-                ) : (
-                  <>
-                    <Textarea
-                      rows={10}
-                      value={subjectMemory}
-                      onChange={(e) => setSubjectMemory(e.target.value)}
-                      placeholder="Nog geen lessen vastgelegd voor dit vak."
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={savingSubjectMemory}
-                      onClick={() => void saveSubjectMemory()}
-                    >
-                      {savingSubjectMemory ? <Loader2 className="spin" size={14} /> : <Save size={14} />} Opslaan
-                    </Button>
-                  </>
-                )
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="costs">
-            <div className="verkenner-card">
-              <Select
-                value={costsSubjectId}
-                onValueChange={(value) => { setCostsSubjectId(value); void loadCosts(value); }}
-              >
-                <SelectTrigger aria-label="Vak"><SelectValue placeholder="Kies een vak" /></SelectTrigger>
-                <SelectContent>
-                  {activeSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {costsSubjectId && (
-                loadingCosts || !costs ? (
-                  <p className="admin-empty"><Loader2 className="spin" size={15} /> Kosten laden…</p>
-                ) : (
-                  <>
-                    <p>
-                      <strong>Firecrawl-credits</strong><br />
-                      {costs.firecrawlTotal} van {costs.creditBudget} verbruikt
-                    </p>
-                    {costs.firecrawlByOperation.length > 0 && (
-                      <ul>
-                        {costs.firecrawlByOperation.map((entry) => (
-                          <li key={entry.operation}>{entry.operation}: {entry.credits} credits</li>
-                        ))}
-                      </ul>
-                    )}
-                    <p><strong>AI-tokens</strong><br />per taak, geen geschatte kosten in euro's</p>
-                    {costs.aiByTask.length > 0 ? (
-                      <ul>
-                        {costs.aiByTask.map((entry) => (
-                          <li key={`${entry.taskType}-${entry.model}`}>
-                            {entry.taskType} ({entry.model}): {entry.inputTokens} in / {entry.outputTokens} uit
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="study-hint">Nog geen AI-gebruik geregistreerd voor dit vak.</p>
-                    )}
-                  </>
-                )
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-      <DetailSheet
-        open={detailRequest !== null}
-        onClose={() => setDetailRequest(null)}
-        title={detailRequest?.subjectName ?? 'Onbekend vak'}
-        description={
-          detailRequest
-            ? `${detailRequest.yearLevel === 'universitair' ? 'Universitair' : 'HAVO/VWO Bovenbouw'} · aangevraagd ${fmtDateTime(detailRequest.createdAt)}`
-            : undefined
-        }
-        footer={
-          (detailRequest?.status === 'pending' || detailRequest?.status === 'needs_refinement') && (
-            <div className="request-row-actions">
-              <Button variant="outline" onClick={() => void approve(detailRequest.id)}><Check size={14} /> Goedkeuren</Button>
-              <Button variant="outline" onClick={() => openRefinement(detailRequest.id, 'refine')}>Aanpassing vragen</Button>
-              <Button variant="outline" onClick={() => openRefinement(detailRequest.id, 'deny')}><X size={14} /> Afwijzen</Button>
-            </div>
-          )
-        }
+      <Tabs
+        value={tabFromSearch(search)}
+        onValueChange={(value) => setLocation(value === 'crawls' ? '/beheer/crawl' : `/beheer/crawl?tab=${value}`)}
+        className="admin-tabs"
       >
-        {detailRequest && (
-          <div className="verkenner-card">
-            <Badge variant="secondary">{requestStatusLabel[detailRequest.status]}</Badge>
-            {detailRequest.description && (
-              <p><strong>Beschrijving</strong><br />{detailRequest.description}</p>
-            )}
-            {detailRequest.emphasis && (
-              <p><strong>Nadruk</strong><br />{detailRequest.emphasis}</p>
-            )}
-            {detailRequest.preferredSourceTypes && (
-              <p><strong>Gewenste brontypes</strong><br />{detailRequest.preferredSourceTypes}</p>
-            )}
-            {detailRequest.subjectId && (
-              <div>
-                <Label htmlFor="request-budget-input">Zoekbudget</Label>
-                <div className="request-row-actions">
-                  <Input
-                    id="request-budget-input"
-                    type="number"
-                    min={50}
-                    max={2000}
-                    value={budgetDraft}
-                    onChange={(e) => setBudgetDraft(e.target.value)}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={savingBudget || !budgetDraft || Number(budgetDraft) === detailRequest.creditBudget}
-                    onClick={() => void saveBudget()}
-                  >
-                    {savingBudget ? <Loader2 className="spin" size={14} /> : null} Opslaan
-                  </Button>
-                </div>
-              </div>
-            )}
-            {detailRequest.adminNote && (
-              <p><strong>Toelichting aan student</strong><br />{detailRequest.adminNote}</p>
-            )}
-            {!detailRequest.description && !detailRequest.emphasis && !detailRequest.preferredSourceTypes && (
-              <p className="study-hint">De student gaf verder geen toelichting bij deze aanvraag.</p>
-            )}
-          </div>
-        )}
-      </DetailSheet>
+        <TabsList className="admin-tabs-list">
+          <TabsTrigger value="crawls">Crawls</TabsTrigger>
+          <TabsTrigger value="review">Beoordelen</TabsTrigger>
+          <TabsTrigger value="requests">Vakaanvragen</TabsTrigger>
+          <TabsTrigger value="memory">Geheugen</TabsTrigger>
+          <TabsTrigger value="costs">Kosten</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="crawls"><CrawlsTab /></TabsContent>
+        <TabsContent value="review"><ReviewTab /></TabsContent>
+        <TabsContent value="requests"><RequestsTab /></TabsContent>
+        <TabsContent value="memory"><MemoryTab /></TabsContent>
+        <TabsContent value="costs"><CostsTab /></TabsContent>
+      </Tabs>
 
       <Dialog open={runOpen} onOpenChange={setRunOpen}>
         <DialogContent>
@@ -557,26 +183,6 @@ export default function AdminCrawlPage() {
               {creating ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Toevoegen
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!refinement} onOpenChange={(open) => { if (!open) setRefinement(null); }}>
-        <DialogContent>
-          {refinement && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{refinement.kind === 'deny' ? 'Vakaanvraag afwijzen' : 'Aanpassing vragen'}</DialogTitle>
-                <DialogDescription>Deze toelichting is zichtbaar voor de student.</DialogDescription>
-              </DialogHeader>
-              <Textarea value={adminNote} maxLength={1000} onChange={(e) => setAdminNote(e.target.value)} placeholder="Toelichting…" />
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setRefinement(null)} disabled={refining}>Annuleren</Button>
-                <Button onClick={() => void submitRefinement()} disabled={!adminNote.trim() || refining}>
-                  {refining ? <Loader2 className="spin" size={14} /> : null} Versturen
-                </Button>
-              </DialogFooter>
-            </>
-          )}
         </DialogContent>
       </Dialog>
     </AdminShell>

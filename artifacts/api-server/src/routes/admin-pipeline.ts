@@ -88,6 +88,7 @@ router.get("/admin/pipeline/logs", async (req, res): Promise<void> => {
     const logs = await loadRecentLogs({
       ...(query.data.subjectId ? { subjectId: query.data.subjectId } : {}),
       ...(query.data.level ? { level: query.data.level } : {}),
+      ...(query.data.decisionsOnly ? { decisionsOnly: query.data.decisionsOnly } : {}),
       ...(query.data.limit ? { limit: query.data.limit } : {}),
     });
     res.json(ListPipelineLogsResponse.parse(logs));

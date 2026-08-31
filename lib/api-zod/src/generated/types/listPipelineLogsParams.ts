@@ -11,6 +11,10 @@ export type ListPipelineLogsParams = {
 subjectId?: string;
 level?: ListPipelineLogsLevel;
 /**
+ * Only log lines that represent an AI judgment call, for the AI-beslissingen page
+ */
+decisionsOnly?: boolean;
+/**
  * @minimum 1
  * @maximum 500
  */

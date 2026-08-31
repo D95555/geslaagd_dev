@@ -102,6 +102,16 @@ export async function runTriage(task: PipelineTask): Promise<Record<string, unkn
     });
   }
 
+  await taskLog(task).info(
+    "triage",
+    status === "active"
+      ? `Aanvraag goedgekeurd: ${reason}`
+      : status === "needs_refinement"
+        ? `Creditbudget sluit niet aan bij de omvang: ${tierReason ?? reason}`
+        : `Aanvraag afgewezen: ${reason}`,
+    { subject: subject.name, status, tierFits, creditBudget: subject.creditBudget },
+  );
+
   await taskLog(task).conclude(
     status === "active"
       ? `De aanvraag voor "${subject.name}" is goedgekeurd: ${reason} Het vak staat nu op actief ` +

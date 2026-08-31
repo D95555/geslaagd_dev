@@ -1142,6 +1142,7 @@ export const GetVerkennerObjectResponse = zod.object({
   "logs": zod.array(zod.object({
   "id": zod.string(),
   "taskId": zod.string().uuid(),
+  "subjectId": zod.string().uuid().nullable(),
   "chapterId": zod.string().uuid().nullish(),
   "level": zod.enum(['info', 'warn', 'error']),
   "phase": zod.string(),
@@ -2010,6 +2011,7 @@ export const GetPipelineTaskDetailResponse = zod.object({
   "logs": zod.array(zod.object({
   "id": zod.string(),
   "taskId": zod.string().uuid(),
+  "subjectId": zod.string().uuid().nullable(),
   "chapterId": zod.string().uuid().nullish(),
   "level": zod.enum(['info', 'warn', 'error']),
   "phase": zod.string(),
@@ -2030,12 +2032,14 @@ export const listPipelineLogsQueryLimitMax = 500;
 export const ListPipelineLogsQueryParams = zod.object({
   "subjectId": zod.string().uuid().optional(),
   "level": zod.enum(['info', 'warn', 'error']).optional(),
+  "decisionsOnly": zod.coerce.boolean().optional().describe('Only log lines that represent an AI judgment call, for the AI-beslissingen page'),
   "limit": zod.coerce.number().int().min(1).max(listPipelineLogsQueryLimitMax).optional()
 })
 
 export const ListPipelineLogsResponseItem = zod.object({
   "id": zod.string(),
   "taskId": zod.string().uuid(),
+  "subjectId": zod.string().uuid().nullable(),
   "chapterId": zod.string().uuid().nullish(),
   "level": zod.enum(['info', 'warn', 'error']),
   "phase": zod.string(),

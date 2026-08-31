@@ -8,6 +8,7 @@ export type LogLevel = "info" | "warn" | "error";
 export type TaskLogEntry = {
   id: string;
   taskId: string;
+  subjectId: string | null;
   chapterId: string | null;
   level: LogLevel;
   phase: string;
@@ -20,6 +21,7 @@ export function toTaskLogEntry(row: Row): TaskLogEntry {
   return {
     id: String(row.id),
     taskId: row.task_id as string,
+    subjectId: (row.subject_id as string | null) ?? null,
     chapterId: (row.chapter_id as string | null) ?? null,
     level: row.level as LogLevel,
     phase: (row.phase as string | null) ?? "",
@@ -28,6 +30,19 @@ export function toTaskLogEntry(row: Row): TaskLogEntry {
     createdAt: row.created_at as string,
   };
 }
+
+/**
+ * Phases that represent an actual AI judgment call (accept/decline/tier-fit,
+ * not routine progress narration like "zoeken" or "gescraped"). Drives the
+ * AI-beslissingen admin page, which is a filtered view over this same log.
+ */
+export const DECISION_PHASES = [
+  "beoordeeld",
+  "link-beoordeeld",
+  "behouden",
+  "afgewezen",
+  "triage",
+] as const;
 
 /**
  * Records one step of a task. Logging must never break the work it describes,
@@ -116,15 +131,17 @@ export async function loadTaskLogs(taskId: string): Promise<TaskLogEntry[]> {
   return rows.map(toTaskLogEntry);
 }
 
-/** Newest-first feed across every task, for the console page. */
+/** Newest-first feed across every task, for the console and AI-beslissingen pages. */
 export async function loadRecentLogs(filters: {
   subjectId?: string;
   level?: LogLevel;
+  decisionsOnly?: boolean;
   limit?: number;
 }): Promise<TaskLogEntry[]> {
   const parts = [
     filters.subjectId ? `subject_id=eq.${filters.subjectId}` : null,
     filters.level ? `level=eq.${filters.level}` : null,
+    filters.decisionsOnly ? `phase=in.(${DECISION_PHASES.join(",")})` : null,
   ].filter(Boolean);
   const rows = await restService<Row[]>(
     `pipeline_task_logs?select=*&order=created_at.desc,id.desc&limit=${filters.limit ?? 200}` +

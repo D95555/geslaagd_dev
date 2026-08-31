@@ -11,8 +11,7 @@ import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
 import DashboardPage from '@/pages/dashboard-page';
 import AdminPage from '@/pages/admin-page';
 import AdminCrawlPage from '@/pages/admin-crawl-page';
-import AdminCrawlDetailPage from '@/pages/admin-crawl-detail-page';
-import AdminCrawlPendingPage from '@/pages/admin-crawl-pending-page';
+import AdminAiDecisionsPage from '@/pages/admin-ai-decisions-page';
 import AdminPipelinePage from '@/pages/admin-pipeline-page';
 import AdminOverviewPage from '@/pages/admin-overview-page';
 import AdminVerkennerPage from '@/pages/admin-verkenner-page';
@@ -54,9 +53,8 @@ function Router() {
           <Route path="/beheer/console" component={AdminConsolePage} />
           <Route path="/beheer/accounts" component={AdminPage} />
           <Route path="/beheer" component={AdminOverviewPage} />
-          <Route path="/beheer/crawl/pending" component={AdminCrawlPendingPage} />
-          <Route path="/beheer/crawl/:crawlId">{(params) => <AdminCrawlDetailPage crawlId={params.crawlId} />}</Route>
           <Route path="/beheer/crawl" component={AdminCrawlPage} />
+          <Route path="/beheer/beslissingen" component={AdminAiDecisionsPage} />
           <Route path="/" component={HomePage} />
           <Route component={NotFound} />
         </Switch>

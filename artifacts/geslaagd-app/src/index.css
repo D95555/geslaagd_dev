@@ -1415,6 +1415,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .log-data { margin: 8px 0 0; padding: 10px 12px; border-radius: var(--radius); background: hsl(var(--muted)); font-family: var(--app-font-mono); font-size: .72rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow-y: auto; }
 .log-error-detail { color: hsl(var(--destructive)); }
 
+.decision-row { justify-content: flex-start; align-items: flex-start; gap: 12px; cursor: default; }
+.decision-row-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 2px; border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+.decision-row-body { min-width: 0; flex: 1; }
+.decision-row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.decision-row-subject { color: hsl(var(--primary)); font-family: var(--app-font-mono); font-size: .72rem; }
+.decision-row-time { margin-left: auto; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .72rem; }
+.decision-row-body p { margin: 4px 0 0; overflow-wrap: anywhere; }
+.decision-list { border: 1px solid hsl(var(--border)); border-radius: var(--radius); overflow: hidden; }
+
 .console-list { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 6px; background: hsl(var(--card)); }
 .console-row { position: relative; }
 .console-open { position: absolute; inset: 0; border: 0; background: none; cursor: pointer; z-index: 0; }

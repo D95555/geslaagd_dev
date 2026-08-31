@@ -20,6 +20,7 @@ export function DetailSheet({
   description,
   footer,
   children,
+  wide,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,12 +28,14 @@ export function DetailSheet({
   description?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
+  /** Widens the sheet for content that needs more room, e.g. a full source list. */
+  wide?: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-y-auto sm:max-w-lg"
+        className={`flex w-full flex-col gap-4 overflow-y-auto ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'}`}
       >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">{title}</SheetTitle>

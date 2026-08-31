@@ -12,6 +12,8 @@ export interface PipelineLogEntry {
   id: string;
   taskId: string;
   /** @nullable */
+  subjectId: string | null;
+  /** @nullable */
   chapterId?: string | null;
   level: PipelineLogEntryLevel;
   phase: string;

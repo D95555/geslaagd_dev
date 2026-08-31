@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useLocation } from 'wouter';
 import {
-  ClipboardList,
+  BrainCircuit,
   Compass,
   LayoutDashboard,
   Sparkles,
@@ -30,8 +30,8 @@ export type NavItem = { href: string; label: string; hint: string; icon: LucideI
 export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer', label: 'Overzicht', hint: 'Wat vraagt aandacht', icon: LayoutDashboard },
   { href: '/beheer/verkenner', label: 'Verkenner', hint: 'Elk object opzoeken, met beslissingen en logs', icon: Sparkles },
-  { href: '/beheer/crawl', label: 'Vakken & crawls', hint: 'Aanvragen en zoekopdrachten', icon: Compass },
-  { href: '/beheer/crawl/pending', label: 'Bronnen beoordelen', hint: 'Wachtrij met twijfelgevallen', icon: ClipboardList },
+  { href: '/beheer/crawl', label: 'Vakken & crawls', hint: 'Aanvragen, zoekopdrachten en twijfelgevallen', icon: Compass },
+  { href: '/beheer/beslissingen', label: 'AI-beslissingen', hint: 'Elke keuze die de AI maakte, met reden', icon: BrainCircuit },
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },
   { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
   { href: '/beheer/accounts', label: 'Accounts & sessies', hint: 'Gebruikers en broadcasts', icon: Users },

@@ -1517,6 +1517,11 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [info, warn, error] }
+        - name: decisionsOnly
+          in: query
+          required: false
+          description: Only log lines that represent an AI judgment call, for the AI-beslissingen page
+          schema: { type: boolean }
         - name: limit
           in: query
           required: false
@@ -2507,10 +2512,11 @@ components:
         updatedAt: { type: string, format: date-time }
     PipelineLogEntry:
       type: object
-      required: [id, taskId, level, phase, message, createdAt]
+      required: [id, taskId, subjectId, level, phase, message, createdAt]
       properties:
         id: { type: string }
         taskId: { type: string, format: uuid }
+        subjectId: { type: ["string", "null"], format: uuid }
         chapterId: { type: ["string", "null"], format: uuid }
         level: { type: string, enum: [info, warn, error] }
         phase: { type: string }
