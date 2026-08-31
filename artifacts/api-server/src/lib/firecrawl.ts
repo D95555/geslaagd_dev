@@ -169,6 +169,7 @@ async function searchOnce(
     body: JSON.stringify({
       query,
       limit: config.limitPerQuery,
+      safe: true,
       ...(config.location ? { location: config.location } : {}),
       ...(config.categories.length ? { categories: config.categories } : {}),
       ...(config.includeDomains.length ? { includeDomains: config.includeDomains } : {}),
@@ -250,6 +251,7 @@ async function discoverOnce(
     body: JSON.stringify({
       query,
       limit: config.limitPerQuery,
+      safe: true,
       ...(config.location ? { location: config.location } : {}),
       ...(config.categories.length ? { categories: config.categories } : {}),
       ...(config.includeDomains.length ? { includeDomains: config.includeDomains } : {}),
@@ -322,8 +324,9 @@ export async function firecrawlDiscover(
 export async function firecrawlScrapeUrls(
   urls: string[],
   ctx: BudgetContext,
-): Promise<{ markdownByUrl: Map<string, string>; creditsUsed: number }> {
+): Promise<{ markdownByUrl: Map<string, string>; linksByUrl: Map<string, string[]>; creditsUsed: number }> {
   const markdownByUrl = new Map<string, string>();
+  const linksByUrl = new Map<string, string[]>();
   let creditsUsed = 0;
 
   const pdfUrls = urls.filter(isPdfUrl);
@@ -346,14 +349,19 @@ export async function firecrawlScrapeUrls(
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey()}`,
           },
-          body: JSON.stringify({ url, formats: ["markdown"] }),
+          // `links` and `onlyMainContent` cost nothing extra (only json/question/
+          // highlights/PII/audio/video/ZDR add credits) -- `links` gives the crawl
+          // brain real page links for free link-following instead of regex-
+          // parsing markdown, and `onlyMainContent` strips nav/footer noise before
+          // it reaches the scorer.
+          body: JSON.stringify({ url, formats: ["markdown", "links"], onlyMainContent: true }),
         });
         if (!response.ok) {
           logger.warn({ url, status: response.status }, "Firecrawl scrape failed; skipping");
           return;
         }
         const body = (await response.json()) as {
-          data?: { markdown?: string };
+          data?: { markdown?: string; links?: string[] };
           creditsUsed?: number;
         };
         const spent = Number(body.creditsUsed ?? 0);
@@ -361,13 +369,14 @@ export async function firecrawlScrapeUrls(
         await recordUsage(ctx, "scrape", spent);
         const markdown = body.data?.markdown;
         if (markdown) markdownByUrl.set(url, markdown);
+        if (body.data?.links?.length) linksByUrl.set(url, body.data.links);
       } catch (error) {
         logger.warn({ error, url }, "Firecrawl scrape errored; skipping");
       }
     }),
   );
 
-  return { markdownByUrl, creditsUsed };
+  return { markdownByUrl, linksByUrl, creditsUsed };
 }
 
 // ─── Research index ─────────────────────────────────────────────────────────

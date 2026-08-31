@@ -5,10 +5,10 @@ import {
   type CrawlConfig,
   type FirecrawlSearchResult,
 } from "../firecrawl";
+import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
 import { recordDomainOutcome } from "../domain-reputation";
 import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
-import { determineAcceptance, scoreBatch } from "../source-pipeline";
 import { restService } from "../supabase";
 import { loadChapter, loadSubject } from "./context";
 import { linkSourceToChapter, linkSourceToSubject, upsertSource } from "./source-store";
@@ -161,11 +161,11 @@ export async function runSourceGathering(
     const winnerUrls = scoredList
       .filter((entry) => entry.status !== "declined")
       .map((entry) => entry.source.url);
-    const { markdownByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(
+    const { markdownByUrl, linksByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(
       winnerUrls,
       budgetCtx,
     );
-    const creditsUsed = discoverCredits + scrapeCredits;
+    let creditsUsed = discoverCredits + scrapeCredits;
 
     await log.info(
       "gescraped",
@@ -218,6 +218,88 @@ export async function runSourceGathering(
       }
     }
 
+    // Phase C — free link-following: accepted pages often link to other good
+    // material, and Firecrawl already returned those links as part of the
+    // Phase B scrape (the `links` format costs nothing extra), so harvesting
+    // a few is free discovery instead of a fresh paid search. There is no
+    // cheap snippet to pre-filter on here, so — unlike phase A/B — candidates
+    // are scraped and scored in one step; the cap stays tight (5) since every
+    // one of them costs a real scrape credit.
+    const seenUrls = new Set([...knownUrls, ...scoredList.map((entry) => entry.source.url)]);
+    const linkCandidateUrls: string[] = [];
+    outer: for (const { status, source } of scoredList) {
+      if (status !== "accepted") continue;
+      const links = linksByUrl.get(source.url);
+      if (!links) continue;
+      for (const url of filterCandidateLinks(links, source.url, seenUrls, 5)) {
+        linkCandidateUrls.push(url);
+        seenUrls.add(url);
+        if (linkCandidateUrls.length >= 5) break outer;
+      }
+    }
+
+    if (linkCandidateUrls.length > 0) {
+      const { markdownByUrl: linkMarkdownByUrl, creditsUsed: linkScrapeCredits } =
+        await firecrawlScrapeUrls(linkCandidateUrls, budgetCtx);
+      creditsUsed += linkScrapeCredits;
+
+      const linkCandidates = linkCandidateUrls
+        .filter((url) => linkMarkdownByUrl.has(url))
+        .map((url) => ({ url, markdown: linkMarkdownByUrl.get(url) }));
+
+      await log.info(
+        "links-gevonden",
+        `${linkCandidateUrls.length} gratis kandidaat-links gevonden via geaccepteerde bronnen, ` +
+          `${linkCandidates.length} succesvol opgehaald.`,
+        { urls: linkCandidateUrls },
+      );
+
+      if (linkCandidates.length > 0) {
+        const linkScored = await scoreBatch(
+          { id: subject.id, name: subject.name, yearLevel: subject.yearLevel },
+          linkCandidates,
+        );
+        for (const source of linkScored) {
+          const status = determineAcceptance(source.quality_score, source.confidence, accepted);
+          if (status === "accepted") accepted += 1;
+          const markdown = linkMarkdownByUrl.get(source.url) ?? null;
+          const sourceId = await upsertSource({
+            url: source.url,
+            title: source.title,
+            type: source.type,
+            language: source.language,
+            qualityScore: source.quality_score,
+            confidenceScore: source.confidence,
+            aiSummary: source.ai_summary,
+            status,
+            declineReason: status === "declined" ? source.decline_reason : null,
+            contentPreview: markdown?.slice(0, 500) ?? null,
+            fullContent: markdown,
+            firstCrawlId: crawlId,
+          });
+          if (!sourceId) continue;
+
+          if (status === "accepted" || status === "declined") {
+            await recordDomainOutcome(source.url, status);
+          }
+
+          await log.info(
+            "link-beoordeeld",
+            `${status === "accepted" ? "Geaccepteerd" : status === "pending" ? "Twijfel" : "Afgewezen"} (via link): ${source.title}`,
+            { url: source.url, kwaliteit: source.quality_score, zekerheid: source.confidence },
+          );
+
+          await linkSourceToSubject(sourceId, task.subjectId);
+          await linkSourceToChapter(sourceId, task.chapterId);
+          stored += 1;
+
+          if (status === "accepted") {
+            await enrichAcceptedPdfSource(sourceId, source.url);
+          }
+        }
+      }
+    }
+
     for (const paper of papers) {
       if (!paper.url || knownUrls.has(paper.url)) continue;
       const sourceId = await upsertSource({
@@ -243,7 +325,7 @@ export async function runSourceGathering(
         body: JSON.stringify({
           status: "complete",
           credits_used: creditsUsed,
-          sources_found: candidates.length + papers.length,
+          sources_found: candidates.length + papers.length + linkCandidateUrls.length,
           sources_accepted: accepted,
           completed_at: new Date().toISOString(),
         }),
@@ -260,12 +342,20 @@ export async function runSourceGathering(
 
     await log.conclude(
       `Voor "${chapter.title}" leverden ${config.queries.length} zoekopdrachten ${candidates.length} ` +
-        `nieuwe bronnen op. Daarvan zijn er ${accepted} direct geaccepteerd en ` +
-        `${stored - accepted} als twijfelgeval of afwijzing opgeslagen. Dit kostte ${creditsUsed} ` +
-        `Firecrawl-credits. De bronbeoordeling bepaalt nu welke bronnen het hoofdstuk in gaan.`,
+        `nieuwe bronnen op${linkCandidateUrls.length ? `, plus ${linkCandidateUrls.length} gratis via links uit geaccepteerde bronnen` : ""}. ` +
+        `Daarvan zijn er ${accepted} direct geaccepteerd en ${stored - accepted} als twijfelgeval of ` +
+        `afwijzing opgeslagen. Dit kostte ${creditsUsed} Firecrawl-credits. De bronbeoordeling bepaalt nu ` +
+        `welke bronnen het hoofdstuk in gaan.`,
     );
 
-    return { chapter: chapter.title, found: candidates.length, stored, accepted, creditsUsed };
+    return {
+      chapter: chapter.title,
+      found: candidates.length,
+      linkCandidates: linkCandidateUrls.length,
+      stored,
+      accepted,
+      creditsUsed,
+    };
   } catch (error) {
     if (crawlId) {
       await restService<Row[]>(`crawls?id=eq.${crawlId}`, {

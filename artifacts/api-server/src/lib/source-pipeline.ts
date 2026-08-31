@@ -1,26 +1,21 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { callFastText, FAST_MODEL, openai } from "./ai";
-import { z } from "zod";
+import { callFastText } from "./ai";
+import {
+  determineAcceptance,
+  scoreBatch,
+  type CrawlSubject,
+  type FirecrawlResult,
+} from "./crawl-brain";
 import { logger } from "./logger";
 import { restService } from "./supabase";
 import { enqueuePendingSourceEvent } from "./source-event-outbox";
 import { budgetBlockReason, isPdfUrl, recordUsage, type BudgetContext } from "./firecrawl";
 
-
 const RAW_STORAGE_DIR = path.join(process.cwd(), "crawl-raw");
 
 type Row = Record<string, unknown>;
-
-export type CrawlSubject = {
-  id: string;
-  name: string;
-  yearLevel: string;
-  description?: string | null;
-  emphasis?: string | null;
-  preferredSourceTypes?: string | null;
-};
 
 export type CrawlResult = {
   crawlId: string;
@@ -36,26 +31,6 @@ type PastCrawlExample = {
   sourcesAccepted: number;
   sourcesFound: number;
 };
-
-type FirecrawlResult = {
-  url: string;
-  title?: string;
-  description?: string;
-  markdown?: string;
-};
-
-const scoredSourceSchema = z.object({
-  url: z.string().url(),
-  title: z.string(),
-  type: z.enum(["article", "book", "pdf", "video", "website"]),
-  language: z.string().length(2),
-  quality_score: z.number().int().min(1).max(5),
-  confidence: z.number().min(0).max(1),
-  ai_summary: z.string(),
-  decline_reason: z.string().nullable(),
-});
-const batchResponseSchema = z.array(scoredSourceSchema);
-type ScoredSource = z.infer<typeof scoredSourceSchema>;
 
 // ─── sourceCrawler ──────────────────────────────────────────────────────────
 
@@ -187,87 +162,8 @@ function batch<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
-export async function scoreBatch(
-  subject: CrawlSubject,
-  results: FirecrawlResult[],
-): Promise<ScoredSource[]> {
-  const systemPrompt = [
-    "You are a source quality evaluator for Dutch high school (VWO) and first-year bachelor study material.",
-    "",
-    "For each source provided, evaluate and return a JSON array with one object per source containing:",
-    "- url: the source URL (copy exactly)",
-    "- title: cleaned title",
-    "- type: one of 'article' | 'book' | 'pdf' | 'video' | 'website'",
-    "- language: ISO 639-1 code ('nl' or 'en' for most cases)",
-    "- quality_score: integer 1-5 where:",
-    "    5 = Authoritative: official textbook, university publication, peer-reviewed, national educational platform (e.g. Khan Academy, Kennisnet, university.nl)",
-    "    4 = Reliable: reputable educational site, well-sourced explainer, recognized publisher",
-    "    3 = Useful: decent blog, educational YouTube, reasonably accurate but not authoritative",
-    "    2 = Marginal: personal blog, unverified, partially relevant, outdated",
-    "    1 = Poor: spam, irrelevant, broken, misleading",
-    "- confidence: float 0.0-1.0 (your certainty in the quality_score)",
-    "- ai_summary: 2-3 sentence summary of what this source covers and why it is or isn't useful for studying this subject. Written in Dutch.",
-    "- decline_reason: null if score >= 3, otherwise a brief Dutch explanation of why this source is unsuitable",
-    "",
-    "Return ONLY a valid JSON array. No markdown. No explanation.",
-  ].join("\n");
-
-  const userMessage = [
-    `Subject being studied: ${subject.name} (${subject.yearLevel})`,
-    "",
-    "Sources to evaluate:",
-    ...results.map(
-      (source, index) =>
-        `\n[${index + 1}]\nURL: ${source.url}\nTitle: ${source.title ?? ""}\nContent preview: ${
-          source.markdown?.slice(0, 800) ?? source.description ?? "(no content available)"
-        }`,
-    ),
-  ].join("\n");
-
-  const completion = await openai.chat.completions.create({
-    model: FAST_MODEL,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: systemPrompt },
-      {
-        role: "user",
-        content: `${userMessage}\n\nRespond with a JSON object of the form {"sources": [...]}.`,
-      },
-    ],
-  });
-
-  const raw = JSON.parse(completion.choices[0]?.message.content ?? "{}") as unknown;
-  const sourcesRaw = (raw as { sources?: unknown }).sources ?? raw;
-  const parsed = batchResponseSchema.safeParse(sourcesRaw);
-  if (!parsed.success) {
-    logger.warn({ issues: parsed.error.issues }, "sourceHandler batch scoring returned invalid JSON");
-    return results.map((source) => ({
-      url: source.url,
-      title: source.title ?? source.url,
-      type: "website",
-      language: "nl",
-      quality_score: 1,
-      confidence: 0,
-      ai_summary: "",
-      decline_reason: "Scoring failed — awaiting manual review",
-    }));
-  }
-  return parsed.data;
-}
-
-// ─── Acceptance logic ───────────────────────────────────────────────────────
-
-export function determineAcceptance(
-  score: number,
-  confidence: number,
-  totalAcceptedSoFar: number,
-): "accepted" | "declined" | "pending" {
-  if (score === 1) return "declined";
-  if (confidence < 0.65) return "pending";
-  if (totalAcceptedSoFar < 8 && score >= 3) return "accepted";
-  if (score >= 4) return "accepted";
-  return "declined";
-}
+// scoreBatch/determineAcceptance now live in ./crawl-brain (phase 2b),
+// imported above -- one scoring implementation shared by every call site.
 
 // ─── Orchestration ──────────────────────────────────────────────────────────
 
