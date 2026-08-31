@@ -1467,7 +1467,7 @@ export interface VerkennerSubjectDetail {
 
 export interface VerkennerSubjectDetailResponse {
   subject: VerkennerSubjectDetail;
-  decision: VerkennerDecision;
+  decision: VerkennerDecision | null;
   chapters: VerkennerChapterSummary[];
   subjectContent: VerkennerContentSummary[];
   crawls: CrawlSummary[];

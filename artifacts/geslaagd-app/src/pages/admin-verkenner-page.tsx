@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  deleteVerkennerSubject,
   getVerkennerSubject,
   listVerkennerSubjects,
   lookupVerkennerObject,
@@ -11,7 +12,15 @@ import {
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
-import { Loader2, Search } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@workspace/geslaagd-momentum/components/ui/dialog';
+import { Loader2, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { InlineEditableTitle } from '@/components/admin/verkenner/inline-editable-title';
@@ -35,6 +44,9 @@ export default function AdminVerkennerPage() {
   const [lookupBusy, setLookupBusy] = useState(false);
 
   const [panelObject, setPanelObject] = useState<VerkennerPanelTarget | null>(null);
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadSubjects = async (q?: string) => {
     try {
@@ -88,6 +100,20 @@ export default function AdminVerkennerPage() {
   const renameChapter = async (chapterId: string, title: string) => {
     await updateVerkennerChapterTitle(chapterId, { title });
     if (selectedSubjectId) await loadDetail(selectedSubjectId);
+  };
+
+  const confirmDeleteSubject = async () => {
+    if (!selectedSubjectId) return;
+    setDeleting(true);
+    try {
+      await deleteVerkennerSubject(selectedSubjectId);
+      setDeleteConfirmOpen(false);
+      setSelectedSubjectId(null);
+      setDetail(null);
+      await loadSubjects(searchTerm || undefined);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const runLookup = async () => {
@@ -188,6 +214,9 @@ export default function AdminVerkennerPage() {
                       {detail.subject.yearLevel === 'havo_vwo_bovenbouw' ? 'HAVO/VWO Bovenbouw' : 'Universitair'}
                     </Badge>
                     <code className="verkenner-id">{detail.subject.id}</code>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmOpen(true)}>
+                      <Trash2 size={14} /> Verwijderen
+                    </Button>
                   </div>
                   {detail.subject.description && <p>{detail.subject.description}</p>}
                 </header>
@@ -235,6 +264,27 @@ export default function AdminVerkennerPage() {
       )}
 
       <ObjectPanel object={panelObject} onClose={() => setPanelObject(null)} />
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => { if (!open) setDeleteConfirmOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Vak definitief verwijderen</DialogTitle>
+            <DialogDescription>
+              {detail?.subject.name ?? 'Dit vak'} en alles eronder — hoofdstukken, samenvattingen,
+              oefenvragen, tentamens, crawls en taken — wordt permanent verwijderd. Dit kan niet
+              ongedaan worden gemaakt.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)} disabled={deleting}>
+              Annuleren
+            </Button>
+            <Button variant="destructive" onClick={() => void confirmDeleteSubject()} disabled={deleting}>
+              {deleting ? <Loader2 className="spin" size={14} /> : <Trash2 size={14} />} Definitief verwijderen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   );
 }

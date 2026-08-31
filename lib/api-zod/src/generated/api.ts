@@ -1019,7 +1019,7 @@ export const GetVerkennerSubjectResponse = zod.object({
   "adminNote": zod.string().nullable(),
   "requestedBy": zod.string().nullable()
 }),
-  "decision": zod.object({
+  "decision": zod.union([zod.object({
   "taskId": zod.string().uuid().nullish(),
   "approved": zod.boolean().nullish(),
   "reason": zod.string().nullish(),
@@ -1028,7 +1028,7 @@ export const GetVerkennerSubjectResponse = zod.object({
   "summary": zod.string().nullish(),
   "requestStatus": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('denied'),zod.literal('needs_refinement'),zod.literal(null)]).nullish(),
   "requestAdminNote": zod.string().nullish()
-}),
+}),zod.null()]),
   "chapters": zod.array(zod.object({
   "chapter": zod.object({
   "id": zod.string().uuid(),
@@ -1099,6 +1099,16 @@ export const UpdateVerkennerSubjectTitleResponse = zod.object({
   "chapterCount": zod.number().int().nullable(),
   "createdAt": zod.string()
 })
+
+
+/**
+ * @summary Permanently delete a subject and everything under it
+ */
+export const DeleteVerkennerSubjectParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const DeleteVerkennerSubjectResponse = zod.void()
 
 
 /**

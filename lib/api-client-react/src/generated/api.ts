@@ -3025,6 +3025,77 @@ export const useUpdateVerkennerSubjectTitle = <TError = ErrorType<void>,
       return useMutation(getUpdateVerkennerSubjectTitleMutationOptions(options));
     }
 
+export const getDeleteVerkennerSubjectUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/verkenner/subjects/${subjectId}`
+}
+
+/**
+ * @summary Permanently delete a subject and everything under it
+ */
+export const deleteVerkennerSubject = async (subjectId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteVerkennerSubjectUrl(subjectId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteVerkennerSubjectMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteVerkennerSubject>>, TError,{subjectId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteVerkennerSubject>>, TError,{subjectId: string}, TContext> => {
+
+const mutationKey = ['deleteVerkennerSubject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteVerkennerSubject>>, {subjectId: string}> = (props) => {
+          const {subjectId} = props ?? {};
+
+          return  deleteVerkennerSubject(subjectId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteVerkennerSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof deleteVerkennerSubject>>>
+
+    export type DeleteVerkennerSubjectMutationError = ErrorType<void>
+
+    /**
+ * @summary Permanently delete a subject and everything under it
+ */
+export const useDeleteVerkennerSubject = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteVerkennerSubject>>, TError,{subjectId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteVerkennerSubject>>,
+        TError,
+        {subjectId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteVerkennerSubjectMutationOptions(options));
+    }
+
 export const getUpdateVerkennerChapterTitleUrl = (chapterId: string,) => {
 
 

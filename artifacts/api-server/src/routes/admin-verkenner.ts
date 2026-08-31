@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import {
+  DeleteVerkennerSubjectParams,
   GetVerkennerObjectParams,
   GetVerkennerObjectResponse,
   GetVerkennerSubjectParams,
@@ -548,6 +549,37 @@ router.patch("/admin/verkenner/subjects/:subjectId", async (req, res): Promise<v
   } catch (error) {
     req.log.warn({ error }, "Could not rename Verkenner subject");
     res.status(500).json({ error: "Titel kon niet worden opgeslagen." });
+  }
+});
+
+router.delete("/admin/verkenner/subjects/:subjectId", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = DeleteVerkennerSubjectParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Ongeldig vak." });
+    return;
+  }
+  const { subjectId } = params.data;
+  try {
+    const existing = await restService<Row[]>(`crawl_subjects?id=eq.${subjectId}&select=id`);
+    if (!existing[0]) {
+      res.status(404).json({ error: "Vak niet gevonden." });
+      return;
+    }
+    // crawls.subject_id is ON DELETE RESTRICT (crawl history intentionally
+    // survives a source's own removal), so crawls for this subject must go
+    // first; everything else (chapters, requests, memory, tasks, ...)
+    // cascades from crawl_subjects itself.
+    await restService(`crawls?subject_id=eq.${subjectId}`, { method: "DELETE" });
+    await restService(`crawl_subjects?id=eq.${subjectId}`, { method: "DELETE" });
+    res.status(204).end();
+  } catch (error) {
+    req.log.warn({ error, subjectId }, "Could not delete Verkenner subject");
+    res.status(500).json({ error: "Vak kon niet worden verwijderd." });
   }
 });
 

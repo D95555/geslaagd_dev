@@ -744,6 +744,22 @@ paths:
           description: Forbidden
         "404":
           description: Not found
+    delete:
+      operationId: deleteVerkennerSubject
+      tags: [admin-verkenner]
+      summary: Permanently delete a subject and everything under it
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
   /admin/verkenner/chapters/{chapterId}:
     patch:
       operationId: updateVerkennerChapterTitle
@@ -2641,7 +2657,12 @@ components:
       required: [subject, decision, chapters, subjectContent, crawls, tasks]
       properties:
         subject: { $ref: "#/components/schemas/VerkennerSubjectDetail" }
-        decision: { $ref: "#/components/schemas/VerkennerDecision" }
+        # A subject created directly ("Nieuw vak toevoegen") skips triage
+        # entirely, so there is no decision to show.
+        decision:
+          oneOf:
+            - $ref: "#/components/schemas/VerkennerDecision"
+            - type: "null"
         chapters:
           type: array
           items: { $ref: "#/components/schemas/VerkennerChapterSummary" }
