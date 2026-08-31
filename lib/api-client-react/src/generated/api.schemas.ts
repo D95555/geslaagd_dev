@@ -49,6 +49,61 @@ export interface PasswordResetRequestInput {
   device?: string;
 }
 
+export interface SignUpInput {
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  activationKey: string;
+  /** @maxLength 160 */
+  device?: string;
+}
+
+export interface SignUpResponse {
+  userId: string;
+}
+
+export type ActivationKeyStatus = typeof ActivationKeyStatus[keyof typeof ActivationKeyStatus];
+
+
+export const ActivationKeyStatus = {
+  open: 'open',
+  used: 'used',
+} as const;
+
+export type ActivationKeySource = typeof ActivationKeySource[keyof typeof ActivationKeySource];
+
+
+export const ActivationKeySource = {
+  admin: 'admin',
+  purchase: 'purchase',
+} as const;
+
+export interface ActivationKey {
+  id: string;
+  code: string;
+  status: ActivationKeyStatus;
+  source: ActivationKeySource;
+  createdAt: string;
+  /** @nullable */
+  usedAt: string | null;
+  /** @nullable */
+  usedByUserId: string | null;
+  /** @nullable */
+  usedByEmail: string | null;
+}
+
+export interface ListActivationKeysResponse {
+  keys: ActivationKey[];
+}
+
+export interface CreateActivationKeysInput {
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  count: number;
+}
+
 export interface TrackedSession {
   clientSessionId: string;
   userId: string;
@@ -1636,6 +1691,18 @@ export interface UpdateVerkennerChapterTitleInput {
      */
   title: string;
 }
+
+export type ListActivationKeysParams = {
+status?: ListActivationKeysStatus;
+};
+
+export type ListActivationKeysStatus = typeof ListActivationKeysStatus[keyof typeof ListActivationKeysStatus];
+
+
+export const ListActivationKeysStatus = {
+  open: 'open',
+  used: 'used',
+} as const;
 
 export type ListAdminAccountsParams = {
 /**

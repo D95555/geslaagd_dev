@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './activationKey';
+export * from './activationKeySource';
+export * from './activationKeyStatus';
 export * from './adminAccountAction';
 export * from './adminAccountActionAction';
 export * from './adminAccountActionInput';
@@ -52,6 +55,7 @@ export * from './crawlSubjectStatus';
 export * from './crawlSubjectYearLevel';
 export * from './crawlSummary';
 export * from './crawlSummaryStatus';
+export * from './createActivationKeysInput';
 export * from './declineSourceInput';
 export * from './diagnosticQuestionnaire';
 export * from './diagnosticQuestionnaireQuestionsItem';
@@ -70,6 +74,9 @@ export * from './healthStatus';
 export * from './keyNotesContent';
 export * from './keyNotesContentSectionsItem';
 export * from './keyNotesContentSectionsItemItemsItem';
+export * from './listActivationKeysParams';
+export * from './listActivationKeysResponse';
+export * from './listActivationKeysStatus';
 export * from './listAdminAccountsParams';
 export * from './listAdminAccountsStatus';
 export * from './listChatMessagesParams';
@@ -112,6 +119,8 @@ export * from './sendChatMessageInput';
 export * from './sessionHeartbeat';
 export * from './sessionRegistration';
 export * from './setSubjectBudgetInput';
+export * from './signUpInput';
+export * from './signUpResponse';
 export * from './studentExam';
 export * from './studentProgress';
 export * from './studentSource';

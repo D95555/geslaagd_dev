@@ -3,9 +3,11 @@ import { randomUUID } from "node:crypto";
 import {
   BlockAdminAccountBody,
   BlockAdminAccountParams,
+  CreateActivationKeysBody,
   DeleteAdminAccountBody,
   DeleteAdminAccountParams,
   GetAdminAccountParams,
+  ListActivationKeysQueryParams,
   ListAdminAccountsQueryParams,
   RevokeAdminSessionParams,
   SendAdminBroadcastBody,
@@ -15,6 +17,7 @@ import {
 import { broadcast, getAuthenticatedUser, getServiceUserById, rest, restService } from "../lib/supabase";
 import { enqueueAuthEvent } from "../lib/auth-event-outbox";
 import { enqueueUserNotification } from "../lib/user-notification-outbox";
+import { createActivationKeys, listActivationKeys } from "../lib/activation-keys";
 
 const router: IRouter = Router();
 
@@ -89,6 +92,36 @@ async function authAdmin<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
+
+// ─── Activation keys ──────────────────────────────────────────────────────────
+
+router.get("/admin/activation-keys", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
+  const query = ListActivationKeysQueryParams.safeParse(req.query);
+  if (!query.success) { res.status(400).json({ error: "Ongeldige filter." }); return; }
+  try {
+    const keys = await listActivationKeys(query.data.status);
+    res.json({ keys });
+  } catch (error) {
+    req.log.warn({ error }, "Could not list activation keys");
+    res.status(500).json({ error: "Activatiecodes konden niet worden geladen." });
+  }
+});
+
+router.post("/admin/activation-keys", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
+  const input = CreateActivationKeysBody.safeParse(req.body);
+  if (!input.success) { res.status(400).json({ error: "Ongeldig aantal." }); return; }
+  try {
+    const keys = await createActivationKeys(input.data.count);
+    res.status(201).json({ keys });
+  } catch (error) {
+    req.log.warn({ error }, "Could not create activation keys");
+    res.status(500).json({ error: "Activatiecodes konden niet worden aangemaakt." });
+  }
+});
 
 // ─── Session routes (existing) ────────────────────────────────────────────────
 

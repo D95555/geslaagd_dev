@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import {
   BrainCircuit,
   Compass,
+  KeyRound,
   LayoutDashboard,
   Sparkles,
   Terminal,
@@ -35,6 +36,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },
   { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
   { href: '/beheer/accounts', label: 'Accounts & sessies', hint: 'Gebruikers en broadcasts', icon: Users },
+  { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken', icon: KeyRound },
 ];
 
 function isActive(current: string, href: string): boolean {

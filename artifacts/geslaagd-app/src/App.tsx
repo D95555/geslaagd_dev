@@ -12,6 +12,7 @@ import DashboardPage from '@/pages/dashboard-page';
 import AdminPage from '@/pages/admin-page';
 import AdminCrawlPage from '@/pages/admin-crawl-page';
 import AdminAiDecisionsPage from '@/pages/admin-ai-decisions-page';
+import AdminActivationKeysPage from '@/pages/admin-activation-keys-page';
 import AdminPipelinePage from '@/pages/admin-pipeline-page';
 import AdminOverviewPage from '@/pages/admin-overview-page';
 import AdminVerkennerPage from '@/pages/admin-verkenner-page';
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/beheer/pipeline" component={AdminPipelinePage} />
           <Route path="/beheer/console" component={AdminConsolePage} />
           <Route path="/beheer/accounts" component={AdminPage} />
+          <Route path="/beheer/activatiecodes" component={AdminActivationKeysPage} />
           <Route path="/beheer" component={AdminOverviewPage} />
           <Route path="/beheer/crawl" component={AdminCrawlPage} />
           <Route path="/beheer/beslissingen" component={AdminAiDecisionsPage} />

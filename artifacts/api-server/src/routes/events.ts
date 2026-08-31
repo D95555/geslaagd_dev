@@ -3,6 +3,8 @@ import { createHmac, randomUUID } from "node:crypto";
 import {
   LogAuthEventBody,
   RequestPasswordResetBody,
+  SignUpWithActivationKeyBody,
+  SignUpWithActivationKeyResponse,
 } from "@workspace/api-zod";
 import {
   getAuthenticatedUser,
@@ -10,8 +12,15 @@ import {
   getServiceUserById,
   requestPasswordResetEmail,
   restService,
+  signUpWithPassword,
 } from "../lib/supabase";
 import { enqueueAuthEvent } from "../lib/auth-event-outbox";
+import {
+  attachActivationKeyToUser,
+  claimActivationKey,
+  normalizeActivationCode,
+  releaseActivationKey,
+} from "../lib/activation-keys";
 
 const router: IRouter = Router();
 
@@ -32,6 +41,42 @@ function passwordResetRedirect(): string {
     throw new Error("APP_ORIGIN is required for password-reset redirects.");
   }
   return new URL("/auth/herstel-wachtwoord", `${origin.replace(/\/+$/, "")}/`).toString();
+}
+
+function signupRedirect(): string {
+  const configuredOrigin = process.env.APP_ORIGIN;
+  const developmentDomain = process.env.REPLIT_DEV_DOMAIN;
+  const origin = configuredOrigin
+    ?? (process.env.NODE_ENV !== "production" && developmentDomain
+      ? `https://${developmentDomain}`
+      : null);
+  if (!origin) {
+    throw new Error("APP_ORIGIN is required for signup redirects.");
+  }
+  return new URL("/auth", `${origin.replace(/\/+$/, "")}/`).toString();
+}
+
+function readableSignupError(errorCode: string | null, message: string): string {
+  if (errorCode === "user_already_exists" || errorCode === "email_exists") {
+    return "Dit e-mailadres heeft al een account.";
+  }
+  if (errorCode === "weak_password") {
+    return "Kies een wachtwoord van minimaal 6 tekens.";
+  }
+  if (errorCode === "over_email_send_rate_limit" || errorCode === "over_request_rate_limit") {
+    return "Er zijn net veel verzoeken gedaan. Wacht even en probeer het opnieuw.";
+  }
+  const normalized = message.toLowerCase();
+  if (normalized.includes("already registered") || normalized.includes("already exists")) {
+    return "Dit e-mailadres heeft al een account.";
+  }
+  if (normalized.includes("password")) {
+    return "Kies een wachtwoord van minimaal 6 tekens.";
+  }
+  if (normalized.includes("rate limit") || normalized.includes("only request this after")) {
+    return "Er zijn net veel verzoeken gedaan. Wacht even en probeer het opnieuw.";
+  }
+  return "Aanmaken van het account is mislukt. Probeer het opnieuw.";
 }
 
 function allowedPasswordResetOrigins(): Set<string> {
@@ -191,6 +236,52 @@ router.post("/auth/password-reset-request", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not request password reset");
     res.status(502).json({ error: "Wachtwoordherstel kon niet worden aangevraagd." });
+  }
+});
+
+router.post("/auth/signup", async (req, res): Promise<void> => {
+  const input = SignUpWithActivationKeyBody.safeParse(req.body);
+  if (!input.success) {
+    res.status(400).json({ error: "Ongeldige aanmeldgegevens." });
+    return;
+  }
+
+  const attemptAllowed = await claimAttempt(`signup:ip:${req.ip ?? "unknown"}`, 10);
+  if (!attemptAllowed) {
+    res.status(429).json({ error: "Te veel pogingen. Probeer het later opnieuw." });
+    return;
+  }
+
+  const email = input.data.email.trim().toLowerCase();
+  const code = normalizeActivationCode(input.data.activationKey);
+
+  try {
+    const claimed = await claimActivationKey(code);
+    if (!claimed) {
+      res.status(400).json({ error: "Deze activatiecode is ongeldig of al gebruikt." });
+      return;
+    }
+
+    const signUpResult = await signUpWithPassword(email, input.data.password, signupRedirect());
+    if (!signUpResult.ok) {
+      await releaseActivationKey(claimed.id);
+      res.status(400).json({ error: readableSignupError(signUpResult.errorCode, signUpResult.message) });
+      return;
+    }
+
+    await attachActivationKeyToUser(claimed.id, signUpResult.userId, email);
+    await enqueueAuthEvent({
+      dedupeKey: `signup:${signUpResult.userId}`,
+      event: "signup",
+      userId: signUpResult.userId,
+      device: input.data.device,
+      ipAddress: req.ip ?? null,
+    }).catch((error) => req.log.warn({ error }, "Could not enqueue signup auth event"));
+
+    res.status(201).json(SignUpWithActivationKeyResponse.parse({ userId: signUpResult.userId }));
+  } catch (error) {
+    req.log.warn({ error }, "Signup failed");
+    res.status(500).json({ error: "Aanmaken van het account is mislukt. Probeer het opnieuw." });
   }
 });
 

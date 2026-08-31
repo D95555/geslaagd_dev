@@ -88,6 +88,73 @@ export const RequestPasswordResetResponse = zod.void()
 
 
 /**
+ * @summary Create an account, gated by an activation key
+ */
+export const signUpWithActivationKeyBodyPasswordMin = 6;
+
+export const signUpWithActivationKeyBodyDeviceMax = 160;
+
+
+
+export const SignUpWithActivationKeyBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string().min(signUpWithActivationKeyBodyPasswordMin),
+  "activationKey": zod.string(),
+  "device": zod.string().max(signUpWithActivationKeyBodyDeviceMax).optional()
+})
+
+export const SignUpWithActivationKeyResponse = zod.object({
+  "userId": zod.string().uuid()
+})
+
+
+/**
+ * @summary List activation keys
+ */
+export const ListActivationKeysQueryParams = zod.object({
+  "status": zod.enum(['open', 'used']).optional()
+})
+
+export const ListActivationKeysResponse = zod.object({
+  "keys": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['open', 'used']),
+  "source": zod.enum(['admin', 'purchase']),
+  "createdAt": zod.coerce.date(),
+  "usedAt": zod.coerce.date().nullable(),
+  "usedByUserId": zod.string().uuid().nullable(),
+  "usedByEmail": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Generate one or more fresh activation keys
+ */
+export const createActivationKeysBodyCountMax = 100;
+
+
+
+export const CreateActivationKeysBody = zod.object({
+  "count": zod.number().int().min(1).max(createActivationKeysBodyCountMax)
+})
+
+export const CreateActivationKeysResponse = zod.object({
+  "keys": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "code": zod.string(),
+  "status": zod.enum(['open', 'used']),
+  "source": zod.enum(['admin', 'purchase']),
+  "createdAt": zod.coerce.date(),
+  "usedAt": zod.coerce.date().nullable(),
+  "usedByUserId": zod.string().uuid().nullable(),
+  "usedByEmail": zod.string().nullable()
+}))
+})
+
+
+/**
  * @summary List tracked browser sessions
  */
 export const ListAdminSessionsResponseItem = zod.object({

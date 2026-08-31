@@ -40,6 +40,7 @@ import type {
   CrawlSubjectCreateInput,
   CrawlSubjectRequest,
   CrawlSummary,
+  CreateActivationKeysInput,
   DeclineSourceInput,
   DiagnosticQuestionnaire,
   ExerciseSetPublic,
@@ -47,6 +48,8 @@ import type {
   GetStudyCatalogParams,
   GradeResult,
   HealthStatus,
+  ListActivationKeysParams,
+  ListActivationKeysResponse,
   ListAdminAccountsParams,
   ListChatMessagesParams,
   ListPipelineLogsParams,
@@ -75,6 +78,8 @@ import type {
   SessionHeartbeat,
   SessionRegistration,
   SetSubjectBudgetInput,
+  SignUpInput,
+  SignUpResponse,
   StudentExam,
   StudentProgress,
   StudentSource,
@@ -490,6 +495,232 @@ export const useRequestPasswordReset = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRequestPasswordResetMutationOptions(options));
+    }
+
+export const getSignUpWithActivationKeyUrl = () => {
+
+
+
+
+  return `/api/auth/signup`
+}
+
+/**
+ * @summary Create an account, gated by an activation key
+ */
+export const signUpWithActivationKey = async (signUpInput: SignUpInput, options?: Parameters<typeof customFetch>[1]): Promise<SignUpResponse> => {
+
+  return customFetch<SignUpResponse>(getSignUpWithActivationKeyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(signUpInput)
+  }
+);}
+
+
+
+
+
+export const getSignUpWithActivationKeyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signUpWithActivationKey>>, TError,{data: BodyType<SignUpInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signUpWithActivationKey>>, TError,{data: BodyType<SignUpInput>}, TContext> => {
+
+const mutationKey = ['signUpWithActivationKey'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signUpWithActivationKey>>, {data: BodyType<SignUpInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  signUpWithActivationKey(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignUpWithActivationKeyMutationResult = NonNullable<Awaited<ReturnType<typeof signUpWithActivationKey>>>
+    export type SignUpWithActivationKeyMutationBody = BodyType<SignUpInput>
+    export type SignUpWithActivationKeyMutationError = ErrorType<void>
+
+    /**
+ * @summary Create an account, gated by an activation key
+ */
+export const useSignUpWithActivationKey = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signUpWithActivationKey>>, TError,{data: BodyType<SignUpInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signUpWithActivationKey>>,
+        TError,
+        {data: BodyType<SignUpInput>},
+        TContext
+      > => {
+      return useMutation(getSignUpWithActivationKeyMutationOptions(options));
+    }
+
+export const getListActivationKeysUrl = (params?: ListActivationKeysParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/activation-keys?${stringifiedParams}` : `/api/admin/activation-keys`
+}
+
+/**
+ * @summary List activation keys
+ */
+export const listActivationKeys = async (params?: ListActivationKeysParams, options?: Parameters<typeof customFetch>[1]): Promise<ListActivationKeysResponse> => {
+
+  return customFetch<ListActivationKeysResponse>(getListActivationKeysUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListActivationKeysQueryKey = (params?: ListActivationKeysParams,) => {
+    return [
+    `/api/admin/activation-keys`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListActivationKeysQueryOptions = <TData = Awaited<ReturnType<typeof listActivationKeys>>, TError = ErrorType<void>>(params?: ListActivationKeysParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActivationKeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListActivationKeysQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listActivationKeys>>> = ({ signal }) => listActivationKeys(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listActivationKeys>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListActivationKeysQueryResult = NonNullable<Awaited<ReturnType<typeof listActivationKeys>>>
+export type ListActivationKeysQueryError = ErrorType<void>
+
+
+/**
+ * @summary List activation keys
+ */
+
+export function useListActivationKeys<TData = Awaited<ReturnType<typeof listActivationKeys>>, TError = ErrorType<void>>(
+ params?: ListActivationKeysParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActivationKeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListActivationKeysQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateActivationKeysUrl = () => {
+
+
+
+
+  return `/api/admin/activation-keys`
+}
+
+/**
+ * @summary Generate one or more fresh activation keys
+ */
+export const createActivationKeys = async (createActivationKeysInput: CreateActivationKeysInput, options?: Parameters<typeof customFetch>[1]): Promise<ListActivationKeysResponse> => {
+
+  return customFetch<ListActivationKeysResponse>(getCreateActivationKeysUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createActivationKeysInput)
+  }
+);}
+
+
+
+
+
+export const getCreateActivationKeysMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivationKeys>>, TError,{data: BodyType<CreateActivationKeysInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createActivationKeys>>, TError,{data: BodyType<CreateActivationKeysInput>}, TContext> => {
+
+const mutationKey = ['createActivationKeys'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createActivationKeys>>, {data: BodyType<CreateActivationKeysInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createActivationKeys(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateActivationKeysMutationResult = NonNullable<Awaited<ReturnType<typeof createActivationKeys>>>
+    export type CreateActivationKeysMutationBody = BodyType<CreateActivationKeysInput>
+    export type CreateActivationKeysMutationError = ErrorType<void>
+
+    /**
+ * @summary Generate one or more fresh activation keys
+ */
+export const useCreateActivationKeys = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivationKeys>>, TError,{data: BodyType<CreateActivationKeysInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createActivationKeys>>,
+        TError,
+        {data: BodyType<CreateActivationKeysInput>},
+        TContext
+      > => {
+      return useMutation(getCreateActivationKeysMutationOptions(options));
     }
 
 export const getListAdminSessionsUrl = () => {

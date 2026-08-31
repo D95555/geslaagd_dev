@@ -83,6 +83,42 @@ export async function requestPasswordResetEmail(
   }
 }
 
+export type SignUpResult =
+  | { ok: true; userId: string }
+  | { ok: false; status: number; errorCode: string | null; message: string };
+
+/**
+ * Calls the same public signup endpoint the Supabase JS client hits from the
+ * browser, so the confirmation-email flow stays identical — this just lets
+ * the server validate an activation key before the account is created.
+ */
+export async function signUpWithPassword(
+  email: string,
+  password: string,
+  redirectTo: string,
+): Promise<SignUpResult> {
+  const response = await fetch(`${url}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    method: "POST",
+    headers: { apikey: key, "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = (await response.json().catch(() => null)) as
+    | { id?: string; msg?: string; error_description?: string; message?: string; error_code?: string }
+    | null;
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      errorCode: data?.error_code ?? null,
+      message: data?.msg ?? data?.error_description ?? data?.message ?? "Aanmaken is mislukt.",
+    };
+  }
+  if (!data?.id) {
+    return { ok: false, status: 500, errorCode: null, message: "Supabase gaf geen gebruikers-id terug." };
+  }
+  return { ok: true, userId: data.id };
+}
+
 export async function rest<T>(
   authorization: string,
   path: string,

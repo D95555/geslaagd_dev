@@ -11,7 +11,7 @@ import { useLocation } from 'wouter';
 
 import { useAuth } from '@/auth/auth-context';
 import { appUrl, supabase } from '@/lib/supabase';
-import { logAuthEvent, requestPasswordReset } from '@workspace/api-client-react';
+import { ApiError, logAuthEvent, requestPasswordReset, signUpWithActivationKey } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
@@ -46,6 +46,7 @@ export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [activationKey, setActivationKey] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -102,29 +103,24 @@ export default function AuthPage() {
     setIsBusy(true);
 
     const normalizedEmail = email.trim().toLowerCase();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: {
-        emailRedirectTo: appUrl('/auth'),
-      },
-    });
-
-    if (signUpError) {
-      setError(readableAuthError(signUpError.message));
-    } else {
-      if (data.session) {
-        await supabase.auth.signOut();
-      }
+    try {
+      await signUpWithActivationKey({
+        email: normalizedEmail,
+        password,
+        activationKey,
+        device: navigator.userAgent.includes('Mobile') ? 'Mobiele browser' : 'Webbrowser',
+      });
       setEmail(normalizedEmail);
       setPassword('');
+      setActivationKey('');
       setMode('verify');
-      if (data.user?.id) {
-        void logAuthEvent({ event: 'signup', email: normalizedEmail, userId: data.user.id, device: navigator.userAgent.includes('Mobile') ? 'Mobiele browser' : 'Webbrowser' }).catch(() => undefined);
-      }
       setMessage(
         'Als dit adres nog geen account heeft, ontvang je zo een e-mail om je account te bevestigen.',
       );
+    } catch (signUpError) {
+      const serverMessage =
+        signUpError instanceof ApiError ? (signUpError.data as { error?: string } | null)?.error : undefined;
+      setError(serverMessage ?? 'Er ging iets mis. Probeer het opnieuw.');
     }
 
     setIsBusy(false);
@@ -214,7 +210,7 @@ export default function AuthPage() {
       </h1>
       <p>
         {mode === 'signup'
-          ? 'Maak je account aan. Je bevestigt eerst je e-mailadres voordat je kunt inloggen.'
+          ? 'Maak je account aan met je activatiecode. Je bevestigt daarna je e-mailadres voordat je kunt inloggen.'
           : mode === 'forgot'
             ? 'Vul je e-mailadres in. We sturen je een veilige link om een nieuw wachtwoord te kiezen.'
             : 'Log in om je onderwerpen, samenvattingen en voortgang op één plek te bewaren.'}
@@ -252,6 +248,20 @@ export default function AuthPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Minimaal 6 tekens"
+            />
+          </>
+        )}
+        {mode === 'signup' && (
+          <>
+            <label htmlFor="activation-key">Activatiecode</label>
+            <Input
+              id="activation-key"
+              type="text"
+              autoComplete="off"
+              required
+              value={activationKey}
+              onChange={(event) => setActivationKey(event.target.value)}
+              placeholder="XXXX-XXXX-XXXX"
             />
           </>
         )}
