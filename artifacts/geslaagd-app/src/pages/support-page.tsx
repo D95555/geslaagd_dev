@@ -220,10 +220,7 @@ export default function SupportPage() {
             <button key={ticket.id} className="account-row" onClick={() => void openTicket(ticket.id)}>
               <div>
                 <strong>{ticket.subject}</strong>
-                <span>
-                  {fmtDateTime(ticket.lastMessageAt)}
-                  {ticket.handledBy === 'admin' ? ' · door een beheerder opgepakt' : ''}
-                </span>
+                <span>{fmtDateTime(ticket.lastMessageAt)}</span>
               </div>
               <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>
                 {statusLabel[ticket.status]}

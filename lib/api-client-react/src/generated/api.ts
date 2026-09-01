@@ -814,7 +814,7 @@ export const getCreateSupportTicketUrl = () => {
 }
 
 /**
- * @summary Open a new support ticket; the AI replies immediately
+ * @summary Open a new support ticket
  */
 export const createSupportTicket = async (createSupportTicketInput: CreateSupportTicketInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
 
@@ -863,7 +863,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateSupportTicketMutationError = ErrorType<void>
 
     /**
- * @summary Open a new support ticket; the AI replies immediately
+ * @summary Open a new support ticket
  */
 export const useCreateSupportTicket = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportTicket>>, TError,{data: BodyType<CreateSupportTicketInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -962,7 +962,7 @@ export const getAddSupportMessageUrl = (ticketId: string,) => {
 }
 
 /**
- * @summary Reply in a ticket (owner or admin); an admin reply takes the ticket over from the AI
+ * @summary Reply in a ticket (owner or admin)
  */
 export const addSupportMessage = async (ticketId: string,
     addSupportMessageInput: AddSupportMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
@@ -1012,7 +1012,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddSupportMessageMutationError = ErrorType<void>
 
     /**
- * @summary Reply in a ticket (owner or admin); an admin reply takes the ticket over from the AI
+ * @summary Reply in a ticket (owner or admin)
  */
 export const useAddSupportMessage = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSupportMessage>>, TError,{ticketId: string;data: BodyType<AddSupportMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1108,77 +1108,6 @@ export function useListAdminSupportTickets<TData = Awaited<ReturnType<typeof lis
 
 
 
-
-export const getTakeoverSupportTicketUrl = (ticketId: string,) => {
-
-
-
-
-  return `/api/admin/support/tickets/${ticketId}/takeover`
-}
-
-/**
- * @summary Stop the AI and hand the ticket to an admin
- */
-export const takeoverSupportTicket = async (ticketId: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
-
-  return customFetch<SupportTicketDetail>(getTakeoverSupportTicketUrl(ticketId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-
-export const getTakeoverSupportTicketMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof takeoverSupportTicket>>, TError,{ticketId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof takeoverSupportTicket>>, TError,{ticketId: string}, TContext> => {
-
-const mutationKey = ['takeoverSupportTicket'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof takeoverSupportTicket>>, {ticketId: string}> = (props) => {
-          const {ticketId} = props ?? {};
-
-          return  takeoverSupportTicket(ticketId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type TakeoverSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof takeoverSupportTicket>>>
-
-    export type TakeoverSupportTicketMutationError = ErrorType<void>
-
-    /**
- * @summary Stop the AI and hand the ticket to an admin
- */
-export const useTakeoverSupportTicket = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof takeoverSupportTicket>>, TError,{ticketId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof takeoverSupportTicket>>,
-        TError,
-        {ticketId: string},
-        TContext
-      > => {
-      return useMutation(getTakeoverSupportTicketMutationOptions(options));
-    }
 
 export const getCloseSupportTicketUrl = (ticketId: string,) => {
 

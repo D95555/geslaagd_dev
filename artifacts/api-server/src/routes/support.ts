@@ -7,20 +7,17 @@ import {
   GetSupportTicketParams,
   ListAdminSupportTicketsQueryParams,
   ReopenSupportTicketParams,
-  TakeoverSupportTicketParams,
 } from "@workspace/api-zod";
 import { getAuthenticatedUser } from "../lib/supabase";
 import {
   createTicket,
   emailForUser,
-  generateAiReply,
   getTicket,
   insertMessage,
   listAllTickets,
   listMessages,
   listTicketsForUser,
   setTicketStatus,
-  takeOverTicket,
   type SupportTicket,
 } from "../lib/support-tickets";
 
@@ -59,10 +56,7 @@ router.post("/support/tickets", async (req, res): Promise<void> => {
   try {
     const ticket = await createTicket(user.id, input.data.subject.trim());
     await insertMessage(ticket.id, "user", input.data.message.trim(), user.id);
-    const history = await listMessages(ticket.id);
-    await generateAiReply(ticket, history);
-    const fresh = await getTicket(ticket.id);
-    res.status(201).json(await toDetail(fresh ?? ticket));
+    res.status(201).json(await toDetail(ticket));
   } catch (error) {
     req.log.warn({ error }, "Could not create support ticket");
     res.status(500).json({ error: "Ticket kon niet worden aangemaakt." });
@@ -97,21 +91,8 @@ router.post("/support/tickets/:ticketId/messages", async (req, res): Promise<voi
     const isOwner = ticket.userId === user.id;
     if (!isOwner && !user.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
 
-    if (user.isAdmin) {
-      await insertMessage(ticket.id, "admin", input.data.message.trim(), user.id);
-      if (ticket.handledBy !== "admin") await takeOverTicket(ticket.id);
-    } else {
-      await insertMessage(ticket.id, "user", input.data.message.trim(), user.id);
-      // A ticket an admin already took over stays with that admin -- the AI
-      // does not jump back in just because the student replied again.
-      if (ticket.handledBy === "ai" && ticket.status === "open") {
-        const history = await listMessages(ticket.id);
-        await generateAiReply(ticket, history);
-      }
-    }
-
-    const fresh = await getTicket(ticket.id);
-    res.status(201).json(await toDetail(fresh ?? ticket));
+    await insertMessage(ticket.id, user.isAdmin ? "admin" : "user", input.data.message.trim(), user.id);
+    res.status(201).json(await toDetail(ticket));
   } catch (error) {
     req.log.warn({ error }, "Could not add support message");
     res.status(500).json({ error: "Bericht kon niet worden verstuurd." });
@@ -134,22 +115,6 @@ router.get("/admin/support/tickets", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not list admin support tickets");
     res.status(500).json({ error: "Tickets konden niet worden geladen." });
-  }
-});
-
-router.post("/admin/support/tickets/:ticketId/takeover", async (req, res): Promise<void> => {
-  const identity = await admin(req);
-  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
-  const params = TakeoverSupportTicketParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: "Ongeldig ticket." }); return; }
-  try {
-    const ticket = await getTicket(params.data.ticketId);
-    if (!ticket) { res.status(404).json({ error: "Ticket niet gevonden." }); return; }
-    await takeOverTicket(ticket.id);
-    res.json(await toDetail((await getTicket(ticket.id))!));
-  } catch (error) {
-    req.log.warn({ error }, "Could not take over support ticket");
-    res.status(500).json({ error: "Overnemen is mislukt." });
   }
 });
 

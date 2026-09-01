@@ -183,7 +183,7 @@ paths:
     post:
       operationId: createSupportTicket
       tags: [support]
-      summary: Open a new support ticket; the AI replies immediately
+      summary: Open a new support ticket
       requestBody:
         required: true
         content:
@@ -224,7 +224,7 @@ paths:
     post:
       operationId: addSupportMessage
       tags: [support]
-      summary: Reply in a ticket (owner or admin); an admin reply takes the ticket over from the AI
+      summary: Reply in a ticket (owner or admin)
       parameters:
         - name: ticketId
           in: path
@@ -257,10 +257,6 @@ paths:
           in: query
           required: false
           schema: { type: string, enum: [open, closed] }
-        - name: flagged
-          in: query
-          required: false
-          schema: { type: boolean }
       responses:
         "200":
           description: Tickets
@@ -270,27 +266,6 @@ paths:
                 $ref: "#/components/schemas/ListSupportTicketsResponse"
         "403":
           description: Forbidden
-  /admin/support/tickets/{ticketId}/takeover:
-    post:
-      operationId: takeoverSupportTicket
-      tags: [support]
-      summary: Stop the AI and hand the ticket to an admin
-      parameters:
-        - name: ticketId
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
-      responses:
-        "200":
-          description: Updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SupportTicketDetail"
-        "403":
-          description: Forbidden
-        "404":
-          description: Not found
   /admin/support/tickets/{ticketId}/close:
     post:
       operationId: closeSupportTicket
@@ -1968,14 +1943,11 @@ components:
         createdAt: { type: string, format: date-time }
     SupportTicketSummary:
       type: object
-      required: [id, subject, status, handledBy, flagged, flagReason, userEmail, createdAt, updatedAt, lastMessageAt]
+      required: [id, subject, status, userEmail, createdAt, updatedAt, lastMessageAt]
       properties:
         id: { type: string, format: uuid }
         subject: { type: string }
         status: { type: string, enum: [open, closed] }
-        handledBy: { type: string, enum: [ai, admin] }
-        flagged: { type: boolean }
-        flagReason: { type: ["string", "null"] }
         userEmail: { type: string }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }

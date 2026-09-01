@@ -5,17 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { SupportTicketSummaryHandledBy } from './supportTicketSummaryHandledBy';
 import type { SupportTicketSummaryStatus } from './supportTicketSummaryStatus';
 
 export interface SupportTicketSummary {
   id: string;
   subject: string;
   status: SupportTicketSummaryStatus;
-  handledBy: SupportTicketSummaryHandledBy;
-  flagged: boolean;
-  /** @nullable */
-  flagReason: string | null;
   userEmail: string;
   createdAt: Date;
   updatedAt: Date;

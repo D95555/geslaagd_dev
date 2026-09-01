@@ -5,11 +5,10 @@ import {
   getSupportTicket,
   listAdminSupportTickets,
   reopenSupportTicket,
-  takeoverSupportTicket,
   type SupportTicketDetail,
   type SupportTicketSummary,
 } from '@workspace/api-client-react';
-import { AlertTriangle, Loader2, Send, ShieldCheck, X } from 'lucide-react';
+import { Loader2, Send, X } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
 import { useLivePoll } from '@/lib/use-live-poll';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
@@ -63,15 +62,6 @@ function TicketDetailPanel({
     }
   };
 
-  const takeover = async () => {
-    setBusy(true);
-    try {
-      onUpdated(await takeoverSupportTicket(ticket.id));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const toggleClosed = async () => {
     setBusy(true);
     try {
@@ -85,15 +75,6 @@ function TicketDetailPanel({
     <>
       <div className="request-row-actions">
         <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>{statusLabel[ticket.status]}</Badge>
-        <Badge variant="secondary">{ticket.handledBy === 'ai' ? 'AI reageert' : 'Bij beheerder'}</Badge>
-        {ticket.flagged && <Badge variant="destructive"><AlertTriangle size={12} /> {ticket.flagReason ?? 'gemarkeerd'}</Badge>}
-      </div>
-      <div className="request-row-actions">
-        {ticket.handledBy === 'ai' && (
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => void takeover()}>
-            <ShieldCheck size={14} /> Overnemen
-          </Button>
-        )}
         <Button variant="outline" size="sm" disabled={busy} onClick={() => void toggleClosed()}>
           <X size={14} /> {ticket.status === 'open' ? 'Sluiten' : 'Heropenen'}
         </Button>
@@ -118,7 +99,7 @@ function TicketDetailPanel({
             value={reply}
             maxLength={4000}
             onChange={(e) => setReply(e.target.value)}
-            placeholder="Reageer als beheerder… (dit neemt het ticket automatisch over)"
+            placeholder="Reageer als beheerder…"
           />
           <Button type="submit" disabled={busy || !reply.trim()}>
             {busy ? <Loader2 className="spin" size={14} /> : <Send size={14} />} Versturen
@@ -134,17 +115,15 @@ export default function AdminSupportPage() {
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('open');
-  const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selected, setSelected] = useState<SupportTicketDetail | null>(null);
 
   const load = async (silent = false) => {
     if (!silent) setState('loading');
     try {
-      const result = await listAdminSupportTickets({
-        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
-        ...(flaggedOnly ? { flagged: true } : {}),
-      });
+      const result = await listAdminSupportTickets(
+        statusFilter !== 'all' ? { status: statusFilter } : undefined,
+      );
       setTickets(result.tickets);
       setState('ready');
     } catch (error) {
@@ -154,7 +133,7 @@ export default function AdminSupportPage() {
   useEffect(() => {
     if (!isLoading && user) void load();
     else if (!isLoading) setState('forbidden');
-  }, [isLoading, user?.id, statusFilter, flaggedOnly]);
+  }, [isLoading, user?.id, statusFilter]);
 
   useLivePoll(() => load(true), { enabled: state === 'ready', intervalMs: 8_000 });
 
@@ -168,7 +147,7 @@ export default function AdminSupportPage() {
   return (
     <AdminShell
       title="Support"
-      intro="Elke ticket is zichtbaar. De AI reageert vanzelf en markeert wat jouw aandacht nodig heeft."
+      intro="Tickets van studenten. Klik een ticket om te reageren."
     >
       <div className="pipeline-filters">
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
@@ -181,13 +160,6 @@ export default function AdminSupportPage() {
             <SelectItem value="all">Alles</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant={flaggedOnly ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFlaggedOnly((now) => !now)}
-        >
-          <AlertTriangle size={14} /> Alleen gemarkeerd
-        </Button>
       </div>
 
       {state === 'loading' ? (
@@ -204,11 +176,7 @@ export default function AdminSupportPage() {
                 <strong>{ticket.subject}</strong>
                 <span>{ticket.userEmail} · {fmtDateTime(ticket.lastMessageAt)}</span>
               </div>
-              <div className="request-row-actions">
-                {ticket.flagged && <Badge variant="destructive"><AlertTriangle size={12} /></Badge>}
-                <Badge variant="secondary">{ticket.handledBy === 'ai' ? 'AI' : 'Beheerder'}</Badge>
-                <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>{statusLabel[ticket.status]}</Badge>
-              </div>
+              <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>{statusLabel[ticket.status]}</Badge>
             </button>
           ))}
         </div>

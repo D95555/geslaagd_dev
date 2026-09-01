@@ -130,22 +130,10 @@ export const SupportTicketSummaryStatus = {
   closed: 'closed',
 } as const;
 
-export type SupportTicketSummaryHandledBy = typeof SupportTicketSummaryHandledBy[keyof typeof SupportTicketSummaryHandledBy];
-
-
-export const SupportTicketSummaryHandledBy = {
-  ai: 'ai',
-  admin: 'admin',
-} as const;
-
 export interface SupportTicketSummary {
   id: string;
   subject: string;
   status: SupportTicketSummaryStatus;
-  handledBy: SupportTicketSummaryHandledBy;
-  flagged: boolean;
-  /** @nullable */
-  flagReason: string | null;
   userEmail: string;
   createdAt: string;
   updatedAt: string;
@@ -1783,7 +1771,6 @@ export const ListActivationKeysStatus = {
 
 export type ListAdminSupportTicketsParams = {
 status?: ListAdminSupportTicketsStatus;
-flagged?: boolean;
 };
 
 export type ListAdminSupportTicketsStatus = typeof ListAdminSupportTicketsStatus[keyof typeof ListAdminSupportTicketsStatus];

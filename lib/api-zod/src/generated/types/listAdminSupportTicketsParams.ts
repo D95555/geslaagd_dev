@@ -9,5 +9,4 @@ import type { ListAdminSupportTicketsStatus } from './listAdminSupportTicketsSta
 
 export type ListAdminSupportTicketsParams = {
 status?: ListAdminSupportTicketsStatus;
-flagged?: boolean;
 };

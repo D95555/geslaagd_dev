@@ -170,7 +170,6 @@ export * from './supportMessage';
 export * from './supportMessageSender';
 export * from './supportTicketDetail';
 export * from './supportTicketSummary';
-export * from './supportTicketSummaryHandledBy';
 export * from './supportTicketSummaryStatus';
 export * from './trackedSession';
 export * from './updateCrawlMemoryInput';
