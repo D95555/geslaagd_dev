@@ -1,8 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
 /** Deep reasoning: curriculum structure, the summaries students read, exams. */
-export const STRONG_MODEL = "claude-sonnet-4-6";
+export const STRONG_MODEL = "gpt-5.6-sol";
 /** Everything high-volume or derivative — an order of magnitude cheaper. */
 export const FAST_MODEL = "gpt-5.6-luna";
 
@@ -47,22 +46,15 @@ export async function callJsonForTask(
   return MODEL_BY_TASK[task] === "strong" ? callStrongJson(input) : callFastJson(input);
 }
 
-// Identity-linked Anthropic keys must name the workspace they act on; regular
-// keys ignore the header, so it is only sent when configured.
-const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  ...(workspaceId ? { defaultHeaders: { "anthropic-workspace-id": workspaceId } } : {}),
-});
 export const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
 /**
- * Claude has no JSON response mode, so the model is asked for JSON and the
- * object is extracted from the reply — tolerating markdown fences and any
- * short preamble the model adds despite instructions.
+ * Some models on this integration wrap JSON in markdown fences or add a short
+ * preamble despite instructions, so the object is extracted from the reply
+ * rather than trusted verbatim.
  */
 export function extractJson(raw: string): unknown {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -86,19 +78,23 @@ export async function callStrongJson(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<unknown> {
-  const response = await anthropic.messages.create({
+  const completion = await openai.chat.completions.create({
     model: STRONG_MODEL,
-    max_tokens: input.maxTokens ?? 16_000,
-    system: input.system,
-    messages: [{ role: "user", content: input.user }],
+    response_format: { type: "json_object" },
+    ...(input.maxTokens ? { max_completion_tokens: input.maxTokens } : {}),
+    messages: [
+      { role: "system", content: input.system },
+      { role: "user", content: input.user },
+    ],
   });
-  input.onUsage?.({
-    model: STRONG_MODEL,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-  });
-  const block = response.content.find((item) => item.type === "text");
-  const text = block && "text" in block ? block.text : "";
+  if (completion.usage) {
+    input.onUsage?.({
+      model: STRONG_MODEL,
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+    });
+  }
+  const text = completion.choices[0]?.message.content ?? "";
   if (!text.trim()) throw new Error("Strong model returned an empty response.");
   return extractJson(text);
 }
@@ -133,8 +129,9 @@ export async function callFastJson(input: {
 /**
  * Reads a PDF as native document input instead of a Firecrawl scrape — free
  * (no Firecrawl credits), used for PDFs that already passed source scoring.
- * This SDK version (0.32.1) only exposes PDF document blocks through the
- * beta Messages namespace, hence `anthropic.beta.messages.create`.
+ * Sent as an inline base64 `file` content part per the OpenAI chat
+ * completions format; the caller already treats any failure here as
+ * non-fatal (falls back to the snippet already on hand).
  */
 export async function callStrongTextWithDocument(input: {
   system: string;
@@ -143,31 +140,34 @@ export async function callStrongTextWithDocument(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<string> {
-  const response = await anthropic.beta.messages.create({
+  const completion = await openai.chat.completions.create({
     model: STRONG_MODEL,
-    betas: ["pdfs-2024-09-25"],
-    max_tokens: input.maxTokens ?? 8_000,
-    system: input.system,
+    max_completion_tokens: input.maxTokens ?? 8_000,
     messages: [
+      { role: "system", content: input.system },
       {
         role: "user",
         content: [
           {
-            type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: input.documentBase64 },
+            type: "file",
+            file: {
+              filename: "document.pdf",
+              file_data: `data:application/pdf;base64,${input.documentBase64}`,
+            },
           },
           { type: "text", text: input.user },
         ],
       },
     ],
   });
-  input.onUsage?.({
-    model: STRONG_MODEL,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-  });
-  const block = response.content.find((item) => item.type === "text");
-  const text = block && "text" in block ? block.text : "";
+  if (completion.usage) {
+    input.onUsage?.({
+      model: STRONG_MODEL,
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+    });
+  }
+  const text = completion.choices[0]?.message.content ?? "";
   if (!text.trim()) throw new Error("Document extraction returned an empty response.");
   return text;
 }
