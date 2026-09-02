@@ -19,6 +19,7 @@ import AdminVerkennerPage from '@/pages/admin-verkenner-page';
 import AdminConsolePage from '@/pages/admin-console-page';
 import SubjectCatalogPage from '@/pages/subject-catalog-page';
 import SupportPage from '@/pages/support-page';
+import FaqPage from '@/pages/faq-page';
 import AdminSupportPage from '@/pages/admin-support-page';
 import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
@@ -44,6 +45,7 @@ function Router() {
           <Route path="/auth" component={AuthPage} />
           <Route path="/mijn-leeromgeving" component={DashboardPage} />
           <Route path="/support" component={SupportPage} />
+          <Route path="/faq" component={FaqPage} />
           <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
           <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
             {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}

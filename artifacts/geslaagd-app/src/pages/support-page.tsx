@@ -7,7 +7,8 @@ import {
   type SupportTicketDetail,
   type SupportTicketSummary,
 } from '@workspace/api-client-react';
-import { ArrowLeft, Loader2, MessageCircleQuestion, Plus, Send } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Loader2, MessageCircleQuestion, Plus, Send } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
@@ -144,6 +145,7 @@ function TicketThread({
 }
 
 export default function SupportPage() {
+  const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -194,6 +196,11 @@ export default function SupportPage() {
           </div>
         )}
       </div>
+
+      <button type="button" className="support-faq-hint" onClick={() => setLocation('/faq')}>
+        <HelpCircle size={16} aria-hidden="true" />
+        <span>Veel vragen zijn al beantwoord bij de veelgestelde vragen — bekijk die eerst.</span>
+      </button>
 
       {creating || tickets.length === 0 ? (
         <>

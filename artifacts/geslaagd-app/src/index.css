@@ -1437,6 +1437,20 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .support-message-meta { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
 .support-message p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 
+.support-faq-hint { display: flex; align-items: center; gap: 10px; width: 100%; margin: 4px 0 20px; padding: 12px 14px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--muted) / .4); color: hsl(var(--muted-foreground)); text-align: left; cursor: pointer; transition: background-color var(--momentum-motion-fast) var(--momentum-ease-standard); }
+.support-faq-hint:hover { background: hsl(var(--muted)); }
+.support-faq-hint svg { flex-shrink: 0; color: hsl(var(--primary)); }
+
+.faq-page { max-width: 760px; }
+.faq-section { margin-top: 28px; }
+.faq-section h2 { margin: 0 0 8px; font: 600 1.05rem var(--app-font-serif); letter-spacing: -.02em; }
+.faq-accordion { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 0 14px; background: hsl(var(--card)); }
+.faq-cta { display: flex; align-items: center; gap: 14px; margin-top: 32px; padding: 16px 18px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--muted) / .4); }
+.faq-cta > svg { flex-shrink: 0; color: hsl(var(--primary)); }
+.faq-cta > div { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.faq-cta strong { font-size: var(--text-body-size); }
+.faq-cta span { color: hsl(var(--muted-foreground)); font-size: var(--text-meta-size); }
+
 .decision-row { justify-content: flex-start; align-items: flex-start; gap: 12px; cursor: default; }
 .decision-row-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 2px; border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
 .decision-row-body { min-width: 0; flex: 1; }
