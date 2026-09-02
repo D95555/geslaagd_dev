@@ -2309,6 +2309,30 @@ export const ListPipelineLogsResponse = zod.array(ListPipelineLogsResponseItem)
 
 
 /**
+ * @summary Stalled subjects and long-running tasks that need a look
+ */
+export const GetPipelineHealthResponse = zod.object({
+  "stalledSubjects": zod.array(zod.object({
+  "subjectId": zod.string().uuid(),
+  "name": zod.string(),
+  "chapterCount": zod.number().int(),
+  "stalledSince": zod.coerce.date(),
+  "missing": zod.array(zod.string())
+})),
+  "longRunningTasks": zod.array(zod.object({
+  "taskId": zod.string().uuid(),
+  "subjectId": zod.string().uuid().nullable(),
+  "subjectName": zod.string().nullable(),
+  "taskType": zod.string(),
+  "status": zod.string(),
+  "minutesRunning": zod.number().int(),
+  "attempts": zod.number().int(),
+  "lockExpired": zod.boolean()
+}))
+})
+
+
+/**
  * @summary Retry a failed pipeline task, optionally overriding its config
  */
 export const RetryPipelineTaskParams = zod.object({

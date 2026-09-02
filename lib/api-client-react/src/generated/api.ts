@@ -64,6 +64,7 @@ import type {
   LookupVerkennerObjectParams,
   PasswordResetRequestInput,
   PendingSource,
+  PipelineHealth,
   PipelineLogEntry,
   PipelineTask,
   PipelineTaskDetail,
@@ -6820,6 +6821,83 @@ export function useListPipelineLogs<TData = Awaited<ReturnType<typeof listPipeli
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListPipelineLogsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPipelineHealthUrl = () => {
+
+
+
+
+  return `/api/admin/pipeline/health`
+}
+
+/**
+ * @summary Stalled subjects and long-running tasks that need a look
+ */
+export const getPipelineHealth = async ( options?: Parameters<typeof customFetch>[1]): Promise<PipelineHealth> => {
+
+  return customFetch<PipelineHealth>(getGetPipelineHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPipelineHealthQueryKey = () => {
+    return [
+    `/api/admin/pipeline/health`
+    ] as const;
+    }
+
+
+export const getGetPipelineHealthQueryOptions = <TData = Awaited<ReturnType<typeof getPipelineHealth>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPipelineHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPipelineHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPipelineHealth>>> = ({ signal }) => getPipelineHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPipelineHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPipelineHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getPipelineHealth>>>
+export type GetPipelineHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Stalled subjects and long-running tasks that need a look
+ */
+
+export function useGetPipelineHealth<TData = Awaited<ReturnType<typeof getPipelineHealth>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPipelineHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPipelineHealthQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

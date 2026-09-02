@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
+  getPipelineHealth,
   listCrawlSubjectRequests,
   listCrawlSubjects,
   listPendingSources,
   listPipelineTasks,
   type CrawlSubject,
+  type PipelineHealth,
   type PipelineTask,
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { NumberTicker } from '@/components/ui/number-ticker';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
@@ -30,6 +32,7 @@ export default function AdminOverviewPage() {
   const [items, setItems] = useState<Attention[]>([]);
   const [subjects, setSubjects] = useState<CrawlSubject[]>([]);
   const [tasks, setTasks] = useState<PipelineTask[]>([]);
+  const [health, setHealth] = useState<PipelineHealth | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
@@ -38,14 +41,16 @@ export default function AdminOverviewPage() {
   const load = async (silent = false) => {
     if (!silent) setState('loading');
     try {
-      const [nextTasks, nextSubjects, pending, requests] = await Promise.all([
+      const [nextTasks, nextSubjects, pending, requests, nextHealth] = await Promise.all([
         listPipelineTasks(),
         listCrawlSubjects(),
         listPendingSources(),
         listCrawlSubjectRequests(),
+        getPipelineHealth(),
       ]);
       setTasks(nextTasks);
       setSubjects(nextSubjects);
+      setHealth(nextHealth);
 
       const failed = nextTasks.filter((task) => task.status === 'failed').length;
       const running = nextTasks.filter(
@@ -144,6 +149,63 @@ export default function AdminOverviewPage() {
               </li>
             ))}
           </ul>
+
+          {health && (health.stalledSubjects.length > 0 || health.longRunningTasks.length > 0) && (
+            <section className="admin-block health-block">
+              <h2><AlertTriangle size={17} aria-hidden="true" /> Aandacht nodig in de pijplijn</h2>
+
+              {health.stalledSubjects.length > 0 && (
+                <div className="health-group">
+                  <h3>Vastgelopen vakken</h3>
+                  <p className="health-hint">
+                    De pijplijn is klaar, maar deze vakken zijn niet afgerond en wachten op niets meer.
+                  </p>
+                  <ul className="health-list">
+                    {health.stalledSubjects.map((subject) => (
+                      <li key={subject.subjectId}>
+                        <button type="button" onClick={() => setLocation('/beheer/verkenner')}>
+                          <strong>{subject.name}</strong>
+                          <span>
+                            {subject.chapterCount === 0
+                              ? 'Geen hoofdstukken opgebouwd'
+                              : subject.missing.length > 0
+                                ? `${subject.missing.length} ontbrekend, o.a.: ${subject.missing.slice(0, 2).join('; ')}`
+                                : 'Afgerond maar niet gepubliceerd'}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {health.longRunningTasks.length > 0 && (
+                <div className="health-group">
+                  <h3>Langlopende taken</h3>
+                  <p className="health-hint">
+                    Deze taken staan al lang stil of vast — mogelijk draait de worker niet.
+                  </p>
+                  <ul className="health-list">
+                    {health.longRunningTasks.map((task) => (
+                      <li key={task.taskId}>
+                        <button type="button" onClick={() => setDetailTaskId(task.taskId)}>
+                          <strong>
+                            <Clock size={13} aria-hidden="true" /> {task.taskType}
+                            {task.subjectName ? ` · ${task.subjectName}` : ''}
+                          </strong>
+                          <span>
+                            {task.status} · {task.minutesRunning} min
+                            {task.lockExpired ? ' · lock verlopen' : ''}
+                            {task.attempts > 0 ? ` · poging ${task.attempts}` : ''}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="admin-block">
             <h2>Vakken klaar om te publiceren</h2>

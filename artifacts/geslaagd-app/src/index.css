@@ -1351,6 +1351,19 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .admin-block { display: flex; flex-direction: column; gap: var(--density-block-gap); }
 .admin-block h2 { margin: 0; font-family: var(--text-heading2-font); font-size: var(--text-heading2-size); font-weight: var(--text-heading2-weight); letter-spacing: var(--text-heading2-tracking); }
 
+.health-block { padding: 16px 18px; border: 1px solid hsl(var(--destructive) / .4); border-radius: var(--radius); background: hsl(var(--destructive) / .06); }
+.health-block > h2 { display: flex; align-items: center; gap: 8px; color: hsl(var(--destructive)); }
+.health-block > h2 svg { flex-shrink: 0; }
+.health-group { margin-top: 14px; }
+.health-group h3 { margin: 0 0 2px; font-size: .92rem; font-weight: 600; }
+.health-hint { margin: 0 0 10px; color: hsl(var(--muted-foreground)); font-size: var(--text-meta-size); }
+.health-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.health-list li { border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.health-list button { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 10px 12px; border: 0; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; border-radius: var(--radius); }
+.health-list button:hover { background: hsl(var(--muted)); }
+.health-list strong { display: flex; align-items: center; gap: 6px; font-size: var(--text-body-size); font-weight: 600; overflow-wrap: anywhere; }
+.health-list span { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); overflow-wrap: anywhere; }
+
 /* Overzicht: wat vraagt aandacht */
 .attention-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--density-block-gap); margin: 0; padding: 0; list-style: none; align-items: stretch; }
 .attention-grid li { display: flex; }

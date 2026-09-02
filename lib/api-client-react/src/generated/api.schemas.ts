@@ -1373,6 +1373,32 @@ export interface PipelineLogEntry {
   createdAt: string;
 }
 
+export type PipelineHealthStalledSubjectsItem = {
+  subjectId: string;
+  name: string;
+  chapterCount: number;
+  stalledSince: string;
+  missing: string[];
+};
+
+export type PipelineHealthLongRunningTasksItem = {
+  taskId: string;
+  /** @nullable */
+  subjectId: string | null;
+  /** @nullable */
+  subjectName: string | null;
+  taskType: string;
+  status: string;
+  minutesRunning: number;
+  attempts: number;
+  lockExpired: boolean;
+};
+
+export interface PipelineHealth {
+  stalledSubjects: PipelineHealthStalledSubjectsItem[];
+  longRunningTasks: PipelineHealthLongRunningTasksItem[];
+}
+
 /**
  * @nullable
  */

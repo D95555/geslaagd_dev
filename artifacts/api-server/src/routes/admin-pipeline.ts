@@ -3,6 +3,7 @@ import {
   CancelPipelineTaskParams,
   GetPipelineTaskDetailParams,
   GetPipelineTaskDetailResponse,
+  GetPipelineHealthResponse,
   ListPipelineLogsQueryParams,
   ListPipelineLogsResponse,
   CancelPipelineTaskResponse,
@@ -95,6 +96,96 @@ router.get("/admin/pipeline/logs", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not load pipeline logs");
     res.status(500).json({ error: "Logboek kon niet worden geladen." });
+  }
+});
+
+// A 'running' task older than this is very likely wedged (a worker died
+// mid-task and the lock outlived it), and a 'ready' task older than this was
+// queued but never picked up — both mean the pipeline needs a look.
+const LONG_RUNNING_MINUTES = 20;
+const STUCK_READY_MINUTES = 15;
+
+router.get("/admin/pipeline/health", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  try {
+    // Stalled subjects: active, not yet publishable, and with no task left to
+    // run — the pipeline has gone quiet but the subject never finished. This is
+    // exactly the failure mode where a subject silently never appears.
+    const incompleteSubjects = await restService<Row[]>(
+      "crawl_subjects?status=eq.active&publish_status=eq.incomplete" +
+        "&select=id,name,chapter_count,updated_at",
+    );
+    const openTaskRows = await restService<Row[]>(
+      "pipeline_tasks?status=in.(ready,running,waiting)&select=subject_id",
+    );
+    const subjectsWithOpenTasks = new Set(
+      openTaskRows.map((row) => row.subject_id as string).filter(Boolean),
+    );
+
+    const stalledSubjects = [];
+    for (const subject of incompleteSubjects) {
+      const subjectId = subject.id as string;
+      if (subjectsWithOpenTasks.has(subjectId)) continue;
+
+      // The readiness check already recorded what is missing; reuse it rather
+      // than recomputing so the two views can never disagree.
+      const readinessRows = await restService<Row[]>(
+        `pipeline_tasks?subject_id=eq.${subjectId}&task_type=eq.readiness_check` +
+          "&order=created_at.desc&limit=1&select=result",
+      );
+      const result = readinessRows[0]?.result as { missing?: unknown } | null;
+      const missing = Array.isArray(result?.missing)
+        ? (result!.missing as unknown[]).map(String)
+        : [];
+      stalledSubjects.push({
+        subjectId,
+        name: subject.name as string,
+        chapterCount: (subject.chapter_count as number | null) ?? 0,
+        stalledSince: subject.updated_at as string,
+        missing,
+      });
+    }
+
+    // Long-running / stuck tasks: a live worker keeps these moving, so anything
+    // sitting past the thresholds points at a wedged or stopped pipeline.
+    const activeTaskRows = await restService<Row[]>(
+      "pipeline_tasks?status=in.(running,ready)" +
+        "&select=id,subject_id,task_type,status,attempts,locked_until,updated_at,crawl_subjects(name)",
+    );
+    const now = Date.now();
+    const longRunningTasks = [];
+    for (const row of activeTaskRows) {
+      const status = row.status as string;
+      const updatedAt = new Date(row.updated_at as string).getTime();
+      const ageMinutes = Math.floor((now - updatedAt) / 60_000);
+      const lockExpired =
+        row.locked_until != null && new Date(row.locked_until as string).getTime() < now;
+      const threshold = status === "running" ? LONG_RUNNING_MINUTES : STUCK_READY_MINUTES;
+      if (ageMinutes < threshold && !lockExpired) continue;
+
+      const subjectEmbed = row.crawl_subjects as Row | Row[] | null | undefined;
+      const subject = Array.isArray(subjectEmbed) ? subjectEmbed[0] : subjectEmbed;
+      longRunningTasks.push({
+        taskId: row.id as string,
+        subjectId: (row.subject_id as string | null) ?? null,
+        subjectName: (subject?.name as string | undefined) ?? null,
+        taskType: row.task_type as string,
+        status,
+        minutesRunning: ageMinutes,
+        attempts: Number(row.attempts ?? 0),
+        lockExpired,
+      });
+    }
+    longRunningTasks.sort((a, b) => b.minutesRunning - a.minutesRunning);
+
+    res.json(GetPipelineHealthResponse.parse({ stalledSubjects, longRunningTasks }));
+  } catch (error) {
+    req.log.warn({ error }, "Could not compute pipeline health");
+    res.status(500).json({ error: "Gezondheidsoverzicht kon niet worden geladen." });
   }
 });
 

@@ -1755,6 +1755,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PipelineLogEntry"
+  /admin/pipeline/health:
+    get:
+      operationId: getPipelineHealth
+      tags: [admin-pipeline]
+      summary: Stalled subjects and long-running tasks that need a look
+      responses:
+        "200":
+          description: Pipeline health signals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineHealth"
   /admin/pipeline/tasks/{taskId}/retry:
     post:
       operationId: retryPipelineTask
@@ -2836,6 +2848,37 @@ components:
           type: ["object", "null"]
           additionalProperties: true
         createdAt: { type: string, format: date-time }
+    PipelineHealth:
+      type: object
+      required: [stalledSubjects, longRunningTasks]
+      properties:
+        stalledSubjects:
+          type: array
+          items:
+            type: object
+            required: [subjectId, name, chapterCount, stalledSince, missing]
+            properties:
+              subjectId: { type: string, format: uuid }
+              name: { type: string }
+              chapterCount: { type: integer }
+              stalledSince: { type: string, format: date-time }
+              missing:
+                type: array
+                items: { type: string }
+        longRunningTasks:
+          type: array
+          items:
+            type: object
+            required: [taskId, subjectId, subjectName, taskType, status, minutesRunning, attempts, lockExpired]
+            properties:
+              taskId: { type: string, format: uuid }
+              subjectId: { type: ["string", "null"], format: uuid }
+              subjectName: { type: ["string", "null"] }
+              taskType: { type: string }
+              status: { type: string }
+              minutesRunning: { type: integer }
+              attempts: { type: integer }
+              lockExpired: { type: boolean }
     PipelineTaskDetail:
       allOf:
         - $ref: "#/components/schemas/PipelineTask"
