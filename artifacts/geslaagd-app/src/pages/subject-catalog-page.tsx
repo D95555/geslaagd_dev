@@ -42,7 +42,7 @@ const emptyRequestForm = {
   emphasis: '',
   yearLevel: 'havo_vwo_bovenbouw' as RequestSubjectInputYearLevel,
   preferredSourceTypes: '',
-  creditTier: 300 as 300 | 600,
+  creditTier: 300 as 300 | 600 | 800,
 };
 
 export default function SubjectCatalogPage() {
@@ -285,13 +285,14 @@ export default function SubjectCatalogPage() {
                 <Select
                   value={String(requestForm.creditTier)}
                   onValueChange={(value) =>
-                    setRequestForm((form) => ({ ...form, creditTier: Number(value) as 300 | 600 }))
+                    setRequestForm((form) => ({ ...form, creditTier: Number(value) as 300 | 600 | 800 }))
                   }
                 >
                   <SelectTrigger id="request-subject-tier" aria-label="Zoekbudget"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="300">Klein of algemeen vak (300)</SelectItem>
                     <SelectItem value="600">Groot vak of specifieke kennis (600)</SelectItem>
+                    <SelectItem value="800">Niche-onderwerp, diepgaand onderzoek (800)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="study-hint">

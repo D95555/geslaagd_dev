@@ -2539,7 +2539,7 @@ components:
         description: { type: string, maxLength: 1000 }
         emphasis: { type: string, maxLength: 300 }
         preferred_source_types: { type: string, maxLength: 300 }
-        credit_tier: { type: integer, enum: [300, 600] }
+        credit_tier: { type: integer, enum: [300, 600, 800] }
     RequestSubjectResult:
       type: object
       required: [requestId, subjectId]

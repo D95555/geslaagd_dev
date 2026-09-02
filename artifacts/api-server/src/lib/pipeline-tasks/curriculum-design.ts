@@ -236,6 +236,9 @@ export async function runCurriculumDesign(
       includeDomains: designed?.includeDomains ?? [],
       useResearchIndex: designed?.useResearchIndex ?? false,
       researchQuery: designed?.useResearchIndex ? `${subject.name} ${chapter.title}` : null,
+      // Niche subjects dig deeper: more candidates per search so scarce good
+      // sources are actually found. The larger budget covers the extra scrapes.
+      limitPerQuery: subject.deepResearch ? 16 : defaultCrawlConfig([]).limitPerQuery,
     };
     await createTask({
       subjectId: task.subjectId,

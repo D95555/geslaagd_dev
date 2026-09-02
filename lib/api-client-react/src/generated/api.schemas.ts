@@ -988,6 +988,7 @@ export type RequestSubjectInputCreditTier = typeof RequestSubjectInputCreditTier
 export const RequestSubjectInputCreditTier = {
   NUMBER_300: 300,
   NUMBER_600: 600,
+  NUMBER_800: 800,
 } as const;
 
 export interface RequestSubjectInput {

@@ -1739,7 +1739,7 @@ export const RequestSourceSubjectBody = zod.object({
   "description": zod.string().max(requestSourceSubjectBodyDescriptionMax).optional(),
   "emphasis": zod.string().max(requestSourceSubjectBodyEmphasisMax).optional(),
   "preferred_source_types": zod.string().max(requestSourceSubjectBodyPreferredSourceTypesMax).optional(),
-  "credit_tier": zod.union([zod.literal(300),zod.literal(600)])
+  "credit_tier": zod.union([zod.literal(300),zod.literal(600),zod.literal(800)])
 })
 
 export const RequestSourceSubjectResponse = zod.object({

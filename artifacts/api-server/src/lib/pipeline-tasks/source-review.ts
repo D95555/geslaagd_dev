@@ -11,7 +11,11 @@ import { setChapterSourceRelevance, setSourceStatus } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
 import { taskLog } from "./task-log";
 
+// A normal subject gets one extra targeted crawl round to fill gaps; a niche
+// (deep-research) subject gets more, so it keeps digging for a fuller knowledge
+// base until coverage is deep or its larger budget runs out.
 const MAX_GAP_ROUNDS = 1;
+const MAX_GAP_ROUNDS_DEEP = 3;
 
 const reviewSchema = z.object({
   decisions: z
@@ -159,10 +163,11 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
   }
 
   const gapRound = Number((task.config as Record<string, unknown> | null)?.gapRound ?? 0);
+  const maxGapRounds = subject.deepResearch ? MAX_GAP_ROUNDS_DEEP : MAX_GAP_ROUNDS;
 
-  // One extra crawl round is allowed; after that the readiness check reports
-  // whatever is still missing instead of looping forever.
-  if (gapQueries.length > 0 && gapRound < MAX_GAP_ROUNDS) {
+  // Extra crawl rounds are allowed up to the per-subject cap; after that the
+  // readiness check reports whatever is still missing instead of looping forever.
+  if (gapQueries.length > 0 && gapRound < maxGapRounds) {
     await createTask({
       subjectId: task.subjectId,
       chapterId: task.chapterId,
@@ -170,6 +175,7 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
       status: "ready",
       config: {
         ...defaultCrawlConfig(gapQueries.slice(0, 3)),
+        ...(subject.deepResearch ? { limitPerQuery: 16 } : {}),
         gapRound: gapRound + 1,
       } as unknown as Record<string, unknown>,
     });

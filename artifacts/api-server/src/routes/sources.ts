@@ -87,6 +87,9 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
         emphasis: input.data.emphasis ?? null,
         preferred_source_types: input.data.preferred_source_types ?? null,
         credit_budget: input.data.credit_tier,
+        // The 800 tier is the niche/deep-research tier: it crawls far more
+        // thoroughly so a niche subject still gets a full knowledge base.
+        deep_research: input.data.credit_tier === 800,
         status: "pending",
         requested_by: identity.user.id,
       }),
