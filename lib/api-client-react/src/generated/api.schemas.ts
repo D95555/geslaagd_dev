@@ -1099,9 +1099,14 @@ export interface SubjectSummary {
   chapterCount: number | null;
 }
 
-export type SubjectDetail = SubjectSummary & {
+export type SubjectDetail = SubjectSummary & ({
   chapters: Chapter[];
-};
+  /**
+     * When this subject's sources were last gathered/checked (latest crawl), or null if never
+     * @nullable
+     */
+  sourcesCheckedAt: string | null;
+});
 
 export type SelectedSubject = SubjectSummary & {
   subjectProgress: number;

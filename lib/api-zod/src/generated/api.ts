@@ -1865,7 +1865,8 @@ export const GetSubjectDetailResponse = zod.object({
   "isImportant": zod.boolean(),
   "topicTags": zod.array(zod.string()),
   "status": zod.enum(['pending', 'ready'])
-}))
+})),
+  "sourcesCheckedAt": zod.coerce.date().nullable().describe('When this subject\'s sources were last gathered\/checked (latest crawl), or null if never')
 }))
 
 
@@ -2402,7 +2403,8 @@ export const GetAdminSubjectContentResponse = zod.object({
   "isImportant": zod.boolean(),
   "topicTags": zod.array(zod.string()),
   "status": zod.enum(['pending', 'ready'])
-}))
+})),
+  "sourcesCheckedAt": zod.coerce.date().nullable().describe('When this subject\'s sources were last gathered\/checked (latest crawl), or null if never')
 })),
   "chapters": zod.array(zod.object({
   "chapter": zod.object({

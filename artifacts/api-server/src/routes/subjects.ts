@@ -158,10 +158,16 @@ router.get("/subjects/:subjectId", async (req, res): Promise<void> => {
     const chapters = await restService<Row[]>(
       `chapters?subject_id=eq.${params.data.subjectId}&select=*&order=position.asc`,
     );
+    // "Sources last checked" = the most recent crawl for this subject. Lets a
+    // student see how fresh the material is instead of it being silently stale.
+    const latestCrawl = await restService<Row[]>(
+      `crawls?subject_id=eq.${params.data.subjectId}&select=created_at&order=created_at.desc&limit=1`,
+    );
     res.json(
       GetSubjectDetailResponse.parse({
         ...toSubjectSummary(subject),
         chapters: chapters.map(toChapter),
+        sourcesCheckedAt: (latestCrawl[0]?.created_at as string | undefined) ?? null,
       }),
     );
   } catch (error) {

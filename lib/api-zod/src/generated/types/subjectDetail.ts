@@ -8,6 +8,11 @@
 import type { Chapter } from './chapter';
 import type { SubjectSummary } from './subjectSummary';
 
-export type SubjectDetail = SubjectSummary & {
+export type SubjectDetail = SubjectSummary & ({
   chapters: Chapter[];
-};
+  /**
+     * When this subject's sources were last gathered/checked (latest crawl), or null if never
+     * @nullable
+     */
+  sourcesCheckedAt: Date | null;
+});

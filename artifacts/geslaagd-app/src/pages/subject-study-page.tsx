@@ -25,7 +25,7 @@ import {
   ListSkeleton,
   PageSkeleton,
 } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
-import { CalendarPlus, MessageCircle, NotebookPen } from 'lucide-react';
+import { CalendarPlus, Clock3, MessageCircle, NotebookPen } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { useContextRail } from '@/components/shell/rail-context';
@@ -36,6 +36,16 @@ import { ProgressBar } from '@/components/study/progress-bar';
 import { ReviewPlan } from '@/components/study/review-plan';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
 import { WeaknessCard } from '@/components/study/weakness-card';
+
+/** "Bronnen voor het laatst gecontroleerd" in plain relative Dutch. */
+function sourcesFreshnessLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return 'vandaag gecontroleerd';
+  if (days === 1) return 'gisteren gecontroleerd';
+  if (days < 30) return `${days} dagen geleden gecontroleerd`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? 'een maand geleden gecontroleerd' : `${months} maanden geleden gecontroleerd`;
+}
 
 export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
   const [, setLocation] = useLocation();
@@ -198,6 +208,12 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
             do. Progress, the plan and weak spots that used to sit below this
             list now live in the context rail instead. */}
         <Section title="Hoofdstukken">
+          {subject.sourcesCheckedAt && (
+            <p className="sources-freshness">
+              <Clock3 size={13} aria-hidden="true" />
+              Bronnen {sourcesFreshnessLabel(subject.sourcesCheckedAt)}
+            </p>
+          )}
           <ChapterList
             chapters={subject.chapters}
             progress={progressByChapter}

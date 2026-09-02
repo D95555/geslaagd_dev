@@ -1450,6 +1450,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .support-message-meta { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
 .support-message p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 
+.sources-freshness { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 12px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
+.sources-freshness svg { flex-shrink: 0; }
+
 .support-faq-hint { display: flex; align-items: center; gap: 10px; width: 100%; margin: 4px 0 20px; padding: 12px 14px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--muted) / .4); color: hsl(var(--muted-foreground)); text-align: left; cursor: pointer; transition: background-color var(--momentum-motion-fast) var(--momentum-ease-standard); }
 .support-faq-hint:hover { background: hsl(var(--muted)); }
 .support-faq-hint svg { flex-shrink: 0; color: hsl(var(--primary)); }
