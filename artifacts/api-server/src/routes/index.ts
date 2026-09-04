@@ -16,6 +16,7 @@ import adminVerkennerRouter from "./admin-verkenner";
 import supportRouter from "./support";
 import billingRouter from "./billing";
 import notificationsRouter from "./notifications";
+import changelogRouter from "./changelog";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(adminVerkennerRouter);
 router.use(supportRouter);
 router.use(billingRouter);
 router.use(notificationsRouter);
+router.use(changelogRouter);
 
 export default router;
