@@ -1496,6 +1496,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .version-badge:hover { color: hsl(var(--foreground)); background: hsl(var(--secondary)); }
 
+.account-upgrade-field { display: grid; gap: 6px; max-width: 320px; margin: 18px 0 10px; font-size: var(--text-meta-size); color: hsl(var(--muted-foreground)); }
+
 .decision-row { justify-content: flex-start; align-items: flex-start; gap: 12px; cursor: default; }
 .decision-row-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 2px; border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
 .decision-row-body { min-width: 0; flex: 1; }

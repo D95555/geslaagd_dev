@@ -11,7 +11,7 @@ import { useLocation } from 'wouter';
 
 import { useAuth } from '@/auth/auth-context';
 import { appUrl, supabase } from '@/lib/supabase';
-import { ApiError, logAuthEvent, requestPasswordReset, signUpWithActivationKey } from '@workspace/api-client-react';
+import { ApiError, logAuthEvent, requestPasswordReset, signUpTrial, signUpWithActivationKey } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
@@ -44,6 +44,7 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { isLoading, user } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
+  const [signupPath, setSignupPath] = useState<'key' | 'trial'>('key');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activationKey, setActivationKey] = useState('');
@@ -104,12 +105,12 @@ export default function AuthPage() {
 
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      await signUpWithActivationKey({
-        email: normalizedEmail,
-        password,
-        activationKey,
-        device: navigator.userAgent.includes('Mobile') ? 'Mobiele browser' : 'Webbrowser',
-      });
+      const device = navigator.userAgent.includes('Mobile') ? 'Mobiele browser' : 'Webbrowser';
+      if (signupPath === 'trial') {
+        await signUpTrial({ email: normalizedEmail, password, device });
+      } else {
+        await signUpWithActivationKey({ email: normalizedEmail, password, activationKey, device });
+      }
       setEmail(normalizedEmail);
       setPassword('');
       setActivationKey('');
@@ -210,7 +211,9 @@ export default function AuthPage() {
       </h1>
       <p>
         {mode === 'signup'
-          ? 'Maak je account aan met je activatiecode. Je bevestigt daarna je e-mailadres voordat je kunt inloggen.'
+          ? signupPath === 'trial'
+            ? 'Begin gratis met een Trial-account, geen activatiecode nodig. Je bevestigt daarna je e-mailadres voordat je kunt inloggen.'
+            : 'Maak je account aan met je activatiecode. Je bevestigt daarna je e-mailadres voordat je kunt inloggen.'
           : mode === 'forgot'
             ? 'Vul je e-mailadres in. We sturen je een veilige link om een nieuw wachtwoord te kiezen.'
             : 'Log in om je onderwerpen, samenvattingen en voortgang op één plek te bewaren.'}
@@ -251,7 +254,7 @@ export default function AuthPage() {
             />
           </>
         )}
-        {mode === 'signup' && (
+        {mode === 'signup' && signupPath === 'key' && (
           <>
             <label htmlFor="activation-key">Activatiecode</label>
             <Input
@@ -286,7 +289,12 @@ export default function AuthPage() {
           </>
         )}
         {mode === 'signup' && (
-          <span>Al een account? <button type="button" onClick={() => switchMode('login')}>Inloggen</button></span>
+          <>
+            <button type="button" onClick={() => setSignupPath(signupPath === 'trial' ? 'key' : 'trial')}>
+              {signupPath === 'trial' ? 'Ik heb een activatiecode' : 'Start gratis met Trial'}
+            </button>
+            <span>Al een account? <button type="button" onClick={() => switchMode('login')}>Inloggen</button></span>
+          </>
         )}
         {mode === 'forgot' && (
           <button type="button" onClick={() => switchMode('login')}><ArrowLeft size={14} /> Terug naar inloggen</button>

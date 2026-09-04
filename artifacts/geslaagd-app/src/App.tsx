@@ -22,6 +22,7 @@ import SubjectCatalogPage from '@/pages/subject-catalog-page';
 import SupportPage from '@/pages/support-page';
 import FaqPage from '@/pages/faq-page';
 import ChangelogPage from '@/pages/changelog-page';
+import AccountPage from '@/pages/account-page';
 import AdminChangelogPage from '@/pages/admin-changelog-page';
 import AdminSupportPage from '@/pages/admin-support-page';
 import SubjectStudyPage from '@/pages/subject-study-page';
@@ -50,6 +51,7 @@ function Router() {
           <Route path="/support" component={SupportPage} />
           <Route path="/faq" component={FaqPage} />
           <Route path="/changelog" component={ChangelogPage} />
+          <Route path="/account" component={AccountPage} />
           <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
           <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
             {(params) => <ChapterPage subjectId={params.subjectId} chapterId={params.chapterId} />}
