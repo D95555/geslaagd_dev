@@ -17,6 +17,8 @@ import {
   ListCrawlSubjectsResponse,
   ListCrawlsResponse,
   ListPendingSourcesResponse,
+  RefreshCrawlSubjectParams,
+  RefreshCrawlSubjectResponse,
   RequestCrawlSubjectRefinementBody,
   RequestCrawlSubjectRefinementParams,
   RunCrawlBody,
@@ -29,6 +31,8 @@ import {
 } from "@workspace/api-zod";
 import { appendMemoryEntry, getMemoryContent, setMemoryContent } from "../lib/crawl-memory";
 import { recordDomainOutcome } from "../lib/domain-reputation";
+import { queueSubjectRefresh } from "../lib/pipeline-tasks/refresh";
+import { pollAndProcess } from "../lib/pipeline-worker";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { rescoreSource, runCrawl } from "../lib/source-pipeline";
 
@@ -183,6 +187,31 @@ router.post("/admin/crawl/subjects/:subjectId/budget", async (req, res): Promise
   } catch (error) {
     req.log.warn({ error }, "Could not update subject budget");
     res.status(500).json({ error: "Could not update subject budget." });
+  }
+});
+
+router.post("/admin/crawl/subjects/:subjectId/refresh", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  const params = RefreshCrawlSubjectParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Ongeldig vak." });
+    return;
+  }
+  try {
+    const chaptersQueued = await queueSubjectRefresh(params.data.subjectId);
+    if (chaptersQueued === 0) {
+      res.status(409).json({ error: "Dit vak heeft nog geen hoofdstukken om te verversen." });
+      return;
+    }
+    void pollAndProcess();
+    res.json(RefreshCrawlSubjectResponse.parse({ chaptersQueued }));
+  } catch (error) {
+    req.log.warn({ error }, "Could not queue subject refresh");
+    res.status(500).json({ error: "De verversing kon niet worden gestart." });
   }
 });
 

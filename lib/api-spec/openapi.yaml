@@ -882,6 +882,25 @@ paths:
       responses:
         "200":
           description: Budget updated
+  /admin/crawl/subjects/{subjectId}/refresh:
+    post:
+      operationId: refreshCrawlSubject
+      tags: [crawl]
+      summary: Re-crawl a built subject and regenerate its material; existing content stays live until the new version is ready
+      parameters:
+        - name: subjectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Refresh queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshSubjectResult"
   /admin/verkenner/subjects:
     get:
       operationId: listVerkennerSubjects
@@ -2429,6 +2448,11 @@ components:
       required: [creditBudget]
       properties:
         creditBudget: { type: integer, minimum: 50, maximum: 2000 }
+    RefreshSubjectResult:
+      type: object
+      required: [chaptersQueued]
+      properties:
+        chaptersQueued: { type: integer }
     CrawlMemory:
       type: object
       required: [content]

@@ -842,6 +842,10 @@ export interface SetSubjectBudgetInput {
   creditBudget: number;
 }
 
+export interface RefreshSubjectResult {
+  chaptersQueued: number;
+}
+
 export interface CrawlMemory {
   content: string;
 }

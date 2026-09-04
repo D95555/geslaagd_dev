@@ -70,6 +70,7 @@ import type {
   PipelineTaskDetail,
   QuestionnaireSubmissionInput,
   ReconsiderSourceInput,
+  RefreshSubjectResult,
   ReorderSelectedStudySubjectsInput,
   RequestSubjectInput,
   RequestSubjectResult,
@@ -3550,6 +3551,77 @@ export const useSetCrawlSubjectBudget = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSetCrawlSubjectBudgetMutationOptions(options));
+    }
+
+export const getRefreshCrawlSubjectUrl = (subjectId: string,) => {
+
+
+
+
+  return `/api/admin/crawl/subjects/${subjectId}/refresh`
+}
+
+/**
+ * @summary Re-crawl a built subject and regenerate its material; existing content stays live until the new version is ready
+ */
+export const refreshCrawlSubject = async (subjectId: string, options?: Parameters<typeof customFetch>[1]): Promise<RefreshSubjectResult> => {
+
+  return customFetch<RefreshSubjectResult>(getRefreshCrawlSubjectUrl(subjectId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRefreshCrawlSubjectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshCrawlSubject>>, TError,{subjectId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refreshCrawlSubject>>, TError,{subjectId: string}, TContext> => {
+
+const mutationKey = ['refreshCrawlSubject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshCrawlSubject>>, {subjectId: string}> = (props) => {
+          const {subjectId} = props ?? {};
+
+          return  refreshCrawlSubject(subjectId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshCrawlSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof refreshCrawlSubject>>>
+
+    export type RefreshCrawlSubjectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Re-crawl a built subject and regenerate its material; existing content stays live until the new version is ready
+ */
+export const useRefreshCrawlSubject = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshCrawlSubject>>, TError,{subjectId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refreshCrawlSubject>>,
+        TError,
+        {subjectId: string},
+        TContext
+      > => {
+      return useMutation(getRefreshCrawlSubjectMutationOptions(options));
     }
 
 export const getListVerkennerSubjectsUrl = (params?: ListVerkennerSubjectsParams,) => {

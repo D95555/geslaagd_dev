@@ -109,6 +109,7 @@ export * from './pipelineTaskStatus';
 export * from './questionnaireSubmissionInput';
 export * from './questionnaireSubmissionInputAnswersItem';
 export * from './reconsiderSourceInput';
+export * from './refreshSubjectResult';
 export * from './reorderSelectedStudySubjectsInput';
 export * from './requestSubjectInput';
 export * from './requestSubjectInputCreditTier';

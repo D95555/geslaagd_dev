@@ -4,6 +4,7 @@ import {
   getVerkennerSubject,
   listVerkennerSubjects,
   lookupVerkennerObject,
+  refreshCrawlSubject,
   updateVerkennerChapterTitle,
   updateVerkennerSubjectTitle,
   type VerkennerSubjectDetailResponse,
@@ -20,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@workspace/geslaagd-momentum/components/ui/dialog';
-import { Loader2, Search, Trash2 } from 'lucide-react';
+import { Loader2, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { InlineEditableTitle } from '@/components/admin/verkenner/inline-editable-title';
@@ -47,6 +48,10 @@ export default function AdminVerkennerPage() {
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState('');
 
   const loadSubjects = async (q?: string) => {
     try {
@@ -113,6 +118,22 @@ export default function AdminVerkennerPage() {
       await loadSubjects(searchTerm || undefined);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const confirmRefreshSubject = async () => {
+    if (!selectedSubjectId) return;
+    setRefreshing(true);
+    setRefreshNotice('');
+    try {
+      const result = await refreshCrawlSubject(selectedSubjectId);
+      setRefreshConfirmOpen(false);
+      setRefreshNotice(
+        `Verversing gestart voor ${result.chaptersQueued} hoofdstukken. Het huidige materiaal blijft ` +
+          `zichtbaar tot de nieuwe versie klaar is.`,
+      );
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -214,11 +235,15 @@ export default function AdminVerkennerPage() {
                       {detail.subject.yearLevel === 'havo_vwo_bovenbouw' ? 'HAVO/VWO Bovenbouw' : 'Universitair'}
                     </Badge>
                     <code className="verkenner-id">{detail.subject.id}</code>
+                    <Button variant="ghost" size="sm" onClick={() => { setRefreshNotice(''); setRefreshConfirmOpen(true); }}>
+                      <RefreshCw size={14} /> Bronnen verversen
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmOpen(true)}>
                       <Trash2 size={14} /> Verwijderen
                     </Button>
                   </div>
                   {detail.subject.description && <p>{detail.subject.description}</p>}
+                  {refreshNotice && <p className="admin-notice" role="status">{refreshNotice}</p>}
                 </header>
 
                 <DecisionCard decision={detail.decision} />
@@ -281,6 +306,27 @@ export default function AdminVerkennerPage() {
             </Button>
             <Button variant="destructive" onClick={() => void confirmDeleteSubject()} disabled={deleting}>
               {deleting ? <Loader2 className="spin" size={14} /> : <Trash2 size={14} />} Definitief verwijderen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={refreshConfirmOpen} onOpenChange={(open) => { if (!open) setRefreshConfirmOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bronnen verversen</DialogTitle>
+            <DialogDescription>
+              {detail?.subject.name ?? 'Dit vak'} wordt opnieuw doorzocht op bronnen; waar nieuwe of
+              betere bronnen worden gevonden, wordt het studiemateriaal opnieuw gegenereerd. Dit kost
+              opnieuw zoekbudget. Het huidige materiaal blijft zichtbaar tot de nieuwe versie klaar is.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRefreshConfirmOpen(false)} disabled={refreshing}>
+              Annuleren
+            </Button>
+            <Button onClick={() => void confirmRefreshSubject()} disabled={refreshing}>
+              {refreshing ? <Loader2 className="spin" size={14} /> : <RefreshCw size={14} />} Verversen starten
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1229,6 +1229,18 @@ export const SetCrawlSubjectBudgetResponse = zod.unknown()
 
 
 /**
+ * @summary Re-crawl a built subject and regenerate its material; existing content stays live until the new version is ready
+ */
+export const RefreshCrawlSubjectParams = zod.object({
+  "subjectId": zod.string().uuid()
+})
+
+export const RefreshCrawlSubjectResponse = zod.object({
+  "chaptersQueued": zod.number().int()
+})
+
+
+/**
  * @summary Search subjects for the Verkenner
  */
 export const ListVerkennerSubjectsQueryParams = zod.object({
