@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Request } from "express";
-import { randomUUID } from "node:crypto";
 import {
   BlockAdminAccountBody,
   BlockAdminAccountParams,
@@ -9,8 +8,7 @@ import {
   GetAdminAccountParams,
   ListActivationKeysQueryParams,
   ListAdminAccountsQueryParams,
-  RevokeAdminSessionParams,
-  SendAdminBroadcastBody,
+  SetAdminAccountPackageBody,
   UnblockAdminAccountBody,
   UnblockAdminAccountParams,
 } from "@workspace/api-zod";
@@ -57,7 +55,14 @@ function accountStatus(user: SupabaseAuthUser): "active" | "blocked" {
   return until > new Date() ? "blocked" : "active";
 }
 
-function toAccountSummary(user: SupabaseAuthUser, sessionCount = 0, lastSeenAt: string | null = null) {
+type RecentAction = { id: string; delta: number; reason: string; createdAt: string };
+
+function toAccountSummary(
+  user: SupabaseAuthUser,
+  sessionCount = 0,
+  lastSeenAt: string | null = null,
+  billing?: { package: string; recentActions: RecentAction[] },
+) {
   return {
     userId: user.id,
     email: user.email ?? "",
@@ -67,6 +72,8 @@ function toAccountSummary(user: SupabaseAuthUser, sessionCount = 0, lastSeenAt: 
     bannedUntil: user.banned_until ?? null,
     sessionCount,
     lastSeenAt,
+    package: billing?.package ?? "trial",
+    recentActions: billing?.recentActions ?? [],
   };
 }
 
@@ -113,73 +120,13 @@ router.post("/admin/activation-keys", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
   const input = CreateActivationKeysBody.safeParse(req.body);
-  if (!input.success) { res.status(400).json({ error: "Ongeldig aantal." }); return; }
+  if (!input.success) { res.status(400).json({ error: "Ongeldig aantal of pakket." }); return; }
   try {
-    const keys = await createActivationKeys(input.data.count);
+    const keys = await createActivationKeys(input.data.count, input.data.package);
     res.status(201).json({ keys });
   } catch (error) {
     req.log.warn({ error }, "Could not create activation keys");
     res.status(500).json({ error: "Activatiecodes konden niet worden aangemaakt." });
-  }
-});
-
-// ─── Session routes (existing) ────────────────────────────────────────────────
-
-router.get("/admin/sessions", async (req, res): Promise<void> => {
-  const identity = await admin(req);
-  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
-  try {
-    const rows = await restService<Record<string, unknown>[]>(
-      "app_sessions?select=*&order=last_seen_at.desc",
-    );
-    res.json(rows.map(toSession));
-  } catch (error) {
-    req.log.warn({ error }, "Could not list admin sessions");
-    res.status(500).json({ error: "Session list failed" });
-  }
-});
-
-router.post("/admin/sessions/:sessionId/revoke", async (req, res): Promise<void> => {
-  const params = RevokeAdminSessionParams.safeParse(req.params);
-  const identity = await admin(req);
-  if (!params.success || !identity) { res.status(403).json({ error: "Forbidden" }); return; }
-  try {
-    const existing = await restService<Record<string, unknown>[]>(
-      `app_sessions?client_session_id=eq.${encodeURIComponent(params.data.sessionId)}&select=*`,
-    );
-    if (!existing[0]?.auth_session_id) { res.status(409).json({ error: "Session cannot be revoked safely" }); return; }
-    await rest<void>(identity.token, "rpc/revoke_auth_session", { method: "POST", body: JSON.stringify({ p_auth_session_id: existing[0].auth_session_id }) });
-    const rows = await restService<Record<string, unknown>[]>(`app_sessions?client_session_id=eq.${encodeURIComponent(params.data.sessionId)}`, {
-      method: "PATCH",
-      headers: { prefer: "return=representation" },
-      body: JSON.stringify({ revoked_at: new Date().toISOString(), revoked_by: identity.user.id }),
-    });
-    if (!rows[0]) { res.status(404).json({ error: "Session not found" }); return; }
-    await broadcast(identity.token, `user:${rows[0].user_id}:session:${rows[0].client_session_id}:commands`, "logout", { reason: "admin" });
-    await enqueueAuthEvent({
-      dedupeKey: `session-revoked:${randomUUID()}`,
-      event: "session-revoked",
-      userId: rows[0].user_id as string,
-      device: rows[0].device_label as string,
-      extra: "Ingetrokken door een beheerder.",
-    });
-    res.json(toSession(rows[0]));
-  } catch (error) {
-    req.log.warn({ error }, "Could not revoke admin session");
-    res.status(500).json({ error: "Session revoke failed" });
-  }
-});
-
-router.post("/admin/broadcasts", async (req, res): Promise<void> => {
-  const input = SendAdminBroadcastBody.safeParse(req.body);
-  const identity = await admin(req);
-  if (!input.success || !identity) { res.status(403).json({ error: "Forbidden" }); return; }
-  try {
-    await broadcast(identity.token, "app:broadcasts", "message", input.data);
-    res.sendStatus(204);
-  } catch (error) {
-    req.log.warn({ error }, "Could not send broadcast");
-    res.status(502).json({ error: "Broadcast failed" });
   }
 });
 
@@ -217,10 +164,21 @@ router.get("/admin/accounts", async (req, res): Promise<void> => {
     // Fetch session counts for listed users in one query
     const userIds = users.map((u) => u.id);
     let sessionRows: Record<string, unknown>[] = [];
+    let billingRows: Record<string, unknown>[] = [];
+    let ledgerRows: Record<string, unknown>[] = [];
     if (userIds.length > 0) {
-      sessionRows = await restService<Record<string, unknown>[]>(
-        `app_sessions?user_id=in.(${userIds.map((id) => encodeURIComponent(id)).join(",")})&select=user_id,last_seen_at&revoked_at=is.null`,
-      );
+      const idList = userIds.map((id) => encodeURIComponent(id)).join(",");
+      [sessionRows, billingRows, ledgerRows] = await Promise.all([
+        restService<Record<string, unknown>[]>(
+          `app_sessions?user_id=in.(${idList})&select=user_id,last_seen_at&revoked_at=is.null`,
+        ),
+        restService<Record<string, unknown>[]>(
+          `account_billing?user_id=in.(${idList})&select=user_id,package`,
+        ),
+        restService<Record<string, unknown>[]>(
+          `credit_transactions?account_id=in.(${idList})&select=id,account_id,delta,reason,created_at&order=created_at.desc&limit=200`,
+        ),
+      ]);
     }
     const sessionByUser = new Map<string, { count: number; lastSeenAt: string | null }>();
     for (const row of sessionRows) {
@@ -232,10 +190,28 @@ router.get("/admin/accounts", async (req, res): Promise<void> => {
         lastSeenAt: !existing?.lastSeenAt || seenAt > existing.lastSeenAt ? seenAt : existing.lastSeenAt,
       });
     }
+    const packageByUser = new Map(billingRows.map((r) => [r.user_id as string, r.package as string]));
+    const actionsByUser = new Map<string, RecentAction[]>();
+    for (const row of ledgerRows) {
+      const uid = row.account_id as string;
+      const list = actionsByUser.get(uid) ?? [];
+      if (list.length < 5) {
+        list.push({
+          id: row.id as string,
+          delta: row.delta as number,
+          reason: row.reason as string,
+          createdAt: row.created_at as string,
+        });
+      }
+      actionsByUser.set(uid, list);
+    }
 
     const accounts = users.map((u) => {
       const s = sessionByUser.get(u.id);
-      return toAccountSummary(u, s?.count ?? 0, s?.lastSeenAt ?? null);
+      return toAccountSummary(u, s?.count ?? 0, s?.lastSeenAt ?? null, {
+        package: packageByUser.get(u.id) ?? "trial",
+        recentActions: actionsByUser.get(u.id) ?? [],
+      });
     });
 
     res.json({ accounts, total: authResult.total ?? accounts.length, page, limit });
@@ -257,7 +233,7 @@ router.get("/admin/accounts/:userId", async (req, res): Promise<void> => {
     const { userId } = params.data;
 
     // Fetch everything in parallel
-    const [authUser, sessions, selectedSubjects, preferences, studySpaces, recentActions] = await Promise.all([
+    const [authUser, sessions, selectedSubjects, preferences, studySpaces, recentActions, billing] = await Promise.all([
       getServiceUserById(userId),
       restService<Record<string, unknown>[]>(
         `app_sessions?user_id=eq.${encodeURIComponent(userId)}&select=*&order=last_seen_at.desc&limit=10`,
@@ -274,13 +250,27 @@ router.get("/admin/accounts/:userId", async (req, res): Promise<void> => {
       restService<Record<string, unknown>[]>(
         `admin_account_actions?target_user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc&limit=20`,
       ),
+      restService<Record<string, unknown>[]>(
+        `account_billing?user_id=eq.${encodeURIComponent(userId)}&select=package`,
+      ),
     ]);
 
     if (!authUser) { res.status(404).json({ error: "Account niet gevonden" }); return; }
 
     const typedUser = authUser as SupabaseAuthUser;
     const s = sessions.filter((row) => !row.revoked_at);
-    const summary = toAccountSummary(typedUser, s.length, s[0]?.last_seen_at as string ?? null);
+    const ledgerRows = await restService<Record<string, unknown>[]>(
+      `credit_transactions?account_id=eq.${encodeURIComponent(userId)}&select=id,delta,reason,created_at&order=created_at.desc&limit=5`,
+    );
+    const summary = toAccountSummary(typedUser, s.length, s[0]?.last_seen_at as string ?? null, {
+      package: (billing[0]?.package as string) ?? "trial",
+      recentActions: ledgerRows.map((row) => ({
+        id: row.id as string,
+        delta: row.delta as number,
+        reason: row.reason as string,
+        createdAt: row.created_at as string,
+      })),
+    });
 
     const toSelectedSubject = (row: Record<string, unknown>) => ({
       id: row.id as string,
@@ -332,6 +322,38 @@ router.get("/admin/accounts/:userId", async (req, res): Promise<void> => {
   } catch (error) {
     req.log.warn({ error }, "Could not fetch admin account detail");
     res.status(500).json({ error: "Account detail ophalen is mislukt" });
+  }
+});
+
+// ─── Package change ───────────────────────────────────────────────────────────
+
+router.post("/admin/accounts/:userId/package", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
+  const params = GetAdminAccountParams.safeParse(req.params);
+  const input = SetAdminAccountPackageBody.safeParse(req.body);
+  if (!params.success || !input.success) { res.status(400).json({ error: "Invalid request" }); return; }
+  try {
+    const pkgRows = await restService<Record<string, unknown>[]>(`packages?key=eq.${input.data.package}&select=*`);
+    const startCredits = (pkgRows[0]?.start_credits as number | null) ?? 0;
+    await restService(`account_billing?user_id=eq.${params.data.userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ package: input.data.package, credits: startCredits }),
+    });
+    await restService("credit_transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        account_id: params.data.userId,
+        delta: startCredits,
+        reason: "admin_adjustment",
+        note: `Pakket door beheerder gezet op ${input.data.package}`,
+      }),
+    });
+    const authUser = await getServiceUserById(params.data.userId);
+    res.json(toAccountSummary(authUser as SupabaseAuthUser, 0, null, { package: input.data.package, recentActions: [] }));
+  } catch (error) {
+    req.log.warn({ error }, "Could not set account package");
+    res.status(500).json({ error: "Pakket aanpassen is mislukt." });
   }
 });
 

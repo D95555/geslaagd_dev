@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import sessionsRouter from "./sessions";
-import adminRouter from "./admin";
+import adminAccountsRouter from "./admin-accounts";
+import adminSessionsRouter from "./admin-sessions";
 import studyRouter from "./study";
 import eventsRouter from "./events";
 import crawlRouter from "./crawl";
@@ -19,7 +20,8 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(sessionsRouter);
-router.use(adminRouter);
+router.use(adminAccountsRouter);
+router.use(adminSessionsRouter);
 router.use(studyRouter);
 router.use(eventsRouter);
 router.use(crawlRouter);
