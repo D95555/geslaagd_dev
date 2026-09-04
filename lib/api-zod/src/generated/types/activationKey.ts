@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ActivationKeyPackage } from './activationKeyPackage';
 import type { ActivationKeySource } from './activationKeySource';
 import type { ActivationKeyStatus } from './activationKeyStatus';
 
@@ -13,6 +14,7 @@ export interface ActivationKey {
   code: string;
   status: ActivationKeyStatus;
   source: ActivationKeySource;
+  package: ActivationKeyPackage;
   createdAt: Date;
   /** @nullable */
   usedAt: Date | null;

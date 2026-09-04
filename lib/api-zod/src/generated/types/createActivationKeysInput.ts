@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateActivationKeysInputPackage } from './createActivationKeysInputPackage';
 
 export interface CreateActivationKeysInput {
   /**
@@ -12,4 +13,5 @@ export interface CreateActivationKeysInput {
      * @maximum 100
      */
   count: number;
+  package: CreateActivationKeysInputPackage;
 }

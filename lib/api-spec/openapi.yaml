@@ -32,6 +32,12 @@ tags:
     description: Pipeline task monitoring and content publishing
   - name: support
     description: Support ticket operations, for students and admins
+  - name: billing
+    description: Credits and package operations for the signed-in user
+  - name: notifications
+    description: Persistent global and per-account notifications
+  - name: changelog
+    description: Changelog entries
 paths:
   /healthz:
     get:
@@ -128,6 +134,167 @@ paths:
           description: Invalid activation key, or Supabase rejected the signup
         "429":
           description: Too many attempts
+  /auth/signup-trial:
+    post:
+      operationId: signUpTrial
+      tags: [sessions]
+      summary: Create a Trial account, no activation key required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpTrialInput"
+      responses:
+        "201":
+          description: Account created; a verification support ticket is opened automatically
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignUpResponse"
+        "400":
+          description: Supabase rejected the signup
+        "429":
+          description: Too many attempts
+  /billing/me:
+    get:
+      operationId: getMyBilling
+      tags: [billing]
+      summary: The signed-in user's current package and credit balance
+      responses:
+        "200":
+          description: Billing summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSummary"
+        "401":
+          description: Unauthorized
+  /activation/upgrade:
+    post:
+      operationId: applyUpgradeKey
+      tags: [billing]
+      summary: Apply an activation key to upgrade the signed-in user's package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyUpgradeKeyInput"
+      responses:
+        "200":
+          description: Updated billing summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSummary"
+        "400":
+          description: Invalid, used, or non-upgrade key
+        "401":
+          description: Unauthorized
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List undismissed notifications (global and personal) for the signed-in user
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListNotificationsResponse"
+        "401":
+          description: Unauthorized
+  /notifications/{notificationId}/dismiss:
+    post:
+      operationId: dismissNotification
+      tags: [notifications]
+      summary: Permanently dismiss one notification for the signed-in user
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Dismissed
+        "401":
+          description: Unauthorized
+  /changelog:
+    get:
+      operationId: getChangelog
+      tags: [changelog]
+      summary: List changelog entries, newest first
+      responses:
+        "200":
+          description: Entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListChangelogResponse"
+        "401":
+          description: Unauthorized
+  /admin/changelog:
+    get:
+      operationId: listChangelogAdmin
+      tags: [admin]
+      summary: List changelog entries for editing
+      responses:
+        "200":
+          description: Entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListChangelogResponse"
+        "403":
+          description: Forbidden
+    post:
+      operationId: createChangelogEntry
+      tags: [admin]
+      summary: Add a changelog entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChangelogEntryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "403":
+          description: Forbidden
+  /admin/changelog/{entryId}:
+    patch:
+      operationId: updateChangelogEntry
+      tags: [admin]
+      summary: Edit a changelog entry
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChangelogEntryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangelogEntry"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
   /admin/activation-keys:
     get:
       operationId: listActivationKeys
@@ -297,6 +464,33 @@ paths:
           in: path
           required: true
           schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketDetail"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+  /admin/support/tickets/{ticketId}/grant-package:
+    post:
+      operationId: grantSupportTicketPackage
+      tags: [support]
+      summary: Grant a package to the ticket's account (trial verification) and close the ticket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantPackageInput"
       responses:
         "200":
           description: Updated
@@ -481,6 +675,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminAccountSummary"
+  /admin/accounts/{userId}/package:
+    post:
+      operationId: setAdminAccountPackage
+      tags: [admin]
+      summary: Change an account's package (admin override, no rank restriction)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAdminAccountPackageInput"
+      responses:
+        "200":
+          description: Updated account summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAccountSummary"
+        "403":
+          description: Forbidden
+  /admin/accounts/{userId}/notify:
+    post:
+      operationId: sendPrivateNotification
+      tags: [admin]
+      summary: Send a persistent notification to one account, visible on every session
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BroadcastInput"
+      responses:
+        "204":
+          description: Sent
+        "403":
+          description: Forbidden
   /study/catalog:
     get:
       operationId: getStudyCatalog
@@ -1941,12 +2185,13 @@ components:
         userId: { type: string, format: uuid }
     ActivationKey:
       type: object
-      required: [id, code, status, source, createdAt, usedAt, usedByUserId, usedByEmail]
+      required: [id, code, status, source, package, createdAt, usedAt, usedByUserId, usedByEmail]
       properties:
         id: { type: string, format: uuid }
         code: { type: string }
         status: { type: string, enum: [open, used] }
         source: { type: string, enum: [admin, purchase] }
+        package: { type: string, enum: [trial, basis, plus, beheerder] }
         createdAt: { type: string, format: date-time }
         usedAt: { type: ["string", "null"], format: date-time }
         usedByUserId: { type: ["string", "null"], format: uuid }
@@ -1960,25 +2205,110 @@ components:
           items: { $ref: "#/components/schemas/ActivationKey" }
     CreateActivationKeysInput:
       type: object
-      required: [count]
+      required: [count, package]
       properties:
         count: { type: integer, minimum: 1, maximum: 100 }
+        package: { type: string, enum: [basis, plus, beheerder] }
+    BillingSummary:
+      type: object
+      required: [package, credits, canCreateSubjects]
+      properties:
+        package: { type: string, enum: [trial, basis, plus, beheerder] }
+        credits: { type: ["integer", "null"], description: "null means unlimited (beheerder)." }
+        canCreateSubjects: { type: boolean }
+    ApplyUpgradeKeyInput:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+    SignUpTrialInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        device: { type: string, maxLength: 160 }
+    CreditActivity:
+      type: object
+      required: [id, delta, reason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        delta: { type: integer }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+    SetAdminAccountPackageInput:
+      type: object
+      required: [package]
+      properties:
+        package: { type: string, enum: [trial, basis, plus, beheerder] }
+    Notification:
+      type: object
+      required: [id, title, body, createdAt, isGlobal]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        isGlobal: { type: boolean }
+    ListNotificationsResponse:
+      type: object
+      required: [notifications]
+      properties:
+        notifications:
+          type: array
+          items: { $ref: "#/components/schemas/Notification" }
+    ChangelogEntry:
+      type: object
+      required: [id, version, releasedAt, summary, bullets]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: string }
+        releasedAt: { type: string, format: date }
+        summary: { type: string }
+        bullets:
+          type: array
+          items: { type: string }
+    ListChangelogResponse:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/ChangelogEntry" }
+    CreateChangelogEntryInput:
+      type: object
+      required: [version, releasedAt, summary, bullets]
+      properties:
+        version: { type: string, minLength: 1, maxLength: 20 }
+        releasedAt: { type: string, format: date }
+        summary: { type: string, minLength: 1, maxLength: 200 }
+        bullets:
+          type: array
+          items: { type: string }
+          minItems: 1
+    GrantPackageInput:
+      type: object
+      required: [package]
+      properties:
+        package: { type: string, enum: [basis, plus] }
     SupportMessage:
       type: object
-      required: [id, sender, senderUserId, body, createdAt]
+      required: [id, sender, senderUserId, senderEmail, body, createdAt]
       properties:
         id: { type: string, format: uuid }
         sender: { type: string, enum: [user, ai, admin] }
         senderUserId: { type: ["string", "null"], format: uuid }
+        senderEmail: { type: ["string", "null"] }
         body: { type: string }
         createdAt: { type: string, format: date-time }
     SupportTicketSummary:
       type: object
-      required: [id, subject, status, userEmail, createdAt, updatedAt, lastMessageAt]
+      required: [id, subject, status, category, userEmail, createdAt, updatedAt, lastMessageAt]
       properties:
         id: { type: string, format: uuid }
         subject: { type: string }
         status: { type: string, enum: [open, closed] }
+        category: { type: ["string", "null"] }
         userEmail: { type: string }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -2317,7 +2647,7 @@ components:
           items: { $ref: "#/components/schemas/StudySpace" }
     AdminAccountSummary:
       type: object
-      required: [userId, email, status, createdAt, lastSignInAt, bannedUntil, sessionCount, lastSeenAt]
+      required: [userId, email, status, createdAt, lastSignInAt, bannedUntil, sessionCount, lastSeenAt, package, recentActions]
       properties:
         userId: { type: string, format: uuid }
         email: { type: string }
@@ -2327,6 +2657,10 @@ components:
         bannedUntil: { type: ["string", "null"] }
         sessionCount: { type: integer }
         lastSeenAt: { type: ["string", "null"] }
+        package: { type: string, enum: [trial, basis, plus, beheerder] }
+        recentActions:
+          type: array
+          items: { $ref: "#/components/schemas/CreditActivity" }
     AdminAccountList:
       type: object
       required: [accounts, total, page, limit]

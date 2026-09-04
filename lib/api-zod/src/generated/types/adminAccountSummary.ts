@@ -5,7 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminAccountSummaryPackage } from './adminAccountSummaryPackage';
 import type { AdminAccountSummaryStatus } from './adminAccountSummaryStatus';
+import type { CreditActivity } from './creditActivity';
 
 export interface AdminAccountSummary {
   userId: string;
@@ -19,4 +21,6 @@ export interface AdminAccountSummary {
   sessionCount: number;
   /** @nullable */
   lastSeenAt: string | null;
+  package: AdminAccountSummaryPackage;
+  recentActions: CreditActivity[];
 }

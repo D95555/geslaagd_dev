@@ -11,6 +11,8 @@ export interface SupportTicketSummary {
   id: string;
   subject: string;
   status: SupportTicketSummaryStatus;
+  /** @nullable */
+  category: string | null;
   userEmail: string;
   createdAt: Date;
   updatedAt: Date;

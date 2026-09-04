@@ -78,11 +78,22 @@ export const ActivationKeySource = {
   purchase: 'purchase',
 } as const;
 
+export type ActivationKeyPackage = typeof ActivationKeyPackage[keyof typeof ActivationKeyPackage];
+
+
+export const ActivationKeyPackage = {
+  trial: 'trial',
+  basis: 'basis',
+  plus: 'plus',
+  beheerder: 'beheerder',
+} as const;
+
 export interface ActivationKey {
   id: string;
   code: string;
   status: ActivationKeyStatus;
   source: ActivationKeySource;
+  package: ActivationKeyPackage;
   createdAt: string;
   /** @nullable */
   usedAt: string | null;
@@ -96,12 +107,127 @@ export interface ListActivationKeysResponse {
   keys: ActivationKey[];
 }
 
+export type CreateActivationKeysInputPackage = typeof CreateActivationKeysInputPackage[keyof typeof CreateActivationKeysInputPackage];
+
+
+export const CreateActivationKeysInputPackage = {
+  basis: 'basis',
+  plus: 'plus',
+  beheerder: 'beheerder',
+} as const;
+
 export interface CreateActivationKeysInput {
   /**
      * @minimum 1
      * @maximum 100
      */
   count: number;
+  package: CreateActivationKeysInputPackage;
+}
+
+export type BillingSummaryPackage = typeof BillingSummaryPackage[keyof typeof BillingSummaryPackage];
+
+
+export const BillingSummaryPackage = {
+  trial: 'trial',
+  basis: 'basis',
+  plus: 'plus',
+  beheerder: 'beheerder',
+} as const;
+
+export interface BillingSummary {
+  package: BillingSummaryPackage;
+  /**
+     * null means unlimited (beheerder).
+     * @nullable
+     */
+  credits: number | null;
+  canCreateSubjects: boolean;
+}
+
+export interface ApplyUpgradeKeyInput {
+  code: string;
+}
+
+export interface SignUpTrialInput {
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  /** @maxLength 160 */
+  device?: string;
+}
+
+export interface CreditActivity {
+  id: string;
+  delta: number;
+  reason: string;
+  createdAt: string;
+}
+
+export type SetAdminAccountPackageInputPackage = typeof SetAdminAccountPackageInputPackage[keyof typeof SetAdminAccountPackageInputPackage];
+
+
+export const SetAdminAccountPackageInputPackage = {
+  trial: 'trial',
+  basis: 'basis',
+  plus: 'plus',
+  beheerder: 'beheerder',
+} as const;
+
+export interface SetAdminAccountPackageInput {
+  package: SetAdminAccountPackageInputPackage;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  isGlobal: boolean;
+}
+
+export interface ListNotificationsResponse {
+  notifications: Notification[];
+}
+
+export interface ChangelogEntry {
+  id: string;
+  version: string;
+  releasedAt: string;
+  summary: string;
+  bullets: string[];
+}
+
+export interface ListChangelogResponse {
+  entries: ChangelogEntry[];
+}
+
+export interface CreateChangelogEntryInput {
+  /**
+     * @minLength 1
+     * @maxLength 20
+     */
+  version: string;
+  releasedAt: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  summary: string;
+  /** @minItems 1 */
+  bullets: string[];
+}
+
+export type GrantPackageInputPackage = typeof GrantPackageInputPackage[keyof typeof GrantPackageInputPackage];
+
+
+export const GrantPackageInputPackage = {
+  basis: 'basis',
+  plus: 'plus',
+} as const;
+
+export interface GrantPackageInput {
+  package: GrantPackageInputPackage;
 }
 
 export type SupportMessageSender = typeof SupportMessageSender[keyof typeof SupportMessageSender];
@@ -118,6 +244,8 @@ export interface SupportMessage {
   sender: SupportMessageSender;
   /** @nullable */
   senderUserId: string | null;
+  /** @nullable */
+  senderEmail: string | null;
   body: string;
   createdAt: string;
 }
@@ -134,6 +262,8 @@ export interface SupportTicketSummary {
   id: string;
   subject: string;
   status: SupportTicketSummaryStatus;
+  /** @nullable */
+  category: string | null;
   userEmail: string;
   createdAt: string;
   updatedAt: string;
@@ -607,6 +737,16 @@ export const AdminAccountSummaryStatus = {
   blocked: 'blocked',
 } as const;
 
+export type AdminAccountSummaryPackage = typeof AdminAccountSummaryPackage[keyof typeof AdminAccountSummaryPackage];
+
+
+export const AdminAccountSummaryPackage = {
+  trial: 'trial',
+  basis: 'basis',
+  plus: 'plus',
+  beheerder: 'beheerder',
+} as const;
+
 export interface AdminAccountSummary {
   userId: string;
   email: string;
@@ -619,6 +759,8 @@ export interface AdminAccountSummary {
   sessionCount: number;
   /** @nullable */
   lastSeenAt: string | null;
+  package: AdminAccountSummaryPackage;
+  recentActions: CreditActivity[];
 }
 
 export interface AdminAccountList {

@@ -109,6 +109,158 @@ export const SignUpWithActivationKeyResponse = zod.object({
 
 
 /**
+ * @summary Create a Trial account, no activation key required
+ */
+export const signUpTrialBodyPasswordMin = 6;
+
+export const signUpTrialBodyDeviceMax = 160;
+
+
+
+export const SignUpTrialBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string().min(signUpTrialBodyPasswordMin),
+  "device": zod.string().max(signUpTrialBodyDeviceMax).optional()
+})
+
+export const SignUpTrialResponse = zod.object({
+  "userId": zod.string().uuid()
+})
+
+
+/**
+ * @summary The signed-in user's current package and credit balance
+ */
+export const GetMyBillingResponse = zod.object({
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "credits": zod.number().int().nullable().describe('null means unlimited (beheerder).'),
+  "canCreateSubjects": zod.boolean()
+})
+
+
+/**
+ * @summary Apply an activation key to upgrade the signed-in user's package
+ */
+export const ApplyUpgradeKeyBody = zod.object({
+  "code": zod.string()
+})
+
+export const ApplyUpgradeKeyResponse = zod.object({
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "credits": zod.number().int().nullable().describe('null means unlimited (beheerder).'),
+  "canCreateSubjects": zod.boolean()
+})
+
+
+/**
+ * @summary List undismissed notifications (global and personal) for the signed-in user
+ */
+export const ListNotificationsResponse = zod.object({
+  "notifications": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "isGlobal": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Permanently dismiss one notification for the signed-in user
+ */
+export const DismissNotificationParams = zod.object({
+  "notificationId": zod.string().uuid()
+})
+
+export const DismissNotificationResponse = zod.void()
+
+
+/**
+ * @summary List changelog entries, newest first
+ */
+export const GetChangelogResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.string(),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string(),
+  "bullets": zod.array(zod.string())
+}))
+})
+
+
+/**
+ * @summary List changelog entries for editing
+ */
+export const ListChangelogAdminResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.string(),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string(),
+  "bullets": zod.array(zod.string())
+}))
+})
+
+
+/**
+ * @summary Add a changelog entry
+ */
+export const createChangelogEntryBodyVersionMax = 20;
+
+export const createChangelogEntryBodySummaryMax = 200;
+
+
+
+
+export const CreateChangelogEntryBody = zod.object({
+  "version": zod.string().min(1).max(createChangelogEntryBodyVersionMax),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string().min(1).max(createChangelogEntryBodySummaryMax),
+  "bullets": zod.array(zod.string()).min(1)
+})
+
+export const CreateChangelogEntryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.string(),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string(),
+  "bullets": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Edit a changelog entry
+ */
+export const UpdateChangelogEntryParams = zod.object({
+  "entryId": zod.string().uuid()
+})
+
+export const updateChangelogEntryBodyVersionMax = 20;
+
+export const updateChangelogEntryBodySummaryMax = 200;
+
+
+
+
+export const UpdateChangelogEntryBody = zod.object({
+  "version": zod.string().min(1).max(updateChangelogEntryBodyVersionMax),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string().min(1).max(updateChangelogEntryBodySummaryMax),
+  "bullets": zod.array(zod.string()).min(1)
+})
+
+export const UpdateChangelogEntryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.string(),
+  "releasedAt": zod.coerce.date(),
+  "summary": zod.string(),
+  "bullets": zod.array(zod.string())
+})
+
+
+/**
  * @summary List activation keys
  */
 export const ListActivationKeysQueryParams = zod.object({
@@ -121,6 +273,7 @@ export const ListActivationKeysResponse = zod.object({
   "code": zod.string(),
   "status": zod.enum(['open', 'used']),
   "source": zod.enum(['admin', 'purchase']),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
   "createdAt": zod.coerce.date(),
   "usedAt": zod.coerce.date().nullable(),
   "usedByUserId": zod.string().uuid().nullable(),
@@ -137,7 +290,8 @@ export const createActivationKeysBodyCountMax = 100;
 
 
 export const CreateActivationKeysBody = zod.object({
-  "count": zod.number().int().min(1).max(createActivationKeysBodyCountMax)
+  "count": zod.number().int().min(1).max(createActivationKeysBodyCountMax),
+  "package": zod.enum(['basis', 'plus', 'beheerder'])
 })
 
 export const CreateActivationKeysResponse = zod.object({
@@ -146,6 +300,7 @@ export const CreateActivationKeysResponse = zod.object({
   "code": zod.string(),
   "status": zod.enum(['open', 'used']),
   "source": zod.enum(['admin', 'purchase']),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
   "createdAt": zod.coerce.date(),
   "usedAt": zod.coerce.date().nullable(),
   "usedByUserId": zod.string().uuid().nullable(),
@@ -162,6 +317,7 @@ export const ListSupportTicketsResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -188,6 +344,7 @@ export const CreateSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -197,6 +354,7 @@ export const CreateSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "sender": zod.enum(['user', 'ai', 'admin']),
   "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
 }))
@@ -214,6 +372,7 @@ export const GetSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -223,6 +382,7 @@ export const GetSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "sender": zod.enum(['user', 'ai', 'admin']),
   "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
 }))
@@ -248,6 +408,7 @@ export const AddSupportMessageResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -257,6 +418,7 @@ export const AddSupportMessageResponse = zod.object({
   "id": zod.string().uuid(),
   "sender": zod.enum(['user', 'ai', 'admin']),
   "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
 }))
@@ -275,6 +437,7 @@ export const ListAdminSupportTicketsResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -294,6 +457,7 @@ export const CloseSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -303,6 +467,7 @@ export const CloseSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "sender": zod.enum(['user', 'ai', 'admin']),
   "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
 }))
@@ -320,6 +485,7 @@ export const ReopenSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "subject": zod.string(),
   "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
   "userEmail": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -329,6 +495,39 @@ export const ReopenSupportTicketResponse = zod.object({
   "id": zod.string().uuid(),
   "sender": zod.enum(['user', 'ai', 'admin']),
   "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Grant a package to the ticket's account (trial verification) and close the ticket
+ */
+export const GrantSupportTicketPackageParams = zod.object({
+  "ticketId": zod.string().uuid()
+})
+
+export const GrantSupportTicketPackageBody = zod.object({
+  "package": zod.enum(['basis', 'plus'])
+})
+
+export const GrantSupportTicketPackageResponse = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'closed']),
+  "category": zod.string().nullable(),
+  "userEmail": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sender": zod.enum(['user', 'ai', 'admin']),
+  "senderUserId": zod.string().uuid().nullable(),
+  "senderEmail": zod.string().nullable(),
   "body": zod.string(),
   "createdAt": zod.coerce.date()
 }))
@@ -415,7 +614,14 @@ export const ListAdminAccountsResponse = zod.object({
   "lastSignInAt": zod.string().nullable(),
   "bannedUntil": zod.string().nullable(),
   "sessionCount": zod.number().int(),
-  "lastSeenAt": zod.string().nullable()
+  "lastSeenAt": zod.string().nullable(),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "recentActions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "delta": zod.number().int(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 })),
   "total": zod.number().int(),
   "page": zod.number().int(),
@@ -439,7 +645,14 @@ export const GetAdminAccountResponse = zod.object({
   "lastSignInAt": zod.string().nullable(),
   "bannedUntil": zod.string().nullable(),
   "sessionCount": zod.number().int(),
-  "lastSeenAt": zod.string().nullable()
+  "lastSeenAt": zod.string().nullable(),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "recentActions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "delta": zod.number().int(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 }),
   "selectedSubjects": zod.array(zod.object({
   "id": zod.string().uuid(),
@@ -535,7 +748,14 @@ export const BlockAdminAccountResponse = zod.object({
   "lastSignInAt": zod.string().nullable(),
   "bannedUntil": zod.string().nullable(),
   "sessionCount": zod.number().int(),
-  "lastSeenAt": zod.string().nullable()
+  "lastSeenAt": zod.string().nullable(),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "recentActions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "delta": zod.number().int(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 })
 
 
@@ -565,8 +785,66 @@ export const UnblockAdminAccountResponse = zod.object({
   "lastSignInAt": zod.string().nullable(),
   "bannedUntil": zod.string().nullable(),
   "sessionCount": zod.number().int(),
-  "lastSeenAt": zod.string().nullable()
+  "lastSeenAt": zod.string().nullable(),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "recentActions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "delta": zod.number().int(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
 })
+
+
+/**
+ * @summary Change an account's package (admin override, no rank restriction)
+ */
+export const SetAdminAccountPackageParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const SetAdminAccountPackageBody = zod.object({
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder'])
+})
+
+export const SetAdminAccountPackageResponse = zod.object({
+  "userId": zod.string().uuid(),
+  "email": zod.string(),
+  "status": zod.enum(['active', 'blocked']),
+  "createdAt": zod.string(),
+  "lastSignInAt": zod.string().nullable(),
+  "bannedUntil": zod.string().nullable(),
+  "sessionCount": zod.number().int(),
+  "lastSeenAt": zod.string().nullable(),
+  "package": zod.enum(['trial', 'basis', 'plus', 'beheerder']),
+  "recentActions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "delta": zod.number().int(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Send a persistent notification to one account, visible on every session
+ */
+export const SendPrivateNotificationParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const sendPrivateNotificationBodyTitleMax = 70;
+
+export const sendPrivateNotificationBodyBodyMax = 320;
+
+
+
+export const SendPrivateNotificationBody = zod.object({
+  "title": zod.string().min(1).max(sendPrivateNotificationBodyTitleMax),
+  "body": zod.string().min(1).max(sendPrivateNotificationBodyBodyMax)
+})
+
+export const SendPrivateNotificationResponse = zod.void()
 
 
 /**

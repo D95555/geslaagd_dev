@@ -12,6 +12,8 @@ export interface SupportMessage {
   sender: SupportMessageSender;
   /** @nullable */
   senderUserId: string | null;
+  /** @nullable */
+  senderEmail: string | null;
   body: string;
   createdAt: Date;
 }
