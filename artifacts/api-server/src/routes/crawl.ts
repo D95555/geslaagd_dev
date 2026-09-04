@@ -31,10 +31,12 @@ import {
 } from "@workspace/api-zod";
 import { appendMemoryEntry, getMemoryContent, setMemoryContent } from "../lib/crawl-memory";
 import { recordDomainOutcome } from "../lib/domain-reputation";
+import { loadSubjectChapters } from "../lib/pipeline-tasks/context";
 import { queueSubjectRefresh } from "../lib/pipeline-tasks/refresh";
+import { createTask } from "../lib/pipeline-tasks/task-store";
 import { pollAndProcess } from "../lib/pipeline-worker";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
-import { rescoreSource, runCrawl } from "../lib/source-pipeline";
+import { rescoreSource } from "../lib/source-rescore";
 
 const router: IRouter = Router();
 
@@ -483,7 +485,7 @@ router.post("/admin/crawl/run", async (req, res): Promise<void> => {
   }
   try {
     const subjects = await restService<Row[]>(
-      `crawl_subjects?id=eq.${input.data.subjectId}&select=id,name,year_level,status,description,emphasis,preferred_source_types`,
+      `crawl_subjects?id=eq.${input.data.subjectId}&select=id,status`,
     );
     const subject = subjects[0];
     if (!subject) {
@@ -495,18 +497,25 @@ router.post("/admin/crawl/run", async (req, res): Promise<void> => {
       return;
     }
 
-    const result = await runCrawl({
-      subject: {
-        id: subject.id as string,
-        name: subject.name as string,
-        yearLevel: subject.year_level as string,
-        description: (subject.description as string | null) ?? null,
-        emphasis: (subject.emphasis as string | null) ?? null,
-        preferredSourceTypes: (subject.preferred_source_types as string | null) ?? null,
-      },
-      triggeredBy: identity.user.id,
-    });
-    res.json(RunCrawlResponse.parse(result));
+    // Everything runs through the async task pipeline now — the legacy
+    // subject-level synchronous crawl (which never mapped sources to chapters
+    // or generated content) is gone. A subject that already has chapters is
+    // refreshed per chapter; an unbuilt one (e.g. created straight in admin)
+    // gets curriculum design, which builds chapters and fans out from there.
+    const subjectId = subject.id as string;
+    const chapters = await loadSubjectChapters(subjectId);
+    let mode: "curriculum" | "refresh";
+    let tasksQueued: number;
+    if (chapters.length === 0) {
+      await createTask({ subjectId, taskType: "curriculum_design", status: "ready" });
+      mode = "curriculum";
+      tasksQueued = 1;
+    } else {
+      tasksQueued = await queueSubjectRefresh(subjectId);
+      mode = "refresh";
+    }
+    void pollAndProcess();
+    res.json(RunCrawlResponse.parse({ mode, tasksQueued }));
   } catch (error) {
     req.log.warn({ error }, "Could not run crawl");
     res.status(500).json({ error: "Could not run crawl." });

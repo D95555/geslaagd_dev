@@ -1131,7 +1131,7 @@ paths:
     post:
       operationId: runCrawl
       tags: [crawl]
-      summary: Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+      summary: Queue the subject through the task pipeline (curriculum design if unbuilt, otherwise a source refresh)
       requestBody:
         required: true
         content:
@@ -2494,13 +2494,12 @@ components:
         subjectId: { type: string, format: uuid }
     CrawlRunResult:
       type: object
-      required: [crawlId, sourcesFound, sourcesAccepted, creditsUsed, efficiencyRatio]
+      required: [mode, tasksQueued]
       properties:
-        crawlId: { type: string, format: uuid }
-        sourcesFound: { type: integer }
-        sourcesAccepted: { type: integer }
-        creditsUsed: { type: ["integer", "null"] }
-        efficiencyRatio: { type: ["number", "null"] }
+        # The crawl now runs through the async task pipeline instead of a
+        # synchronous legacy run, so this reports what was queued, not counts.
+        mode: { type: string, enum: [curriculum, refresh] }
+        tasksQueued: { type: integer }
     CrawlSummary:
       type: object
       required: [id, subjectId, subjectName, status, sourcesFound, sourcesAccepted, creditsUsed, efficiencyRatio, createdAt, completedAt]

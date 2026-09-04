@@ -878,14 +878,17 @@ export interface RunCrawlInput {
   subjectId: string;
 }
 
+export type CrawlRunResultMode = typeof CrawlRunResultMode[keyof typeof CrawlRunResultMode];
+
+
+export const CrawlRunResultMode = {
+  curriculum: 'curriculum',
+  refresh: 'refresh',
+} as const;
+
 export interface CrawlRunResult {
-  crawlId: string;
-  sourcesFound: number;
-  sourcesAccepted: number;
-  /** @nullable */
-  creditsUsed: number | null;
-  /** @nullable */
-  efficiencyRatio: number | null;
+  mode: CrawlRunResultMode;
+  tasksQueued: number;
 }
 
 export type CrawlSummaryStatus = typeof CrawlSummaryStatus[keyof typeof CrawlSummaryStatus];

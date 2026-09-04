@@ -83,7 +83,11 @@ export default function AdminCrawlPage() {
     setRunNotice('');
     try {
       const result = await runCrawl({ subjectId: runSubjectId });
-      setRunNotice(`Crawl voltooid: ${result.sourcesAccepted}/${result.sourcesFound} bronnen geaccepteerd.`);
+      setRunNotice(
+        result.mode === 'curriculum'
+          ? 'Curriculumontwerp gestart. Het vak wordt hoofdstuk voor hoofdstuk opgebouwd; volg de voortgang in de Contentpijplijn.'
+          : `Verversing gestart voor ${result.tasksQueued} hoofdstukken. Het bestaande materiaal blijft zichtbaar tot de nieuwe versie klaar is.`,
+      );
     } catch {
       setRunNotice('De crawl kon niet worden gestart of is mislukt.');
     } finally {
@@ -143,7 +147,7 @@ export default function AdminCrawlPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Crawl starten</DialogTitle>
-            <DialogDescription>Kies een actief vak om de sourceCrawler/sourceHandler-pijplijn voor te starten.</DialogDescription>
+            <DialogDescription>Kies een actief vak. Nog niet opgebouwde vakken krijgen een curriculumontwerp; al opgebouwde vakken worden ververst — alles via de reguliere pijplijn.</DialogDescription>
           </DialogHeader>
           <Select value={runSubjectId} onValueChange={setRunSubjectId}>
             <SelectTrigger aria-label="Vak"><SelectValue placeholder="Kies een vak" /></SelectTrigger>

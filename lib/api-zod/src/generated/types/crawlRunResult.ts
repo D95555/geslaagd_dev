@@ -5,13 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CrawlRunResultMode } from './crawlRunResultMode';
 
 export interface CrawlRunResult {
-  crawlId: string;
-  sourcesFound: number;
-  sourcesAccepted: number;
-  /** @nullable */
-  creditsUsed: number | null;
-  /** @nullable */
-  efficiencyRatio: number | null;
+  mode: CrawlRunResultMode;
+  tasksQueued: number;
 }

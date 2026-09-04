@@ -42,6 +42,7 @@ export * from './citation';
 export * from './crawlDetail';
 export * from './crawlMemory';
 export * from './crawlRunResult';
+export * from './crawlRunResultMode';
 export * from './crawlSource';
 export * from './crawlSourceStatus';
 export * from './crawlSourceType';

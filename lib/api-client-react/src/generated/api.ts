@@ -4467,7 +4467,7 @@ export const getRunCrawlUrl = () => {
 }
 
 /**
- * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ * @summary Queue the subject through the task pipeline (curriculum design if unbuilt, otherwise a source refresh)
  */
 export const runCrawl = async (runCrawlInput: RunCrawlInput, options?: Parameters<typeof customFetch>[1]): Promise<CrawlRunResult> => {
 
@@ -4516,7 +4516,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RunCrawlMutationError = ErrorType<unknown>
 
     /**
- * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ * @summary Queue the subject through the task pipeline (curriculum design if unbuilt, otherwise a source refresh)
  */
 export const useRunCrawl = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runCrawl>>, TError,{data: BodyType<RunCrawlInput>}, TContext>, request?: SecondParameter<typeof customFetch>}

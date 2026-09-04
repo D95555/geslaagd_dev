@@ -1572,18 +1572,15 @@ export const RequestCrawlSubjectRefinementResponse = zod.unknown()
 
 
 /**
- * @summary Trigger a full sourceCrawler/sourceHandler pipeline run for a subject
+ * @summary Queue the subject through the task pipeline (curriculum design if unbuilt, otherwise a source refresh)
  */
 export const RunCrawlBody = zod.object({
   "subjectId": zod.string().uuid()
 })
 
 export const RunCrawlResponse = zod.object({
-  "crawlId": zod.string().uuid(),
-  "sourcesFound": zod.number().int(),
-  "sourcesAccepted": zod.number().int(),
-  "creditsUsed": zod.number().int().nullable(),
-  "efficiencyRatio": zod.number().nullable()
+  "mode": zod.enum(['curriculum', 'refresh']),
+  "tasksQueued": zod.number().int()
 })
 
 
