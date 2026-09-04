@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { restService } from "./supabase";
+import { getPackage, type PackageKey } from "./credits";
 
 type Row = Record<string, unknown>;
 
@@ -8,6 +9,7 @@ export type ActivationKey = {
   code: string;
   status: "open" | "used";
   source: "admin" | "purchase";
+  package: PackageKey;
   createdAt: string;
   usedAt: string | null;
   usedByUserId: string | null;
@@ -20,6 +22,7 @@ function toActivationKey(row: Row): ActivationKey {
     code: row.code as string,
     status: row.status as "open" | "used",
     source: row.source as "admin" | "purchase",
+    package: row.package as PackageKey,
     createdAt: row.created_at as string,
     usedAt: (row.used_at as string | null) ?? null,
     usedByUserId: (row.used_by_user_id as string | null) ?? null,
@@ -53,9 +56,9 @@ export async function listActivationKeys(status?: "open" | "used"): Promise<Acti
   return rows.map(toActivationKey);
 }
 
-/** Creates `count` fresh, unused keys and returns them so an admin can copy the codes immediately. */
-export async function createActivationKeys(count: number): Promise<ActivationKey[]> {
-  const body = Array.from({ length: count }, () => ({ code: generateCode() }));
+/** Creates `count` fresh, unused keys for the given package and returns them so an admin can copy the codes immediately. */
+export async function createActivationKeys(count: number, packageKey: PackageKey): Promise<ActivationKey[]> {
+  const body = Array.from({ length: count }, () => ({ code: generateCode(), package: packageKey }));
   const rows = await restService<Row[]>("activation_keys", {
     method: "POST",
     headers: { prefer: "return=representation" },
@@ -99,4 +102,25 @@ export async function attachActivationKeyToUser(
     method: "PATCH",
     body: JSON.stringify({ used_by_user_id: userId, used_by_email: email }),
   });
+}
+
+/**
+ * Like claimActivationKey, but additionally rejects (without touching the
+ * key) any key whose package rank is not strictly higher than the caller's
+ * current package. Used for the logged-in "enter an upgrade key" flow.
+ */
+export async function claimUpgradeKey(code: string, currentPackage: PackageKey): Promise<ActivationKey | null> {
+  const rows = await restService<Row[]>(
+    `activation_keys?code=eq.${encodeURIComponent(code)}&status=eq.open&select=*`,
+  );
+  const candidate = rows[0];
+  if (!candidate) return null;
+
+  const [currentPkg, keyPkg] = await Promise.all([
+    getPackage(currentPackage),
+    getPackage(candidate.package as PackageKey),
+  ]);
+  if (keyPkg.rank <= currentPkg.rank) return null;
+
+  return claimActivationKey(code);
 }
