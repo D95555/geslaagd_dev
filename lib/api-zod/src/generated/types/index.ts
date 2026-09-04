@@ -39,6 +39,7 @@ export * from './chapterStatus';
 export * from './chatMessage';
 export * from './chatMessageRole';
 export * from './citation';
+export * from './contradiction';
 export * from './crawlDetail';
 export * from './crawlMemory';
 export * from './crawlRunResult';

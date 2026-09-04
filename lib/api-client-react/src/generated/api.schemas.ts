@@ -1148,9 +1148,16 @@ export interface KeyNotesContent {
   sections: KeyNotesContentSectionsItem[];
 }
 
+export interface Contradiction {
+  topic: string;
+  description: string;
+  sources: string[];
+}
+
 export interface ChapterContent {
   summary: SummaryContent | null;
   keyNotes: KeyNotesContent | null;
+  contradictions: Contradiction[];
 }
 
 export type ExerciseQuestionPublicType = typeof ExerciseQuestionPublicType[keyof typeof ExerciseQuestionPublicType];
@@ -1731,6 +1738,8 @@ export interface VerkennerObjectDetailResponse {
   chapterTopicTags?: string[] | null;
   /** @nullable */
   chapterStatus?: VerkennerObjectDetailResponseChapterStatus;
+  /** @nullable */
+  chapterContradictions?: Contradiction[] | null;
   /** @nullable */
   contentType?: string | null;
   /** @nullable */

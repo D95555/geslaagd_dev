@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/collapsible';
-import { BookCheck, ChevronDown, MessageCircle } from 'lucide-react';
+import { BookCheck, ChevronDown, MessageCircle, TriangleAlert } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { useContextRail } from '@/components/shell/rail-context';
@@ -189,6 +189,23 @@ export default function ChapterPage({
           </Button>
         }
       />
+
+      {content && content.contradictions.length > 0 && (
+        <section className="chapter-contradictions" aria-label="Tegenstrijdige bronnen">
+          <div className="chapter-contradictions-head">
+            <TriangleAlert size={15} aria-hidden="true" />
+            <strong>Let op: bronnen spreken elkaar tegen</strong>
+          </div>
+          <p>Voor dit hoofdstuk verschillen bronnen over de volgende punten. Weeg ze kritisch af.</p>
+          <ul>
+            {content.contradictions.map((item, index) => (
+              <li key={`${item.topic}-${index}`}>
+                <strong>{item.topic}.</strong> {item.description}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {content?.summary ? (
         <article className="chapter-summary" data-testid="chapter-summary">

@@ -12,7 +12,8 @@ export type TaskType =
   | "exercise_generation"
   | "exam_generation"
   | "questionnaire_generation"
-  | "readiness_check";
+  | "readiness_check"
+  | "contradiction_check";
 
 export type TaskStatus = "waiting" | "ready" | "running" | "done" | "failed";
 

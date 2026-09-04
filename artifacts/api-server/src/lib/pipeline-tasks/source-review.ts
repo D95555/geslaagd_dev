@@ -217,6 +217,15 @@ export async function runSourceReview(task: PipelineTask): Promise<Record<string
     });
   }
 
+  // Non-blocking: compares the now-accepted sources for factual contradictions
+  // and annotates the chapter. It depends on nothing and blocks nothing.
+  await createTask({
+    subjectId: task.subjectId,
+    chapterId: task.chapterId,
+    taskType: "contradiction_check",
+    status: "ready",
+  });
+
   await log.conclude(
     `Van ${candidates.length} bronnen voor "${chapter.title}" zijn er ${kept} behouden en ` +
       `${rejected} afgewezen. De dekking is voldoende, dus de samenvatting kan geschreven worden. ` +

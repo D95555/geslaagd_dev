@@ -16,7 +16,7 @@ import {
   loadProgressForChapters,
   markSummaryRead,
 } from "../lib/progress";
-import { keyNotesSchema, summarySchema } from "../lib/study-content";
+import { contradictionsSchema, keyNotesSchema, summarySchema } from "../lib/study-content";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 
 const router: IRouter = Router();
@@ -237,10 +237,16 @@ router.get(
       const summary = summaryRow ? summarySchema.safeParse(summaryRow.content) : null;
       const keyNotes = keyNotesRow ? keyNotesSchema.safeParse(keyNotesRow.content) : null;
 
+      const chapterRows = await restService<Row[]>(
+        `chapters?id=eq.${params.data.chapterId}&select=contradictions`,
+      );
+      const contradictions = contradictionsSchema.safeParse(chapterRows[0]?.contradictions ?? []);
+
       res.json(
         GetChapterContentResponse.parse({
           summary: summary?.success ? summary.data : null,
           keyNotes: keyNotes?.success ? keyNotes.data : null,
+          contradictions: contradictions.success ? contradictions.data : [],
         }),
       );
     } catch (error) {

@@ -20,6 +20,7 @@ export const taskTypeLabel: Record<string, string> = {
   exam_generation: 'Tentamen',
   questionnaire_generation: 'Startvragenlijst',
   readiness_check: 'Gereedheidscontrole',
+  contradiction_check: 'Tegenstrijdigheidscheck',
 };
 
 function fmtTime(value: string) {

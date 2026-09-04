@@ -55,6 +55,19 @@ export const keyNotesSchema = z.object({
 });
 export type KeyNotesContent = z.infer<typeof keyNotesSchema>;
 
+/** Factual disagreements between a chapter's accepted sources, as stored on chapters.contradictions. */
+export const contradictionsSchema = z
+  .array(
+    z.object({
+      topic: modelText(),
+      description: modelText(),
+      sources: modelList(z.string()),
+    }),
+  )
+  .nullish()
+  .transform((value) => value ?? []);
+export type Contradictions = z.infer<typeof contradictionsSchema>;
+
 export const questionSchema = z.object({
   index: z.number().int(),
   type: z.enum(["mc", "open"]),

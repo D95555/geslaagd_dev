@@ -3,6 +3,7 @@ import { runCurriculumDesign } from "./pipeline-tasks/curriculum-design";
 import { runExamGeneration } from "./pipeline-tasks/exam-generation";
 import { runExerciseGeneration } from "./pipeline-tasks/exercise-generation";
 import { runKeyNotesGeneration } from "./pipeline-tasks/key-notes-generation";
+import { runContradictionCheck } from "./pipeline-tasks/contradiction-check";
 import { runQuestionnaireGeneration } from "./pipeline-tasks/questionnaire-generation";
 import { runReadinessCheck } from "./pipeline-tasks/readiness-check";
 import { runSourceGathering } from "./pipeline-tasks/source-gathering";
@@ -40,6 +41,7 @@ const TASK_LABELS: Record<TaskType, string> = {
   exam_generation: "Tentamen",
   questionnaire_generation: "Diagnostische vragenlijst",
   readiness_check: "Gereedheidscontrole",
+  contradiction_check: "Tegenstrijdigheidscheck",
 };
 
 /**
@@ -77,6 +79,7 @@ const handlers: Record<TaskType, (task: PipelineTask) => Promise<Record<string, 
   exam_generation: runExamGeneration,
   questionnaire_generation: runQuestionnaireGeneration,
   readiness_check: runReadinessCheck,
+  contradiction_check: runContradictionCheck,
 };
 
 /**

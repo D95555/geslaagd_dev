@@ -5,10 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Contradiction } from './contradiction';
 import type { KeyNotesContent } from './keyNotesContent';
 import type { SummaryContent } from './summaryContent';
 
 export interface ChapterContent {
   summary: SummaryContent | null;
   keyNotes: KeyNotesContent | null;
+  contradictions: Contradiction[];
 }

@@ -1425,6 +1425,11 @@ export const GetVerkennerObjectResponse = zod.object({
   "chapterIsImportant": zod.boolean().nullish(),
   "chapterTopicTags": zod.array(zod.string()).nullish(),
   "chapterStatus": zod.union([zod.literal('pending'),zod.literal('ready'),zod.literal(null)]).nullish(),
+  "chapterContradictions": zod.array(zod.object({
+  "topic": zod.string(),
+  "description": zod.string(),
+  "sources": zod.array(zod.string())
+})).nullish(),
   "contentType": zod.string().nullish(),
   "contentVersion": zod.number().int().nullish(),
   "contentStatus": zod.union([zod.literal('generating'),zod.literal('ready'),zod.literal('failed'),zod.literal(null)]).nullish(),
@@ -1945,7 +1950,12 @@ export const GetChapterContentResponse = zod.object({
   "topicTag": zod.string()
 }))
 }))
-}),zod.null()])
+}),zod.null()]),
+  "contradictions": zod.array(zod.object({
+  "topic": zod.string(),
+  "description": zod.string(),
+  "sources": zod.array(zod.string())
+}))
 })
 
 

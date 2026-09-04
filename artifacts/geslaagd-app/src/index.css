@@ -1450,6 +1450,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .support-message-meta { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
 .support-message p { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 
+.chapter-contradictions { margin: 4px 0 22px; padding: 14px 16px; border: 1px solid hsl(var(--destructive) / .4); border-radius: var(--radius); background: hsl(var(--destructive) / .06); }
+.chapter-contradictions-head { display: flex; align-items: center; gap: 8px; color: hsl(var(--destructive)); }
+.chapter-contradictions-head svg { flex-shrink: 0; }
+.chapter-contradictions > p { margin: 6px 0 8px; color: hsl(var(--muted-foreground)); font-size: var(--text-meta-size); }
+.chapter-contradictions ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.chapter-contradictions li { overflow-wrap: anywhere; }
+
 .sources-freshness { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 12px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 .sources-freshness svg { flex-shrink: 0; }
 

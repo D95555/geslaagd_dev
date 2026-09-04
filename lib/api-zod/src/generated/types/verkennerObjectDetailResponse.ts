@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Contradiction } from './contradiction';
 import type { CrawlDetail } from './crawlDetail';
 import type { PipelineLogEntry } from './pipelineLogEntry';
 import type { VerkennerLinkedRef } from './verkennerLinkedRef';
@@ -29,6 +30,8 @@ export interface VerkennerObjectDetailResponse {
   chapterTopicTags?: string[] | null;
   /** @nullable */
   chapterStatus?: VerkennerObjectDetailResponseChapterStatus;
+  /** @nullable */
+  chapterContradictions?: Contradiction[] | null;
   /** @nullable */
   contentType?: string | null;
   /** @nullable */

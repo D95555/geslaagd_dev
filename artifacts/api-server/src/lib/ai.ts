@@ -28,6 +28,7 @@ export const MODEL_BY_TASK = {
   exercise_generation: "fast",
   exam_generation: "fast",
   questionnaire_generation: "fast",
+  contradiction_check: "fast",
   grading: "fast",
   chat: "fast",
 } as const satisfies Record<string, ModelTier>;

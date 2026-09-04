@@ -17,6 +17,7 @@ import {
   UpdateVerkennerSubjectTitleResponse,
 } from "@workspace/api-zod";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
+import { contradictionsSchema } from "../lib/study-content";
 import { loadTaskLogs } from "../lib/pipeline-tasks/task-log";
 
 const router: IRouter = Router();
@@ -268,6 +269,7 @@ router.get("/admin/verkenner/objects/:type/:id", async (req, res): Promise<void>
           chapterIsImportant: Boolean(row.is_important),
           chapterTopicTags: (row.topic_tags as string[] | null) ?? [],
           chapterStatus: row.status as "pending" | "ready",
+          chapterContradictions: contradictionsSchema.safeParse(row.contradictions ?? []).data ?? [],
           logs: logs.map(toLogEntry),
         }),
       );

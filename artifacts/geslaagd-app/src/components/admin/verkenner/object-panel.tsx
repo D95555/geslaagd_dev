@@ -148,6 +148,18 @@ export function ObjectPanel({
               <p className="study-hint">
                 {detail.chapterIsImportant ? 'Belangrijk hoofdstuk' : 'Regulier hoofdstuk'} · {detail.chapterStatus}
               </p>
+              {detail.chapterContradictions && detail.chapterContradictions.length > 0 && (
+                <div className="verkenner-card">
+                  <h4>Tegenstrijdige bronnen ({detail.chapterContradictions.length})</h4>
+                  <ul className="verkenner-flat-list">
+                    {detail.chapterContradictions.map((item, index) => (
+                      <li key={`${item.topic}-${index}`}>
+                        <strong>{item.topic}.</strong> {item.description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           )}
 

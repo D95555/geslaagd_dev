@@ -2667,12 +2667,24 @@ components:
                     label: { type: string }
                     value: { type: string }
                     topicTag: { type: string }
+    Contradiction:
+      type: object
+      required: [topic, description, sources]
+      properties:
+        topic: { type: string }
+        description: { type: string }
+        sources:
+          type: array
+          items: { type: string }
     ChapterContent:
       type: object
-      required: [summary, keyNotes]
+      required: [summary, keyNotes, contradictions]
       properties:
         summary: { oneOf: [{ $ref: "#/components/schemas/SummaryContent" }, { type: "null" }] }
         keyNotes: { oneOf: [{ $ref: "#/components/schemas/KeyNotesContent" }, { type: "null" }] }
+        contradictions:
+          type: array
+          items: { $ref: "#/components/schemas/Contradiction" }
     ExerciseQuestionPublic:
       type: object
       required: [index, type, topicTag, pointValue, prompt]
@@ -3056,6 +3068,9 @@ components:
           type: ["array", "null"]
           items: { type: string }
         chapterStatus: { type: ["string", "null"], enum: [pending, ready, null] }
+        chapterContradictions:
+          type: ["array", "null"]
+          items: { $ref: "#/components/schemas/Contradiction" }
         contentType: { type: ["string", "null"] }
         contentVersion: { type: ["integer", "null"] }
         contentStatus: { type: ["string", "null"], enum: [generating, ready, failed, null] }
