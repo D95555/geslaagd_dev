@@ -15,6 +15,7 @@ import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 import { AdminSidebarNav } from '@/components/shell/admin-sidebar';
 import { StudySidebarNav } from '@/components/shell/study-sidebar';
+import { VersionBadge } from '@/components/shell/version-badge';
 import { RailProvider, useRailSlotContent } from '@/components/shell/rail-context';
 import { LiveTaskTicker } from '@/components/admin/live-task-ticker';
 import { CommandPalette } from '@/components/shell/command-palette';
@@ -25,7 +26,7 @@ type Section = 'public' | 'study' | 'admin';
 
 function sectionFor(path: string): Section {
   if (path.startsWith('/beheer')) return 'admin';
-  if (path === '/mijn-leeromgeving' || path.startsWith('/vakken') || path.startsWith('/support') || path.startsWith('/faq')) return 'study';
+  if (path === '/mijn-leeromgeving' || path.startsWith('/vakken') || path.startsWith('/support') || path.startsWith('/faq') || path.startsWith('/changelog') || path.startsWith('/account')) return 'study';
   return 'public';
 }
 
@@ -100,6 +101,7 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
           )}
           <div className="shell-user">
             {user && <span>{user.email}</span>}
+            <VersionBadge />
             <Button variant="ghost" size="sm" onClick={() => void leave()}>
               <LogOut size={15} /> Uitloggen
             </Button>

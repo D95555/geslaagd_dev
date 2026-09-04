@@ -1479,6 +1479,23 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .faq-cta strong { font-size: var(--text-body-size); }
 .faq-cta span { color: hsl(var(--muted-foreground)); font-size: var(--text-meta-size); }
 
+.changelog-page { max-width: 760px; }
+.changelog-entry { margin-top: 24px; padding: 16px 18px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
+.changelog-entry-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.changelog-entry-head strong { font: 600 1.05rem var(--app-font-serif); letter-spacing: -.02em; }
+.changelog-entry-head span { color: hsl(var(--muted-foreground)); font-size: var(--text-meta-size); }
+.changelog-entry-summary { margin: 6px 0 10px; color: hsl(var(--muted-foreground)); }
+.changelog-entry ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.changelog-form { display: grid; gap: 10px; margin-bottom: 20px; }
+.changelog-form label { display: grid; gap: 4px; font-size: var(--text-meta-size); color: hsl(var(--muted-foreground)); }
+
+.version-badge {
+  flex-shrink: 0; padding: 2px 8px; border: 1px solid hsl(var(--sidebar-border)); border-radius: 999px;
+  background: transparent; color: hsl(var(--muted-foreground)); font-family: var(--app-font-mono); font-size: .65rem;
+  cursor: pointer;
+}
+.version-badge:hover { color: hsl(var(--foreground)); background: hsl(var(--secondary)); }
+
 .decision-row { justify-content: flex-start; align-items: flex-start; gap: 12px; cursor: default; }
 .decision-row-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 2px; border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
 .decision-row-body { min-width: 0; flex: 1; }
