@@ -3,6 +3,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import {
   LogAuthEventBody,
   RequestPasswordResetBody,
+  SignUpTrialBody,
   SignUpWithActivationKeyBody,
   SignUpWithActivationKeyResponse,
 } from "@workspace/api-zod";
@@ -21,6 +22,8 @@ import {
   normalizeActivationCode,
   releaseActivationKey,
 } from "../lib/activation-keys";
+import { getPackage, type PackageKey } from "../lib/credits";
+import { createTicket, insertMessage } from "../lib/support-tickets";
 
 const router: IRouter = Router();
 
@@ -270,6 +273,25 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     }
 
     await attachActivationKeyToUser(claimed.id, signUpResult.userId, email);
+
+    const pkg = await getPackage(claimed.package as PackageKey);
+    await restService("account_billing", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: signUpResult.userId,
+        package: pkg.key,
+        credits: pkg.startCredits ?? 0,
+      }),
+    });
+    await restService("credit_transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        account_id: signUpResult.userId,
+        delta: pkg.startCredits ?? 0,
+        reason: "signup_grant",
+      }),
+    });
+
     await enqueueAuthEvent({
       dedupeKey: `signup:${signUpResult.userId}`,
       event: "signup",
@@ -281,6 +303,76 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     res.status(201).json(SignUpWithActivationKeyResponse.parse({ userId: signUpResult.userId }));
   } catch (error) {
     req.log.warn({ error }, "Signup failed");
+    res.status(500).json({ error: "Aanmaken van het account is mislukt. Probeer het opnieuw." });
+  }
+});
+
+const TRIAL_VERIFICATION_MESSAGE =
+  "Welkom bij geslaagd.app! Om toegang te krijgen tot een ander pakket (Basis/Plus), moet een beheerder even bevestigen dat je een studerende gebruiker bent. Beantwoord hieronder kort:\n" +
+  "1. Voor- en achternaam\n" +
+  "2. Onderwijsinstelling\n" +
+  "3. Studierichting\n" +
+  "4. Waarvoor wil je geslaagd.app gebruiken?\n\n" +
+  "Een beheerder reageert zo snel mogelijk.";
+
+router.post("/auth/signup-trial", async (req, res): Promise<void> => {
+  const input = SignUpTrialBody.safeParse(req.body);
+  if (!input.success) {
+    res.status(400).json({ error: "Ongeldige aanmeldgegevens." });
+    return;
+  }
+
+  const attemptAllowed = await claimAttempt(`signup:ip:${req.ip ?? "unknown"}`, 10);
+  if (!attemptAllowed) {
+    res.status(429).json({ error: "Te veel pogingen. Probeer het later opnieuw." });
+    return;
+  }
+
+  const email = input.data.email.trim().toLowerCase();
+
+  try {
+    const signUpResult = await signUpWithPassword(email, input.data.password, signupRedirect());
+    if (!signUpResult.ok) {
+      res.status(400).json({ error: readableSignupError(signUpResult.errorCode, signUpResult.message) });
+      return;
+    }
+
+    const trialPkg = await getPackage("trial");
+    await restService("account_billing", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: signUpResult.userId,
+        package: "trial",
+        credits: trialPkg.startCredits ?? 0,
+      }),
+    });
+    await restService("credit_transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        account_id: signUpResult.userId,
+        delta: trialPkg.startCredits ?? 0,
+        reason: "signup_grant",
+      }),
+    });
+
+    const ticket = await createTicket(signUpResult.userId, "Verificatie studentenstatus");
+    await insertMessage(ticket.id, "admin", TRIAL_VERIFICATION_MESSAGE, null);
+    await restService(`support_tickets?id=eq.${ticket.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ category: "pakket_verificatie" }),
+    });
+
+    await enqueueAuthEvent({
+      dedupeKey: `signup:${signUpResult.userId}`,
+      event: "signup",
+      userId: signUpResult.userId,
+      device: input.data.device ?? "",
+      ipAddress: req.ip ?? null,
+    }).catch((error) => req.log.warn({ error }, "Could not enqueue signup auth event"));
+
+    res.status(201).json(SignUpWithActivationKeyResponse.parse({ userId: signUpResult.userId }));
+  } catch (error) {
+    req.log.warn({ error }, "Trial signup failed");
     res.status(500).json({ error: "Aanmaken van het account is mislukt. Probeer het opnieuw." });
   }
 });
