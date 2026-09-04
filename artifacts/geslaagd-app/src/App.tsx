@@ -9,7 +9,8 @@ import { AppShell } from '@/components/shell/app-shell';
 import HomePage from '@/pages/home-page';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
 import DashboardPage from '@/pages/dashboard-page';
-import AdminPage from '@/pages/admin-page';
+import AdminSessionsPage from '@/pages/admin-sessions-page';
+import AdminAccountsPage from '@/pages/admin-accounts-page';
 import AdminCrawlPage from '@/pages/admin-crawl-page';
 import AdminAiDecisionsPage from '@/pages/admin-ai-decisions-page';
 import AdminActivationKeysPage from '@/pages/admin-activation-keys-page';
@@ -57,7 +58,8 @@ function Router() {
           <Route path="/beheer/verkenner" component={AdminVerkennerPage} />
           <Route path="/beheer/pipeline" component={AdminPipelinePage} />
           <Route path="/beheer/console" component={AdminConsolePage} />
-          <Route path="/beheer/accounts" component={AdminPage} />
+          <Route path="/beheer/sessies" component={AdminSessionsPage} />
+          <Route path="/beheer/accounts" component={AdminAccountsPage} />
           <Route path="/beheer/activatiecodes" component={AdminActivationKeysPage} />
           <Route path="/beheer/support" component={AdminSupportPage} />
           <Route path="/beheer" component={AdminOverviewPage} />

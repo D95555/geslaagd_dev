@@ -1,8 +1,10 @@
 import { useRef } from 'react';
 import { useLocation } from 'wouter';
 import {
+  Activity,
   BrainCircuit,
   Compass,
+  History,
   KeyRound,
   LayoutDashboard,
   MessageCircleQuestion,
@@ -36,9 +38,11 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer/beslissingen', label: 'AI-beslissingen', hint: 'Elke keuze die de AI maakte, met reden', icon: BrainCircuit },
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },
   { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
-  { href: '/beheer/accounts', label: 'Accounts & sessies', hint: 'Gebruikers en broadcasts', icon: Users },
-  { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken', icon: KeyRound },
-  { href: '/beheer/support', label: 'Support', hint: 'Tickets van studenten, AI reageert vanzelf', icon: MessageCircleQuestion },
+  { href: '/beheer/sessies', label: 'Sessies', hint: 'Wie is online, meldingen en privé-berichten', icon: Activity },
+  { href: '/beheer/accounts', label: 'Accounts', hint: 'Gebruikers, pakketten en credits', icon: Users },
+  { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken of te upgraden', icon: KeyRound },
+  { href: '/beheer/support', label: 'Support', hint: 'Tickets van studenten', icon: MessageCircleQuestion },
+  { href: '/beheer/changelog', label: 'Changelog', hint: 'Wat is er veranderd', icon: History },
 ];
 
 function isActive(current: string, href: string): boolean {

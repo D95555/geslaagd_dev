@@ -37,12 +37,22 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
+type PackageOption = 'basis' | 'plus' | 'beheerder';
+
+const packageLabel: Record<ActivationKey['package'], string> = {
+  trial: 'Trial',
+  basis: 'Basis',
+  plus: 'Plus',
+  beheerder: 'Beheerder',
+};
+
 export default function AdminActivationKeysPage() {
   const { user, isLoading } = useAuth();
   const [keys, setKeys] = useState<ActivationKey[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'used'>('all');
   const [count, setCount] = useState('1');
+  const [selectedPackage, setSelectedPackage] = useState<PackageOption>('basis');
   const [generating, setGenerating] = useState(false);
 
   const load = async () => {
@@ -65,7 +75,7 @@ export default function AdminActivationKeysPage() {
     if (!Number.isFinite(value) || value < 1) return;
     setGenerating(true);
     try {
-      await createActivationKeys({ count: Math.min(value, 100) });
+      await createActivationKeys({ count: Math.min(value, 100), package: selectedPackage });
       await load();
     } finally {
       setGenerating(false);
@@ -88,6 +98,16 @@ export default function AdminActivationKeysPage() {
           onChange={(e) => setCount(e.target.value)}
           style={{ width: 90 }}
         />
+        <Select value={selectedPackage} onValueChange={(value) => setSelectedPackage(value as PackageOption)}>
+          <SelectTrigger className="pipeline-filter" aria-label="Pakket">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="basis">Basis</SelectItem>
+            <SelectItem value="plus">Plus</SelectItem>
+            <SelectItem value="beheerder">Beheerder</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={() => void generate()} disabled={generating}>
           {generating ? <Loader2 className="spin" size={14} /> : <Plus size={14} />} Genereer codes
         </Button>
@@ -126,6 +146,7 @@ export default function AdminActivationKeysPage() {
                 </span>
               </div>
               <div className="request-row-actions">
+                <Badge variant="secondary">{packageLabel[key.package]}</Badge>
                 <Badge variant={key.status === 'open' ? 'default' : 'secondary'}>
                   {key.status === 'open' ? 'Open' : 'Gebruikt'}
                 </Badge>
