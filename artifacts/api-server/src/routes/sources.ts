@@ -11,6 +11,13 @@ import {
 import { createTask } from "../lib/pipeline-tasks/task-store";
 import { pollAndProcess } from "../lib/pipeline-worker";
 import { getAuthenticatedUser, rest, restService } from "../lib/supabase";
+import {
+  getBilling,
+  spendCredits,
+  subjectsCreatedThisMonth,
+  recordSubjectPurchase,
+  InsufficientCreditsError,
+} from "../lib/credits";
 
 const router: IRouter = Router();
 
@@ -77,6 +84,28 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
       return;
     }
 
+    const { package: pkg } = await getBilling(identity.user.id);
+    if (!pkg.canCreateSubjects) {
+      res.status(403).json({ error: "Je pakket staat geen nieuwe vakken toe. Vraag via support een upgrade aan." });
+      return;
+    }
+    if (pkg.key !== "beheerder") {
+      const createdThisMonth = await subjectsCreatedThisMonth(identity.user.id);
+      if (createdThisMonth >= 3) {
+        res.status(429).json({ error: "Je hebt deze maand al 3 nieuwe vakken aangemaakt." });
+        return;
+      }
+    }
+    try {
+      await spendCredits(identity.user.id, 10, "subject_create");
+    } catch (error) {
+      if (error instanceof InsufficientCreditsError) {
+        res.status(402).json({ error: "Onvoldoende credits om een nieuw vak aan te maken." });
+        return;
+      }
+      throw error;
+    }
+
     const subjects = await restService<Row[]>("crawl_subjects", {
       method: "POST",
       headers: { prefer: "return=representation" },
@@ -96,6 +125,8 @@ router.post("/sources/request-subject", async (req, res): Promise<void> => {
     });
     const subject = subjects[0];
     if (!subject) throw new Error("Subject insert returned no row.");
+
+    await recordSubjectPurchase(identity.user.id, subject.id as string);
 
     const requests = await restService<Row[]>("subject_requests", {
       method: "POST",

@@ -18,6 +18,7 @@ import {
 } from "../lib/progress";
 import { contradictionsSchema, keyNotesSchema, summarySchema } from "../lib/study-content";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
+import { hasPurchasedSubject, spendCredits, recordSubjectPurchase, InsufficientCreditsError } from "../lib/credits";
 
 const router: IRouter = Router();
 
@@ -193,6 +194,21 @@ router.post("/subjects/:subjectId/select", async (req, res): Promise<void> => {
       res.status(404).json({ error: "Vak niet gevonden." });
       return;
     }
+
+    const alreadyPurchased = await hasPurchasedSubject(identity.user.id, params.data.subjectId);
+    if (!alreadyPurchased) {
+      try {
+        await spendCredits(identity.user.id, 5, "subject_open", params.data.subjectId);
+      } catch (error) {
+        if (error instanceof InsufficientCreditsError) {
+          res.status(402).json({ error: "Onvoldoende credits om dit vak te gebruiken." });
+          return;
+        }
+        throw error;
+      }
+      await recordSubjectPurchase(identity.user.id, params.data.subjectId);
+    }
+
     await restService<Row[]>("student_selected_subjects?on_conflict=user_id,subject_id", {
       method: "POST",
       headers: { prefer: "resolution=ignore-duplicates,return=representation" },
