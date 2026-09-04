@@ -1444,6 +1444,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .support-page { max-width: 720px; }
 .support-thread-head { display: flex; align-items: center; gap: 12px; margin: 14px 0 18px; }
 .support-thread-head h2 { margin: 0; font: 600 1.3rem var(--app-font-serif); letter-spacing: -.02em; }
+.support-grant-package { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
 .support-message-list { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
 .support-message { padding: 12px 14px; border-radius: var(--radius); background: hsl(var(--muted) / .5); }
 .support-message-ai, .support-message-admin { background: hsl(var(--accent)); }

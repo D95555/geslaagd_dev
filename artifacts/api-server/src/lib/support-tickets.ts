@@ -7,6 +7,7 @@ export type SupportTicket = {
   userId: string;
   subject: string;
   status: "open" | "closed";
+  category: string | null;
   createdAt: string;
   updatedAt: string;
   lastMessageAt: string;
@@ -18,6 +19,7 @@ export type SupportMessage = {
   // nothing writes it anymore, but history keeps displaying correctly.
   sender: "user" | "ai" | "admin";
   senderUserId: string | null;
+  senderEmail: string | null;
   body: string;
   createdAt: string;
 };
@@ -28,13 +30,14 @@ function toTicket(row: Row): SupportTicket {
     userId: row.user_id as string,
     subject: row.subject as string,
     status: row.status as "open" | "closed",
+    category: (row.category as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     lastMessageAt: row.last_message_at as string,
   };
 }
 
-function toMessage(row: Row): SupportMessage {
+function toMessage(row: Row): Omit<SupportMessage, "senderEmail"> {
   return {
     id: row.id as string,
     sender: row.sender as "user" | "ai" | "admin",
@@ -53,7 +56,13 @@ export async function listMessages(ticketId: string): Promise<SupportMessage[]> 
   const rows = await restService<Row[]>(
     `support_messages?ticket_id=eq.${ticketId}&select=*&order=created_at.asc`,
   );
-  return rows.map(toMessage);
+  const messages = rows.map(toMessage);
+  return Promise.all(
+    messages.map(async (message) => ({
+      ...message,
+      senderEmail: message.senderUserId ? await emailForUser(message.senderUserId) : null,
+    })),
+  );
 }
 
 export async function listTicketsForUser(userId: string): Promise<SupportTicket[]> {
@@ -105,7 +114,8 @@ export async function insertMessage(
     method: "PATCH",
     body: JSON.stringify({ last_message_at: row.created_at, updated_at: new Date().toISOString() }),
   });
-  return toMessage(row);
+  const message = toMessage(row);
+  return { ...message, senderEmail: message.senderUserId ? await emailForUser(message.senderUserId) : null };
 }
 
 export async function setTicketStatus(ticketId: string, status: "open" | "closed"): Promise<void> {

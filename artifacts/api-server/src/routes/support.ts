@@ -5,10 +5,12 @@ import {
   CloseSupportTicketParams,
   CreateSupportTicketBody,
   GetSupportTicketParams,
+  GrantSupportTicketPackageBody,
+  GrantSupportTicketPackageParams,
   ListAdminSupportTicketsQueryParams,
   ReopenSupportTicketParams,
 } from "@workspace/api-zod";
-import { getAuthenticatedUser } from "../lib/supabase";
+import { getAuthenticatedUser, restService } from "../lib/supabase";
 import {
   createTicket,
   emailForUser,
@@ -147,6 +149,39 @@ router.post("/admin/support/tickets/:ticketId/reopen", async (req, res): Promise
   } catch (error) {
     req.log.warn({ error }, "Could not reopen support ticket");
     res.status(500).json({ error: "Heropenen is mislukt." });
+  }
+});
+
+router.post("/admin/support/tickets/:ticketId/grant-package", async (req, res): Promise<void> => {
+  const identity = await admin(req);
+  if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
+  const params = GrantSupportTicketPackageParams.safeParse(req.params);
+  const input = GrantSupportTicketPackageBody.safeParse(req.body);
+  if (!params.success || !input.success) { res.status(400).json({ error: "Ongeldig verzoek." }); return; }
+  try {
+    const ticket = await getTicket(params.data.ticketId);
+    if (!ticket) { res.status(404).json({ error: "Ticket niet gevonden." }); return; }
+
+    const pkgRows = await restService<Record<string, unknown>[]>(`packages?key=eq.${input.data.package}&select=*`);
+    const startCredits = (pkgRows[0]?.start_credits as number | null) ?? 0;
+    await restService(`account_billing?user_id=eq.${ticket.userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ package: input.data.package, credits: startCredits }),
+    });
+    await restService("credit_transactions", {
+      method: "POST",
+      body: JSON.stringify({
+        account_id: ticket.userId,
+        delta: startCredits,
+        reason: "admin_adjustment",
+        note: "Pakket toegekend via verificatieticket",
+      }),
+    });
+    await setTicketStatus(ticket.id, "closed");
+    res.json(await toDetail((await getTicket(ticket.id))!));
+  } catch (error) {
+    req.log.warn({ error }, "Could not grant package from ticket");
+    res.status(500).json({ error: "Pakket toekennen is mislukt." });
   }
 });
 

@@ -3,6 +3,7 @@ import {
   addSupportMessage,
   closeSupportTicket,
   getSupportTicket,
+  grantSupportTicketPackage,
   listAdminSupportTickets,
   reopenSupportTicket,
   type SupportTicketDetail,
@@ -62,12 +63,24 @@ function TicketDetailPanel({
     }
   };
 
+  const [grantPackage, setGrantPackage] = useState<'basis' | 'plus'>('basis');
+  const [granting, setGranting] = useState(false);
+
   const toggleClosed = async () => {
     setBusy(true);
     try {
       onUpdated(ticket.status === 'open' ? await closeSupportTicket(ticket.id) : await reopenSupportTicket(ticket.id));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const grant = async () => {
+    setGranting(true);
+    try {
+      onUpdated(await grantSupportTicketPackage(ticket.id, { package: grantPackage }));
+    } finally {
+      setGranting(false);
     }
   };
 
@@ -80,11 +93,28 @@ function TicketDetailPanel({
         </Button>
       </div>
 
+      {ticket.category === 'pakket_verificatie' && ticket.status === 'open' && (
+        <div className="support-grant-package">
+          <Select value={grantPackage} onValueChange={(value) => setGrantPackage(value as 'basis' | 'plus')}>
+            <SelectTrigger className="pipeline-filter">
+              <SelectValue placeholder="Pakket" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="basis">Basis</SelectItem>
+              <SelectItem value="plus">Plus</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" disabled={granting} onClick={() => void grant()}>
+            {granting ? <Loader2 className="spin" size={14} /> : null} Pakket toekennen
+          </Button>
+        </div>
+      )}
+
       <div className="support-message-list">
         {ticket.messages.map((message) => (
           <div key={message.id} className={`support-message support-message-${message.sender}`}>
             <div className="support-message-meta">
-              <strong>{senderLabel[message.sender]}</strong>
+              <strong>{message.senderEmail ?? senderLabel[message.sender]}</strong>
               <span>{fmtDateTime(message.createdAt)}</span>
             </div>
             <p>{message.body}</p>
