@@ -13,6 +13,7 @@ import studyProgressRouter from "./study-progress";
 import adminPipelineRouter from "./admin-pipeline";
 import adminVerkennerRouter from "./admin-verkenner";
 import supportRouter from "./support";
+import billingRouter from "./billing";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(subjectsRouter);
 router.use(adminPipelineRouter);
 router.use(adminVerkennerRouter);
 router.use(supportRouter);
+router.use(billingRouter);
 
 export default router;
