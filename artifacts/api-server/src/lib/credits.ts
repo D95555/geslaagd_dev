@@ -47,6 +47,45 @@ export async function getPackage(key: PackageKey): Promise<Package> {
   return toPackage(row);
 }
 
+/**
+ * Grants/revokes the actual Supabase Auth admin role to match the package.
+ * The `beheerder` package is meaningless if the account can't pass the
+ * server-side isAdmin check (`app_metadata.role === "admin"`), so every path
+ * that sets a package to/from beheerder must call this. Reads the current
+ * app_metadata first and merges, rather than overwriting it wholesale, so
+ * unrelated metadata keys survive.
+ */
+async function syncAdminRole(userId: string, packageKey: PackageKey): Promise<void> {
+  const url = process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) throw new Error("Supabase service configuration is required.");
+
+  const getResponse = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` },
+  });
+  if (!getResponse.ok) throw new Error(`Supabase Auth admin lookup failed (${getResponse.status}).`);
+  const currentUser = (await getResponse.json()) as { app_metadata?: Record<string, unknown> };
+
+  const nextAppMetadata = { ...(currentUser.app_metadata ?? {}) };
+  if (packageKey === "beheerder") {
+    nextAppMetadata.role = "admin";
+  } else if (nextAppMetadata.role === "admin") {
+    // Supabase's admin update merges app_metadata rather than replacing it,
+    // so omitting the key would leave "admin" in place — it must be
+    // explicitly nulled out to actually revoke the role.
+    nextAppMetadata.role = null;
+  } else {
+    return; // Not beheerder and wasn't admin — nothing to change.
+  }
+
+  const putResponse = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: "PUT",
+    headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}`, "content-type": "application/json" },
+    body: JSON.stringify({ app_metadata: nextAppMetadata }),
+  });
+  if (!putResponse.ok) throw new Error(`Supabase Auth admin role sync failed (${putResponse.status}).`);
+}
+
 async function insertLedgerRow(
   accountId: string,
   delta: number,
@@ -144,6 +183,34 @@ export async function grantCredits(
   });
   await insertLedgerRow(userId, applied, reason, undefined, note);
 }
+
+export type SetPackageReason = "package_upgrade" | "admin_adjustment";
+
+/**
+ * Changes an existing account's package: resets credits to the new
+ * package's start amount, records the ledger row, and syncs the real
+ * Supabase admin role. Used by both the key-upgrade endpoint and the admin
+ * package-override endpoint so the admin-role sync can never be forgotten
+ * at one of the two call sites.
+ */
+export async function setAccountPackage(
+  userId: string,
+  packageKey: PackageKey,
+  reason: SetPackageReason,
+  note?: string,
+): Promise<void> {
+  const pkg = await getPackage(packageKey);
+  const startCredits = pkg.startCredits ?? 0;
+  await restService(`account_billing?user_id=eq.${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ package: packageKey, credits: startCredits }),
+  });
+  await insertLedgerRow(userId, startCredits, reason, undefined, note);
+  await syncAdminRole(userId, packageKey);
+}
+
+/** Exported so the signup routes can sync the role right after the initial account_billing insert. */
+export { syncAdminRole };
 
 /** Rolling-30-day count of subjects this account has requested. */
 export async function subjectsCreatedThisMonth(userId: string): Promise<number> {

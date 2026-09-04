@@ -10,7 +10,8 @@ import {
   ListAdminSupportTicketsQueryParams,
   ReopenSupportTicketParams,
 } from "@workspace/api-zod";
-import { getAuthenticatedUser, restService } from "../lib/supabase";
+import { getAuthenticatedUser } from "../lib/supabase";
+import { setAccountPackage } from "../lib/credits";
 import {
   createTicket,
   emailForUser,
@@ -162,21 +163,7 @@ router.post("/admin/support/tickets/:ticketId/grant-package", async (req, res): 
     const ticket = await getTicket(params.data.ticketId);
     if (!ticket) { res.status(404).json({ error: "Ticket niet gevonden." }); return; }
 
-    const pkgRows = await restService<Record<string, unknown>[]>(`packages?key=eq.${input.data.package}&select=*`);
-    const startCredits = (pkgRows[0]?.start_credits as number | null) ?? 0;
-    await restService(`account_billing?user_id=eq.${ticket.userId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ package: input.data.package, credits: startCredits }),
-    });
-    await restService("credit_transactions", {
-      method: "POST",
-      body: JSON.stringify({
-        account_id: ticket.userId,
-        delta: startCredits,
-        reason: "admin_adjustment",
-        note: "Pakket toegekend via verificatieticket",
-      }),
-    });
+    await setAccountPackage(ticket.userId, input.data.package, "admin_adjustment", "Pakket toegekend via verificatieticket");
     await setTicketStatus(ticket.id, "closed");
     res.json(await toDetail((await getTicket(ticket.id))!));
   } catch (error) {

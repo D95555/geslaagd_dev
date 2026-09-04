@@ -22,7 +22,7 @@ import {
   normalizeActivationCode,
   releaseActivationKey,
 } from "../lib/activation-keys";
-import { getPackage, type PackageKey } from "../lib/credits";
+import { getPackage, syncAdminRole, type PackageKey } from "../lib/credits";
 import { createTicket, insertMessage } from "../lib/support-tickets";
 
 const router: IRouter = Router();
@@ -291,6 +291,9 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
         reason: "signup_grant",
       }),
     });
+    // A key can grant the beheerder package directly at signup — make sure
+    // that account actually has the admin role, not just the label.
+    await syncAdminRole(signUpResult.userId, pkg.key);
 
     await enqueueAuthEvent({
       dedupeKey: `signup:${signUpResult.userId}`,

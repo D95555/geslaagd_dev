@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { ApplyUpgradeKeyBody, GetMyBillingResponse, ApplyUpgradeKeyResponse } from "@workspace/api-zod";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
-import { getBilling, type PackageKey } from "../lib/credits";
+import { getBilling, setAccountPackage, type PackageKey } from "../lib/credits";
 import { claimUpgradeKey } from "../lib/activation-keys";
 
 const router: IRouter = Router();
@@ -52,24 +52,7 @@ router.post("/activation/upgrade", async (req, res): Promise<void> => {
       return;
     }
 
-    const pkgRows = await restService<Record<string, unknown>[]>(
-      `packages?key=eq.${claimed.package}&select=*`,
-    );
-    const startCredits = (pkgRows[0]?.start_credits as number | null) ?? 0;
-
-    await restService(`account_billing?user_id=eq.${user.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ package: claimed.package, credits: startCredits }),
-    });
-    await restService("credit_transactions", {
-      method: "POST",
-      body: JSON.stringify({
-        account_id: user.id,
-        delta: startCredits,
-        reason: "package_upgrade",
-        note: `Upgrade naar ${claimed.package} via key`,
-      }),
-    });
+    await setAccountPackage(user.id, claimed.package, "package_upgrade", `Upgrade naar ${claimed.package} via key`);
 
     const { package: pkg, credits } = await getBilling(user.id);
     res.json(

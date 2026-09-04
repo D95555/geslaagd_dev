@@ -16,6 +16,7 @@ import { broadcast, getAuthenticatedUser, getServiceUserById, rest, restService 
 import { enqueueAuthEvent } from "../lib/auth-event-outbox";
 import { enqueueUserNotification } from "../lib/user-notification-outbox";
 import { createActivationKeys, listActivationKeys } from "../lib/activation-keys";
+import { setAccountPackage } from "../lib/credits";
 
 const router: IRouter = Router();
 
@@ -334,21 +335,12 @@ router.post("/admin/accounts/:userId/package", async (req, res): Promise<void> =
   const input = SetAdminAccountPackageBody.safeParse(req.body);
   if (!params.success || !input.success) { res.status(400).json({ error: "Invalid request" }); return; }
   try {
-    const pkgRows = await restService<Record<string, unknown>[]>(`packages?key=eq.${input.data.package}&select=*`);
-    const startCredits = (pkgRows[0]?.start_credits as number | null) ?? 0;
-    await restService(`account_billing?user_id=eq.${params.data.userId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ package: input.data.package, credits: startCredits }),
-    });
-    await restService("credit_transactions", {
-      method: "POST",
-      body: JSON.stringify({
-        account_id: params.data.userId,
-        delta: startCredits,
-        reason: "admin_adjustment",
-        note: `Pakket door beheerder gezet op ${input.data.package}`,
-      }),
-    });
+    await setAccountPackage(
+      params.data.userId,
+      input.data.package,
+      "admin_adjustment",
+      `Pakket door beheerder gezet op ${input.data.package}`,
+    );
     const authUser = await getServiceUserById(params.data.userId);
     res.json(toAccountSummary(authUser as SupabaseAuthUser, 0, null, { package: input.data.package, recentActions: [] }));
   } catch (error) {
