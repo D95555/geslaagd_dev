@@ -15,6 +15,7 @@ import adminPipelineRouter from "./admin-pipeline";
 import adminVerkennerRouter from "./admin-verkenner";
 import supportRouter from "./support";
 import billingRouter from "./billing";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(adminPipelineRouter);
 router.use(adminVerkennerRouter);
 router.use(supportRouter);
 router.use(billingRouter);
+router.use(notificationsRouter);
 
 export default router;
