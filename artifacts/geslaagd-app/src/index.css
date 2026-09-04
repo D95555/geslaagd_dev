@@ -651,10 +651,14 @@ button.account-row:hover, .account-row:has(.request-row-summary:hover) { backgro
   .admin-status-filter { width: 100%; }
 }
 /* ── Broadcast notice ───────────────────────────────────────────────────── */
-.broadcast-notice {
+.notifications-stack {
   position: fixed; z-index: 100; top: 16px; right: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  width: min(390px, calc(100% - 32px));
+}
+.broadcast-notice {
   display: flex; align-items: flex-start; gap: 12px;
-  width: min(390px, calc(100% - 32px)); padding: 15px 15px 15px 14px;
+  padding: 15px 15px 15px 14px;
   border: 1px solid hsl(var(--border)); border-left: 3px solid hsl(var(--accent));
   border-radius: var(--radius);
   color: hsl(var(--foreground)); background: hsl(var(--card));

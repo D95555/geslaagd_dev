@@ -10,10 +10,13 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { useLocation } from "wouter";
 import {
+  dismissNotification as dismissNotificationRequest,
   heartbeatSession,
+  listNotifications,
   logAuthEvent,
   registerSession,
   setAuthTokenGetter,
+  type Notification,
 } from "@workspace/api-client-react";
 
 import { appUrl, supabase } from "@/lib/supabase";
@@ -23,8 +26,8 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
-  broadcast: { title: string; body: string } | null;
-  dismissBroadcast: () => void;
+  notifications: Notification[];
+  dismissNotification: (id: string) => void;
   signOut: () => Promise<void>;
 };
 
@@ -47,10 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [broadcast, setBroadcast] = useState<{
-    title: string;
-    body: string;
-  } | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [location] = useLocation();
   const locationRef = useRef(location);
   useEffect(() => {
@@ -134,8 +134,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentPage: locationRef.current.split("?")[0],
       }).catch(() => void supabase.auth.signOut());
     }, 60_000);
+    const refreshNotifications = () =>
+      void listNotifications()
+        .then((result) => setNotifications(result.notifications))
+        .catch(() => undefined);
+    refreshNotifications();
+
     let commandChannel: ReturnType<typeof supabase.channel> | null = null;
-    let broadcastChannel: ReturnType<typeof supabase.channel> | null = null;
+    let globalNotificationsChannel: ReturnType<typeof supabase.channel> | null = null;
+    let personalNotificationsChannel: ReturnType<typeof supabase.channel> | null = null;
     let disposed = false;
     void (async () => {
       await supabase.realtime.setAuth(session.access_token);
@@ -149,20 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.assign(appUrl("/auth"));
         })
         .subscribe();
-      broadcastChannel = supabase
-        .channel("app:broadcasts", { config: { private: true } })
-        .on("broadcast", { event: "message" }, ({ payload }) => {
-          const content = payload as { title?: string; body?: string };
-          if (content.title && content.body)
-            setBroadcast({ title: content.title, body: content.body });
-        })
+      globalNotificationsChannel = supabase
+        .channel("app:notifications", { config: { private: true } })
+        .on("broadcast", { event: "refresh" }, refreshNotifications)
+        .subscribe();
+      personalNotificationsChannel = supabase
+        .channel(`user:${user.id}:notifications`, { config: { private: true } })
+        .on("broadcast", { event: "refresh" }, refreshNotifications)
         .subscribe();
     })();
     return () => {
       disposed = true;
       window.clearInterval(heartbeat);
       if (commandChannel) void supabase.removeChannel(commandChannel);
-      if (broadcastChannel) void supabase.removeChannel(broadcastChannel);
+      if (globalNotificationsChannel) void supabase.removeChannel(globalNotificationsChannel);
+      if (personalNotificationsChannel) void supabase.removeChannel(personalNotificationsChannel);
     };
   }, [session, user]);
 
@@ -172,8 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       isAdmin: isAdminUser(user),
-      broadcast,
-      dismissBroadcast: () => setBroadcast(null),
+      notifications,
+      dismissNotification: (id: string) => {
+        void dismissNotificationRequest(id).catch(() => undefined);
+        setNotifications((all) => all.filter((n) => n.id !== id));
+      },
       signOut: async () => {
         if (user && session) {
           // Await this before signing out. A fire-and-forget call here races
@@ -197,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [broadcast, isLoading, session, user],
+    [notifications, isLoading, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

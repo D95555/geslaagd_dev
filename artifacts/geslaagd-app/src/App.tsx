@@ -4,7 +4,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@workspace/geslaagd-momentum/components/ui/toaster';
 import { TooltipProvider } from '@workspace/geslaagd-momentum/components/ui/tooltip';
 import { ThemeProvider } from '@workspace/geslaagd-momentum/hooks/use-theme';
-import { AuthProvider, useAuth } from '@/auth/auth-context';
+import { AuthProvider } from '@/auth/auth-context';
 import { AppShell } from '@/components/shell/app-shell';
 import HomePage from '@/pages/home-page';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
@@ -26,7 +26,7 @@ import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
 import StudyPlanPage from '@/pages/study-plan-page';
 import NotFound from '@/pages/not-found';
-import { BellRing, X } from 'lucide-react';
+import { NotificationsStack } from '@/components/shell/notifications-stack';
 import {
   Route,
   Switch,
@@ -40,7 +40,7 @@ function Router() {
   return (
     <AppShell>
       <RoutedErrorBoundary>
-        <BroadcastNotice />
+        <NotificationsStack />
         <Switch>
           <Route path="/auth/herstel-wachtwoord" component={PasswordRecoveryPage} />
           <Route path="/auth" component={AuthPage} />
@@ -70,26 +70,6 @@ function Router() {
         </Switch>
       </RoutedErrorBoundary>
     </AppShell>
-  );
-}
-
-function BroadcastNotice() {
-  const { broadcast, dismissBroadcast } = useAuth();
-  if (!broadcast) return null;
-  return (
-    <aside className="broadcast-notice" role="status" aria-live="polite" data-testid="broadcast-notice">
-      <span className="broadcast-notice-icon" aria-hidden="true">
-        <BellRing size={17} />
-      </span>
-      <div className="broadcast-notice-body">
-        <p className="broadcast-notice-kicker">Bericht van geslaagd.app</p>
-        <strong>{broadcast.title}</strong>
-        <p>{broadcast.body}</p>
-      </div>
-      <button className="broadcast-notice-close" onClick={dismissBroadcast} aria-label="Bericht sluiten">
-        <X size={16} aria-hidden="true" />
-      </button>
-    </aside>
   );
 }
 
