@@ -2302,3 +2302,11 @@ export type ListDirectoryParams = {
 query?: string;
 };
 
+export type UploadConversationPhotoBody = {
+  photo: Blob;
+};
+
+export type UploadConversationPhoto201 = {
+  photoUrl: string;
+};
+

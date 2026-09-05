@@ -136,6 +136,8 @@ import type {
   UpdateProfileInput,
   UpdateVerkennerChapterTitleInput,
   UpdateVerkennerSubjectTitleInput,
+  UploadConversationPhoto201,
+  UploadConversationPhotoBody,
   VerkennerLookupResponse,
   VerkennerObjectDetailResponse,
   VerkennerSubjectDetailResponse,
@@ -9947,5 +9949,79 @@ export const useSendConversationMessage = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getSendConversationMessageMutationOptions(options));
+    }
+
+export const getUploadConversationPhotoUrl = (conversationId: string,) => {
+
+
+
+
+  return `/api/conversations/${conversationId}/photos`
+}
+
+/**
+ * @summary Upload a photo for a subsequent message in this conversation (multipart/form-data, field "photo")
+ */
+export const uploadConversationPhoto = async (conversationId: string,
+    uploadConversationPhotoBody: UploadConversationPhotoBody, options?: Parameters<typeof customFetch>[1]): Promise<UploadConversationPhoto201> => {
+    const formData = new FormData();
+formData.append(`photo`, uploadConversationPhotoBody.photo);
+
+  return customFetch<UploadConversationPhoto201>(getUploadConversationPhotoUrl(conversationId),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getUploadConversationPhotoMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadConversationPhoto>>, TError,{conversationId: string;data: BodyType<UploadConversationPhotoBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadConversationPhoto>>, TError,{conversationId: string;data: BodyType<UploadConversationPhotoBody>}, TContext> => {
+
+const mutationKey = ['uploadConversationPhoto'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadConversationPhoto>>, {conversationId: string;data: BodyType<UploadConversationPhotoBody>}> = (props) => {
+          const {conversationId,data} = props ?? {};
+
+          return  uploadConversationPhoto(conversationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadConversationPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof uploadConversationPhoto>>>
+    export type UploadConversationPhotoMutationBody = BodyType<UploadConversationPhotoBody>
+    export type UploadConversationPhotoMutationError = ErrorType<void>
+
+    /**
+ * @summary Upload a photo for a subsequent message in this conversation (multipart/form-data, field "photo")
+ */
+export const useUploadConversationPhoto = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadConversationPhoto>>, TError,{conversationId: string;data: BodyType<UploadConversationPhotoBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadConversationPhoto>>,
+        TError,
+        {conversationId: string;data: BodyType<UploadConversationPhotoBody>},
+        TContext
+      > => {
+      return useMutation(getUploadConversationPhotoMutationOptions(options));
     }
 

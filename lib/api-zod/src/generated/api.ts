@@ -3239,3 +3239,19 @@ export const SendConversationMessageResponse = zod.object({
 })
 
 
+/**
+ * @summary Upload a photo for a subsequent message in this conversation (multipart/form-data, field "photo")
+ */
+export const UploadConversationPhotoParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const UploadConversationPhotoBody = zod.object({
+  "photo": zod.instanceof(File)
+})
+
+export const UploadConversationPhotoResponse = zod.object({
+  "photoUrl": zod.string()
+})
+
+

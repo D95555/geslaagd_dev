@@ -224,6 +224,8 @@ export * from './updateGroupInput';
 export * from './updateProfileInput';
 export * from './updateVerkennerChapterTitleInput';
 export * from './updateVerkennerSubjectTitleInput';
+export * from './uploadConversationPhoto201';
+export * from './uploadConversationPhotoBody';
 export * from './verkennerChapterSummary';
 export * from './verkennerContentSummary';
 export * from './verkennerContentSummaryStatus';

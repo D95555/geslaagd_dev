@@ -2520,6 +2520,40 @@ paths:
         "403":
           description: Not a member, or the conversation is closed/deleted
 
+  /conversations/{conversationId}/photos:
+    post:
+      operationId: uploadConversationPhoto
+      tags: [social]
+      summary: Upload a photo for a subsequent message in this conversation (multipart/form-data, field "photo")
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo: { type: string, format: binary }
+      responses:
+        "201":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [photoUrl]
+                properties:
+                  photoUrl: { type: string }
+        "403":
+          description: Not a member
+        "413":
+          description: Quota exceeded
+
 components:
   schemas:
     Profile:
