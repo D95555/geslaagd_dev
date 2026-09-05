@@ -13,6 +13,13 @@ import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
 
+export const MAX_QUERIES_PER_CHAPTER = 4;
+
+/** Kapt het aantal queries per hoofdstuk af zodat de zoekkosten begrensd blijven. */
+export function capQueries(queries: string[]): string[] {
+  return queries.slice(0, MAX_QUERIES_PER_CHAPTER);
+}
+
 const curriculumSchema = z.object({
   description: modelText(),
   difficultyLevel: modelText("VWO"),
@@ -67,7 +74,10 @@ const SYSTEM_PROMPT = [
   "     notitie over hoe de bron relevant is voor dit hoofdstuk",
   "4. Schrijf een beschrijving van het vak (2-3 zinnen).",
   "5. Bepaal het moeilijkheidsniveau (bijv. 'VWO 5', 'VWO 6', 'Bachelor 1').",
-  "6. Geef per hoofdstuk 2-3 gerichte zoekopdrachten in crawlConfigs.",
+  "6. Geef per hoofdstuk maximaal 4 gerichte zoekopdrachten in crawlConfigs die samen",
+  "   de topicTags dekken langs drie invalshoeken: (a) uitleg/theorie, (b) voorbeeld of",
+  "   oefening, (c) samenvatting/examen. Formuleer ze concreet met de vaktermen uit de",
+  "   topicTags, niet generiek.",
   "   Zet categories op [\"research\"] voor hoofdstukken die overwegend",
   "   wetenschappelijke/academische bronnen nodig hebben (bijv. universitaire",
   "   vakken) — dit beperkt de zoekopdracht tot academische domeinen, zonder",
@@ -229,7 +239,7 @@ export async function runCurriculumDesign(
     const config: CrawlConfig = {
       ...defaultCrawlConfig(
         designed?.queries?.length
-          ? designed.queries
+          ? capQueries(designed.queries)
           : [`${subject.name} ${chapter.title} uitleg`],
       ),
       categories: designed?.categories ?? [],
