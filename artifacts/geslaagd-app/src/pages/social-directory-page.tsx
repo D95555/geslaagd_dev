@@ -101,7 +101,7 @@ export default function SocialDirectoryPage() {
                   onClick={() => setLocation(`/profielen/${profile.userId}`)}
                 >
                   <div className="social-profile-card-head">
-                    <PersonAvatar id={profile.userId} label={profile.displayName} />
+                    <PersonAvatar id={profile.userId} label={profile.displayName} imageUrl={profile.avatarUrl} />
                     <div>
                       <strong>{profile.displayName}</strong>
                       <span>@{profile.username}</span>

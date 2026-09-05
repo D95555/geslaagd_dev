@@ -20,6 +20,7 @@ export function PersonAvatar({
   label,
   size = 'md',
   icon,
+  imageUrl,
   className = '',
 }: {
   id: string | null;
@@ -27,11 +28,24 @@ export function PersonAvatar({
   size?: 'md' | 'lg';
   /** Overrides the initial-letter fallback, e.g. a group icon. */
   icon?: ReactNode;
+  /** When set, shows a real avatar image instead of the tint+initial fallback. */
+  imageUrl?: string | null;
   className?: string;
 }) {
+  const sizeClass = size === 'lg' ? 'person-avatar-lg' : '';
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className={`person-avatar person-avatar-img ${sizeClass} ${className}`}
+        aria-hidden="true"
+      />
+    );
+  }
   return (
     <span
-      className={`person-avatar tint-${tintFor(id)} ${size === 'lg' ? 'person-avatar-lg' : ''} ${className}`}
+      className={`person-avatar tint-${tintFor(id)} ${sizeClass} ${className}`}
       aria-hidden="true"
     >
       {icon ?? initialFor(label)}

@@ -145,6 +145,7 @@ export default function ConversationPage({ conversationId }: { conversationId: s
             id={conversation.kind === 'dm' ? (otherMember?.userId ?? null) : conversation.id}
             label={title}
             icon={conversation.kind === 'group' ? <Users2 size={17} /> : undefined}
+            imageUrl={conversation.kind === 'dm' ? otherMember?.avatarUrl : undefined}
           />
           <PageHeader
             className="flex-1"

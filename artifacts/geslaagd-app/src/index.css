@@ -1548,6 +1548,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .version-badge:hover { color: hsl(var(--foreground)); background: hsl(var(--secondary)); }
 
 .account-upgrade-field { display: grid; gap: 6px; max-width: 320px; margin: 18px 0 10px; font-size: var(--text-meta-size); color: hsl(var(--muted-foreground)); }
+.account-field { display: grid; gap: 6px; max-width: 420px; margin-bottom: 14px; }
+.account-avatar-row { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+.account-avatar-actions { display: flex; flex-direction: column; gap: 10px; }
+.account-preset-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.account-preset { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; padding: 0; border: 2px solid transparent; cursor: pointer; background: none; }
+.account-preset:hover { border-color: hsl(var(--primary)); }
+.account-preset img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .decision-row { justify-content: flex-start; align-items: flex-start; gap: 12px; cursor: default; }
 .decision-row-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 2px; border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
@@ -1646,6 +1653,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .person-avatar.tint-3 { background: hsl(350 60% 50%); }
 .person-avatar.tint-4 { background: hsl(265 45% 52%); }
 .person-avatar-lg { width: 56px; height: 56px; font-size: 1.15rem; }
+.person-avatar-img { object-fit: cover; background: hsl(var(--muted)); }
 .message-avatar { margin-top: 2px; }
 
 .message-row-content { min-width: 0; flex: 1; }

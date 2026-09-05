@@ -103,7 +103,7 @@ export default function ProfilePage({ userId }: { userId: string }) {
     <StudyPageShell backTo="/social" backLabel="Terug naar studenten">
       <PageSections>
         <div className="profile-header-row">
-          <PersonAvatar id={profile.userId} label={profile.displayName} size="lg" />
+          <PersonAvatar id={profile.userId} label={profile.displayName} size="lg" imageUrl={profile.avatarUrl} />
           <PageHeader
             className="flex-1"
             title={profile.displayName}
