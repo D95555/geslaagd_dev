@@ -136,7 +136,12 @@ export async function budgetBlockReason(ctx: BudgetContext): Promise<string | nu
   }
 }
 
-export async function recordUsage(ctx: BudgetContext, operation: string, credits: number): Promise<void> {
+export async function recordUsage(
+  ctx: BudgetContext,
+  operation: string,
+  credits: number,
+  provider: "firecrawl" | "exa" = "firecrawl",
+): Promise<void> {
   if (credits <= 0) return;
   try {
     await restService("firecrawl_usage", {
@@ -146,10 +151,11 @@ export async function recordUsage(ctx: BudgetContext, operation: string, credits
         crawl_id: ctx.crawlId ?? null,
         operation,
         credits,
+        provider,
       }),
     });
   } catch (error) {
-    logger.error({ error, ctx, operation, credits }, "Failed to record Firecrawl usage");
+    logger.error({ error, ctx, operation, credits, provider }, "Failed to record crawl usage");
   }
 }
 
