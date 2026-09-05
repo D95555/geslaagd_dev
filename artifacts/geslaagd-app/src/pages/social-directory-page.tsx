@@ -10,6 +10,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { PersonAvatar } from '@/components/chat/person-avatar';
 
 export default function SocialDirectoryPage() {
   const [, setLocation] = useLocation();
@@ -99,8 +100,13 @@ export default function SocialDirectoryPage() {
                   className="social-profile-card"
                   onClick={() => setLocation(`/profielen/${profile.userId}`)}
                 >
-                  <strong>{profile.displayName}</strong>
-                  <span>@{profile.username}</span>
+                  <div className="social-profile-card-head">
+                    <PersonAvatar id={profile.userId} label={profile.displayName} />
+                    <div>
+                      <strong>{profile.displayName}</strong>
+                      <span>@{profile.username}</span>
+                    </div>
+                  </div>
                   {profile.studyProgram && <small>{profile.studyProgram}</small>}
                 </button>
               </li>

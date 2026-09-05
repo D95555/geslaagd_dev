@@ -1,25 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { Message } from '@workspace/api-client-react';
 import { ReferenceChip } from './reference-chip';
+import { PersonAvatar } from './person-avatar';
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
-const TINT_COUNT = 5;
 
 function fmtTime(value: string) {
   return new Date(value).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-}
-
-function initial(label: string): string {
-  return label.trim().slice(0, 1).toUpperCase() || '?';
-}
-
-/** Deterministic per-sender color, so the same person always gets the same
- * avatar tint across a conversation without the server tracking one. */
-function tintFor(senderId: string | null): number {
-  if (!senderId) return TINT_COUNT - 1; // the AI always gets the same, distinct tint
-  let hash = 0;
-  for (let i = 0; i < senderId.length; i += 1) hash = (hash * 31 + senderId.charCodeAt(i)) >>> 0;
-  return hash % (TINT_COUNT - 1);
 }
 
 export function MessageList({
@@ -68,9 +55,12 @@ export function MessageList({
             key={message.id}
             className={`message-row ${isOwn ? 'is-own' : ''} ${message.kind === 'ai' ? 'is-ai' : ''} ${startsGroup ? 'starts-group' : ''}`}
           >
-            <span className={`message-avatar tint-${tintFor(message.senderId)}`} aria-hidden="true">
-              {startsGroup ? initial(label) : ''}
-            </span>
+            <PersonAvatar
+              id={message.senderId}
+              label={label}
+              className="message-avatar"
+              icon={startsGroup ? undefined : ''}
+            />
             <div className="message-row-content">
               {startsGroup && (
                 <div className="message-row-head">

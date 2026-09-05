@@ -4,6 +4,7 @@ import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { Paperclip, Send } from 'lucide-react';
 import { SubjectReferencePicker } from './subject-reference-picker';
+import { EmojiPicker } from './emoji-picker';
 
 export function MessageComposer({
   conversationId,
@@ -26,6 +27,17 @@ export function MessageComposer({
       await sendConversationMessage(conversationId, { body: draft.trim() || '📷', photoUrl, references });
       setDraft('');
       setReferences([]);
+      onSent();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const sendEmoji = async (emoji: string) => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await sendConversationMessage(conversationId, { body: emoji, references: [] });
       onSent();
     } finally {
       setSending(false);
@@ -72,6 +84,7 @@ export function MessageComposer({
         <Button type="button" variant="ghost" onClick={() => fileInputRef.current?.click()} aria-label="Foto bijvoegen">
           <Paperclip size={16} />
         </Button>
+        <EmojiPicker onPick={(emoji) => void sendEmoji(emoji)} disabled={sending} />
         <Input
           value={draft}
           onChange={(e) => { setDraft(e.target.value); onTyping?.(); }}

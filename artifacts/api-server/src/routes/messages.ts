@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
 import { ListConversationMessagesParams, SendConversationMessageBody, SendConversationMessageParams } from "@workspace/api-zod";
-import { getAuthenticatedUser, restService } from "../lib/supabase";
+import { broadcast, getAuthenticatedUser, restService } from "../lib/supabase";
 import { getConversation, isMember } from "../lib/conversations";
 import { extractMentionedUsernames, insertMessage, listMessages } from "../lib/messages";
 import { checkPhotoQuota, QuotaExceededError, uploadConversationPhoto } from "../lib/social-storage";
@@ -103,6 +103,12 @@ router.post("/conversations/:conversationId/messages", async (req, res): Promise
             body: `In ${conversationLabel}: "${input.data.body.slice(0, 120)}"`,
           }),
         });
+        // Wakes up any tab the mentioned user already has open (see
+        // auth-context.tsx's personalNotificationsChannel); if they don't,
+        // the row above is still there via listNotifications() next time
+        // they load the app. Best-effort: the notification itself already
+        // landed, so a live-push hiccup must not fail the whole send.
+        await broadcast(token, `user:${mentionedUserId}:notifications`, "refresh", {}).catch(() => undefined);
       }
     }
 

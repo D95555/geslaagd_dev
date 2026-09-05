@@ -99,7 +99,7 @@ router.get("/social/directory", async (req, res): Promise<void> => {
   const query = ListDirectoryQueryParams.safeParse(req.query);
   if (!query.success) { res.status(400).json({ error: "Ongeldige zoekopdracht." }); return; }
   try {
-    const profiles = await searchProfiles(query.data.query ?? "", 50);
+    const profiles = await searchProfiles(query.data.query ?? "", 50, user.id);
     res.json({ profiles: await Promise.all(profiles.map(toProfileResponse)) });
   } catch (error) {
     req.log.warn({ error }, "Could not search directory");

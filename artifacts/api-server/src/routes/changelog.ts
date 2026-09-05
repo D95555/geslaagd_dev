@@ -33,7 +33,7 @@ router.get("/changelog", async (req, res): Promise<void> => {
   const user = await getAuthenticatedUser(req.header("authorization"));
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
   try {
-    const rows = await restService<Row[]>("changelog_entries?select=*&order=released_at.desc");
+    const rows = await restService<Row[]>("changelog_entries?select=*&order=released_at.desc,created_at.desc");
     res.json(GetChangelogResponse.parse({ entries: rows.map(toEntry) }));
   } catch (error) {
     req.log.warn({ error }, "Could not list changelog");
@@ -45,7 +45,7 @@ router.get("/admin/changelog", async (req, res): Promise<void> => {
   const identity = await admin(req);
   if (!identity) { res.status(403).json({ error: "Forbidden" }); return; }
   try {
-    const rows = await restService<Row[]>("changelog_entries?select=*&order=released_at.desc");
+    const rows = await restService<Row[]>("changelog_entries?select=*&order=released_at.desc,created_at.desc");
     res.json(ListChangelogAdminResponse.parse({ entries: rows.map(toEntry) }));
   } catch (error) {
     req.log.warn({ error }, "Could not list changelog");

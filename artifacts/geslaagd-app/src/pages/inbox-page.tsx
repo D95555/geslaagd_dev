@@ -19,6 +19,7 @@ import { MessageSquare, Plus, Users2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+import { PersonAvatar } from '@/components/chat/person-avatar';
 
 function fmtRelative(value: string | null): string {
   if (!value) return '';
@@ -160,6 +161,11 @@ export default function InboxPage() {
                   className={`inbox-row ${conversation.unread ? 'is-unread' : ''}`}
                   onClick={() => setLocation(`/gesprekken/${conversation.id}`)}
                 >
+                  <PersonAvatar
+                    id={conversation.id}
+                    label={conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}
+                    icon={conversation.kind === 'group' ? <Users2 size={16} /> : undefined}
+                  />
                   <span className="inbox-row-title">
                     {conversation.unread && <span className="inbox-unread-dot" aria-hidden="true" />}
                     <strong>{conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}</strong>

@@ -1,23 +1,30 @@
 import { useEffect, useState } from 'react';
 import { getChangelog, type ChangelogEntry } from '@workspace/api-client-react';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/auth/auth-context';
 
 function fmtDate(value: string) {
   return new Date(value).toLocaleDateString('nl-NL', { dateStyle: 'long' });
 }
 
 export default function ChangelogPage() {
+  const { user, isLoading } = useAuth();
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
+  // Gated on the session, not just mount: on a fresh/direct page load this
+  // otherwise fires before Supabase restores the session from storage,
+  // sending an unauthenticated request that 401s and is never retried.
   useEffect(() => {
+    if (isLoading) return;
+    if (!user) { setState('error'); return; }
     getChangelog()
       .then((result) => {
         setEntries(result.entries);
         setState('ready');
       })
       .catch(() => setState('error'));
-  }, []);
+  }, [isLoading, user?.id]);
 
   return (
     <section className="admin-content changelog-page">

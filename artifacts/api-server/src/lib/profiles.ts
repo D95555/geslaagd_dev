@@ -84,10 +84,10 @@ export async function updateProfile(userId: string, input: Partial<ProfileInput>
   return toProfile(rows[0]!);
 }
 
-export async function searchProfiles(query: string, limit: number): Promise<Profile[]> {
+export async function searchProfiles(query: string, limit: number, excludingUserId: string): Promise<Profile[]> {
   const q = encodeURIComponent(`%${query}%`);
   const rows = await restService<Row[]>(
-    `profiles?or=(username.ilike.${q},display_name.ilike.${q},study_program.ilike.${q})&select=*&limit=${limit}`,
+    `profiles?or=(username.ilike.${q},display_name.ilike.${q},study_program.ilike.${q})&user_id=neq.${excludingUserId}&select=*&limit=${limit}`,
   );
   return rows.map(toProfile);
 }

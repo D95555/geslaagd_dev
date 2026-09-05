@@ -1610,6 +1610,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   box-shadow: var(--momentum-shadow-soft);
   overflow: hidden;
 }
+/* On phones the page itself scrolls (no fixed app shell height to pin the
+ * composer to), so a tall message pane pushes it below the fold. Shrinking
+ * the pane keeps the composer on-screen without opening every conversation
+ * to a second scroll. */
+@media (max-width: 720px) {
+  .conversation-messages { height: min(42vh, 420px); }
+}
 
 .message-list {
   flex: 1; min-height: 0; overflow-y: auto;
@@ -1624,17 +1631,22 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .message-row.starts-group { margin-top: 12px; }
 .message-row:not(.starts-group) .message-avatar { visibility: hidden; }
 
-.message-avatar {
+/* Shared person/conversation avatar (components/chat/person-avatar.tsx) —
+ * used in chat message rows, the student directory, profile pages and the
+ * inbox, so the same face/initial reads consistently everywhere. */
+.person-avatar {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; margin-top: 2px;
+  width: 38px; height: 38px;
   border-radius: 50%;
   font-family: var(--app-font-serif); font-size: .85rem; font-weight: 700; color: #fff;
 }
-.message-avatar.tint-0 { background: hsl(var(--primary)); }
-.message-avatar.tint-1 { background: hsl(210 70% 46%); }
-.message-avatar.tint-2 { background: hsl(30 80% 42%); }
-.message-avatar.tint-3 { background: hsl(350 60% 50%); }
-.message-avatar.tint-4 { background: hsl(265 45% 52%); }
+.person-avatar.tint-0 { background: hsl(var(--primary)); }
+.person-avatar.tint-1 { background: hsl(210 70% 46%); }
+.person-avatar.tint-2 { background: hsl(30 80% 42%); }
+.person-avatar.tint-3 { background: hsl(350 60% 50%); }
+.person-avatar.tint-4 { background: hsl(265 45% 52%); }
+.person-avatar-lg { width: 56px; height: 56px; font-size: 1.15rem; }
+.message-avatar { margin-top: 2px; }
 
 .message-row-content { min-width: 0; flex: 1; }
 .message-row-head { display: flex; align-items: baseline; gap: 8px; }
@@ -1668,6 +1680,38 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   box-shadow: var(--momentum-shadow-soft);
 }
 .composer-row:focus-within { border-color: hsl(var(--primary)); }
+
+.emoji-picker-panel {
+  width: auto; padding: 8px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+}
+.emoji-picker-option {
+  display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 8px; font-size: 1.2rem;
+}
+.emoji-picker-option:hover { background: hsl(var(--accent)); }
+
+/* Floating reaction burst: an emoji-only message flies up off the screen for
+ * everyone currently in the conversation, on top of appearing in the message
+ * list like any other message. Positioned relative to `.conversation-body`
+ * (not the scroll-clipped `.conversation-messages` panel) so it isn't cut
+ * off partway through, and escapes a full viewport height so it genuinely
+ * exits the screen regardless of window size. */
+.conversation-body { position: relative; }
+.floating-reactions { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: 5; }
+.floating-reaction {
+  position: absolute; bottom: 4px; font-size: 2.2rem; line-height: 1;
+  animation: floating-reaction-fly 2.2s ease-in forwards;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / .18));
+}
+@keyframes floating-reaction-fly {
+  0% { transform: translateY(0) scale(.5) rotate(0deg); opacity: 0; }
+  12% { transform: translateY(-40px) scale(1.15) rotate(-6deg); opacity: 1; }
+  100% { transform: translateY(-100vh) scale(1.05) rotate(10deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-reaction { animation: none; display: none; }
+}
 .composer-row input {
   flex: 1; border: 0 !important; background: transparent !important; box-shadow: none !important;
   padding-left: 6px;
@@ -1700,6 +1744,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: hsl(var(--foreground)); font-size: .85rem;
 }
 .reference-picker button:hover { background: hsl(var(--accent)); }
+.reference-picker button.reference-picker-chapter { padding-left: 22px; color: hsl(var(--muted-foreground)); font-size: .82rem; }
 
 /* ── Social directory (pages/social-directory-page.tsx) ─────────────────── */
 .social-directory-search { max-width: 360px; }
@@ -1718,11 +1763,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
               transform var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
 .social-profile-card:hover { border-color: hsl(var(--primary)); box-shadow: var(--momentum-shadow-lift); transform: translateY(-2px); }
-.social-profile-card strong { font-family: var(--app-font-serif); font-size: 1rem; }
+.social-profile-card-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.social-profile-card-head > div { min-width: 0; display: flex; flex-direction: column; }
+.social-profile-card strong { font-family: var(--app-font-serif); font-size: 1rem; overflow-wrap: anywhere; }
 .social-profile-card span { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: .78rem; }
 .social-profile-card small { color: hsl(var(--muted-foreground)); font-size: .8rem; }
 
 /* ── Profile page (pages/profile-page.tsx) ──────────────────────────────── */
+.profile-header-row { display: flex; align-items: flex-start; gap: 16px; }
+.profile-header-row .person-avatar-lg { margin-top: 2px; }
 .profile-vakken-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .profile-vakken-list li {
   padding: 4px 12px; border-radius: 999px;
@@ -1742,7 +1791,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .inbox-row:hover { border-color: hsl(var(--primary)); }
 .inbox-row.is-unread strong { font-weight: 700; }
-.inbox-row-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.inbox-row-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
 .inbox-row-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inbox-unread-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--primary)); }
 .inbox-row-meta { flex-shrink: 0; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: .72rem; }

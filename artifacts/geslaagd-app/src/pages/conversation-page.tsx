@@ -26,12 +26,14 @@ import {
 import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
 import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
 import { PageSkeleton } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
-import { BellOff, Settings, UserMinus, UserPlus } from 'lucide-react';
+import { BellOff, Settings, UserMinus, UserPlus, Users2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
 import { MessageList } from '@/components/chat/message-list';
 import { MessageComposer } from '@/components/chat/message-composer';
+import { PersonAvatar } from '@/components/chat/person-avatar';
+import { FloatingReactions } from '@/components/chat/floating-reactions';
 import { useConversationChannel } from '@/hooks/use-conversation-channel';
 
 export default function ConversationPage({ conversationId }: { conversationId: string }) {
@@ -44,7 +46,7 @@ export default function ConversationPage({ conversationId }: { conversationId: s
   const [memberQuery, setMemberQuery] = useState('');
   const [candidates, setCandidates] = useState<Profile[]>([]);
 
-  const { messages, sendTyping, typingUserIds } = useConversationChannel(conversationId);
+  const { messages, sendTyping, typingUserIds, reactions, dismissReaction } = useConversationChannel(conversationId);
 
   const load = async () => {
     setState('loading');
@@ -138,37 +140,48 @@ export default function ConversationPage({ conversationId }: { conversationId: s
   return (
     <StudyPageShell backTo="/gesprekken" backLabel="Terug naar gesprekken">
       <PageSections>
-        <PageHeader
-          title={title}
-          description={conversation.kind === 'group' ? `${members.length} leden` : undefined}
-          actions={
-            <>
-              <Button variant="outline" onClick={() => void toggleMute()} aria-label="Dempen">
-                <BellOff size={15} /> {myMembership?.muted ? 'Gedempt' : 'Dempen'}
-              </Button>
-              {isOwner && (
-                <Button variant="outline" onClick={() => setSettingsOpen(true)} aria-label="Groepsinstellingen">
-                  <Settings size={15} /> Instellingen
+        <div className="profile-header-row">
+          <PersonAvatar
+            id={conversation.kind === 'dm' ? (otherMember?.userId ?? null) : conversation.id}
+            label={title}
+            icon={conversation.kind === 'group' ? <Users2 size={17} /> : undefined}
+          />
+          <PageHeader
+            className="flex-1"
+            title={title}
+            description={conversation.kind === 'group' ? `${members.length} leden` : undefined}
+            actions={
+              <>
+                <Button variant="outline" onClick={() => void toggleMute()} aria-label="Dempen">
+                  <BellOff size={15} /> {myMembership?.muted ? 'Gedempt' : 'Dempen'}
                 </Button>
-              )}
-            </>
-          }
-        />
-
-        <div className="conversation-messages">
-          <MessageList
-            messages={messages}
-            currentUserId={user?.id ?? ''}
-            senderLabel={(senderId) =>
-              senderId === null
-                ? 'Studieassistent'
-                : (members.find((m) => m.userId === senderId)?.displayName ?? 'Onbekend lid')
+                {isOwner && (
+                  <Button variant="outline" onClick={() => setSettingsOpen(true)} aria-label="Groepsinstellingen">
+                    <Settings size={15} /> Instellingen
+                  </Button>
+                )}
+              </>
             }
-            typingLabel={typingNames.length > 0 ? `${typingNames.join(', ')} is aan het typen…` : null}
           />
         </div>
 
-        <MessageComposer conversationId={conversationId} onSent={load} onTyping={sendTyping} />
+        <div className="conversation-body">
+          <div className="conversation-messages">
+            <MessageList
+              messages={messages}
+              currentUserId={user?.id ?? ''}
+              senderLabel={(senderId) =>
+                senderId === null
+                  ? 'Studieassistent'
+                  : (members.find((m) => m.userId === senderId)?.displayName ?? 'Onbekend lid')
+              }
+              typingLabel={typingNames.length > 0 ? `${typingNames.join(', ')} is aan het typen…` : null}
+            />
+          </div>
+
+          <MessageComposer conversationId={conversationId} onSent={load} onTyping={sendTyping} />
+          <FloatingReactions reactions={reactions} onDone={dismissReaction} />
+        </div>
       </PageSections>
 
       {isOwner && (

@@ -8,6 +8,7 @@ import { MessageCircle, UserRoundX } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
+import { PersonAvatar } from '@/components/chat/person-avatar';
 
 export default function ProfilePage({ userId }: { userId: string }) {
   const [, setLocation] = useLocation();
@@ -101,22 +102,26 @@ export default function ProfilePage({ userId }: { userId: string }) {
   return (
     <StudyPageShell backTo="/social" backLabel="Terug naar studenten">
       <PageSections>
-        <PageHeader
-          title={profile.displayName}
-          description={`@${profile.username}`}
-          actions={
-            isOwnProfile ? undefined : (
-              <>
-                <Button onClick={() => void sendMessage()} disabled={messaging} data-testid="button-send-message">
-                  <MessageCircle size={15} /> Stuur bericht
-                </Button>
-                <Button variant="outline" onClick={() => void block()} disabled={blockBusy}>
-                  <UserRoundX size={15} /> Blokkeren
-                </Button>
-              </>
-            )
-          }
-        />
+        <div className="profile-header-row">
+          <PersonAvatar id={profile.userId} label={profile.displayName} size="lg" />
+          <PageHeader
+            className="flex-1"
+            title={profile.displayName}
+            description={`@${profile.username}`}
+            actions={
+              isOwnProfile ? undefined : (
+                <>
+                  <Button onClick={() => void sendMessage()} disabled={messaging} data-testid="button-send-message">
+                    <MessageCircle size={15} /> Stuur bericht
+                  </Button>
+                  <Button variant="outline" onClick={() => void block()} disabled={blockBusy}>
+                    <UserRoundX size={15} /> Blokkeren
+                  </Button>
+                </>
+              )
+            }
+          />
+        </div>
 
         {(profile.institution || profile.studyProgram) && (
           <Section title="Over">
