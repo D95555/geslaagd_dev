@@ -146,6 +146,16 @@ export default function HomePage() {
             <a href="#voor-wie" onClick={(event) => jumpTo(event, 'voor-wie')} data-testid="link-voor-wie">
               Mogelijkheden
             </a>
+            <a href="/faq" onClick={(event) => { event.preventDefault(); setLocation('/faq'); }} data-testid="link-faq">
+              Veelgestelde vragen
+            </a>
+            <a
+              href="/announcements"
+              onClick={(event) => { event.preventDefault(); setLocation('/announcements'); }}
+              data-testid="link-announcements"
+            >
+              Aankondigingen
+            </a>
           </nav>
           <div className="nav-actions">
             {user ? (
@@ -186,6 +196,8 @@ export default function HomePage() {
           <div className="mobile-menu" data-testid="menu-mobile">
             <a href="#werking" onClick={(event) => jumpTo(event, 'werking')}>Zo werkt het</a>
             <a href="#voor-wie" onClick={(event) => jumpTo(event, 'voor-wie')}>Mogelijkheden</a>
+            <a href="/faq" onClick={(event) => { event.preventDefault(); setLocation('/faq'); }}>Veelgestelde vragen</a>
+            <a href="/announcements" onClick={(event) => { event.preventDefault(); setLocation('/announcements'); }}>Aankondigingen</a>
             {user ? (
               <>
                 <button onClick={openLearningArea} data-testid="button-mobile-dashboard">Mijn leeromgeving</button>
