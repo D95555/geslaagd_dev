@@ -114,3 +114,23 @@ export async function setChapterSourceRelevance(
     { method: "PATCH", body: JSON.stringify({ relevance_note: relevanceNote }) },
   );
 }
+
+/**
+ * Cross-vak content-cache: geeft voor de gevraagde URL's de al opgeslagen niet-lege
+ * `sources.full_content` terug. `sources` is globaal op URL gededupliceerd, dus content
+ * die voor een ander vak is opgehaald hoeft niet opnieuw (betaald) te worden gescraped.
+ */
+export async function getStoredContentByUrl(urls: string[]): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (urls.length === 0) return result;
+  const inList = urls.map((url) => `"${encodeURIComponent(url)}"`).join(",");
+  const rows = await restService<Row[]>(
+    `sources?url=in.(${inList})&full_content=not.is.null&select=url,full_content`,
+  );
+  for (const row of rows) {
+    const url = row.url as string;
+    const content = row.full_content as string | null;
+    if (url && content && content.length > 0) result.set(url, content);
+  }
+  return result;
+}
