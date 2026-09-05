@@ -10,7 +10,7 @@ import {
   ListAdminSupportTicketsQueryParams,
   ReopenSupportTicketParams,
 } from "@workspace/api-zod";
-import { getAuthenticatedUser } from "../lib/supabase";
+import { broadcast, getAuthenticatedUser } from "../lib/supabase";
 import { setAccountPackage } from "../lib/credits";
 import {
   createTicket,
@@ -59,6 +59,7 @@ router.post("/support/tickets", async (req, res): Promise<void> => {
   try {
     const ticket = await createTicket(user.id, input.data.subject.trim());
     await insertMessage(ticket.id, "user", input.data.message.trim(), user.id);
+    await broadcast(req.header("authorization")!, `ticket:${ticket.id}`, "new-message", {});
     res.status(201).json(await toDetail(ticket));
   } catch (error) {
     req.log.warn({ error }, "Could not create support ticket");
@@ -95,6 +96,7 @@ router.post("/support/tickets/:ticketId/messages", async (req, res): Promise<voi
     if (!isOwner && !user.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
 
     await insertMessage(ticket.id, user.isAdmin ? "admin" : "user", input.data.message.trim(), user.id);
+    await broadcast(req.header("authorization")!, `ticket:${ticket.id}`, "new-message", {});
     res.status(201).json(await toDetail(ticket));
   } catch (error) {
     req.log.warn({ error }, "Could not add support message");

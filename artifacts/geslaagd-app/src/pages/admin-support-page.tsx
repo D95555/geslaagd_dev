@@ -11,9 +11,10 @@ import {
 } from '@workspace/api-client-react';
 import { Loader2, Send, X } from 'lucide-react';
 import { useAuth } from '@/auth/auth-context';
-import { useLivePoll } from '@/lib/use-live-poll';
 import { AdminDenied, AdminShell } from '@/components/admin/admin-shell';
 import { DetailSheet } from '@/components/admin/detail-sheet';
+import { MessageList } from '@/components/chat/message-list';
+import { useBroadcastChannel } from '@/hooks/use-broadcast-channel';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
@@ -39,6 +40,23 @@ const senderLabel: Record<SupportTicketDetail['messages'][number]['sender'], str
   ai: 'Support-AI',
   admin: 'Beheerder',
 };
+
+/** Maps a support message onto the shared social Message shape at the render
+ * boundary, same approach as the AI study-chat retrofit — no backend type
+ * changes needed just to reuse the shared list component. */
+function asSocialMessage(message: SupportTicketDetail['messages'][number]) {
+  return {
+    id: message.id,
+    conversationId: '',
+    senderId: message.sender === 'admin' ? 'admin' : message.sender === 'ai' ? null : 'user',
+    kind: (message.sender === 'ai' ? 'ai' : 'user') as 'user' | 'ai',
+    body: message.body,
+    photoUrl: null,
+    references: [],
+    createdAt: message.createdAt,
+    deletedAt: null,
+  };
+}
 
 function TicketDetailPanel({
   ticket,
@@ -111,15 +129,13 @@ function TicketDetailPanel({
       )}
 
       <div className="support-message-list">
-        {ticket.messages.map((message) => (
-          <div key={message.id} className={`support-message support-message-${message.sender}`}>
-            <div className="support-message-meta">
-              <strong>{message.senderEmail ?? senderLabel[message.sender]}</strong>
-              <span>{fmtDateTime(message.createdAt)}</span>
-            </div>
-            <p>{message.body}</p>
-          </div>
-        ))}
+        <MessageList
+          messages={ticket.messages.map(asSocialMessage)}
+          currentUserId="admin"
+          senderLabel={(senderId) =>
+            senderId === 'admin' ? senderLabel.admin : senderId === null ? senderLabel.ai : (ticket.userEmail ?? senderLabel.user)
+          }
+        />
       </div>
 
       {ticket.status === 'open' && (
@@ -165,12 +181,12 @@ export default function AdminSupportPage() {
     else if (!isLoading) setState('forbidden');
   }, [isLoading, user?.id, statusFilter]);
 
-  useLivePoll(() => load(true), { enabled: state === 'ready', intervalMs: 8_000 });
-
-  useEffect(() => {
+  const reloadSelected = () => {
     if (selectedId) void getSupportTicket(selectedId).then(setSelected);
     else setSelected(null);
-  }, [selectedId]);
+  };
+  useEffect(reloadSelected, [selectedId]);
+  useBroadcastChannel(selectedId ? `ticket:${selectedId}` : null, 'new-message', reloadSelected);
 
   if (state === 'forbidden') return <AdminDenied />;
 

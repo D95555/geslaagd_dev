@@ -15,6 +15,8 @@ import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
 import { Textarea } from '@workspace/geslaagd-momentum/components/ui/textarea';
 import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
+import { MessageList } from '@/components/chat/message-list';
+import { useBroadcastChannel } from '@/hooks/use-broadcast-channel';
 
 function fmtDateTime(value: string) {
   return new Date(value).toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
@@ -30,6 +32,22 @@ const senderLabel: Record<SupportTicketDetail['messages'][number]['sender'], str
   ai: 'Support-AI',
   admin: 'Beheerder',
 };
+
+/** Same render-boundary mapping as the admin support view and the AI study
+ * chat retrofit — no backend type changes needed just to reuse MessageList. */
+function asSocialMessage(message: SupportTicketDetail['messages'][number]) {
+  return {
+    id: message.id,
+    conversationId: '',
+    senderId: message.sender === 'user' ? 'me' : message.sender === 'ai' ? null : 'admin',
+    kind: (message.sender === 'ai' ? 'ai' : 'user') as 'user' | 'ai',
+    body: message.body,
+    photoUrl: null,
+    references: [],
+    createdAt: message.createdAt,
+    deletedAt: null,
+  };
+}
 
 function NewTicketForm({ onCreated }: { onCreated: (ticket: SupportTicketDetail) => void }) {
   const [subject, setSubject] = useState('');
@@ -93,6 +111,10 @@ function TicketThread({
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
+  useBroadcastChannel(`ticket:${ticket.id}`, 'new-message', () => {
+    void getSupportTicket(ticket.id).then(onUpdated);
+  });
+
   const send = async (event: FormEvent) => {
     event.preventDefault();
     if (!reply.trim()) return;
@@ -114,15 +136,13 @@ function TicketThread({
         <Badge variant={ticket.status === 'open' ? 'default' : 'secondary'}>{statusLabel[ticket.status]}</Badge>
       </div>
       <div className="support-message-list">
-        {ticket.messages.map((message) => (
-          <div key={message.id} className={`support-message support-message-${message.sender}`}>
-            <div className="support-message-meta">
-              <strong>{senderLabel[message.sender]}</strong>
-              <span>{fmtDateTime(message.createdAt)}</span>
-            </div>
-            <p>{message.body}</p>
-          </div>
-        ))}
+        <MessageList
+          messages={ticket.messages.map(asSocialMessage)}
+          currentUserId="me"
+          senderLabel={(senderId) =>
+            senderId === 'me' ? senderLabel.user : senderId === null ? senderLabel.ai : senderLabel.admin
+          }
+        />
       </div>
       {ticket.status === 'open' ? (
         <form className="support-reply-form" onSubmit={(event) => void send(event)}>
