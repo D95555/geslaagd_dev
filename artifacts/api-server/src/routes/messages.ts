@@ -2,7 +2,8 @@ import { Router, type IRouter } from "express";
 import multer from "multer";
 import { ListConversationMessagesParams, SendConversationMessageBody, SendConversationMessageParams } from "@workspace/api-zod";
 import { broadcast, getAuthenticatedUser, restService } from "../lib/supabase";
-import { getConversation, isMember } from "../lib/conversations";
+import { getConversation, isMember, listMembers } from "../lib/conversations";
+import { isBlocked } from "../lib/blocks";
 import { extractMentionedUsernames, insertMessage, listMessages } from "../lib/messages";
 import { checkPhotoQuota, QuotaExceededError, uploadConversationPhoto } from "../lib/social-storage";
 
@@ -34,6 +35,15 @@ router.post("/conversations/:conversationId/messages", async (req, res): Promise
     if (!(await isMember(params.data.conversationId, user.id))) { res.status(403).json({ error: "Forbidden" }); return; }
     const conversation = await getConversation(params.data.conversationId);
     if (!conversation || conversation.status !== "active") { res.status(403).json({ error: "Dit gesprek is gesloten." }); return; }
+
+    if (conversation.kind === "dm") {
+      const members = await listMembers(params.data.conversationId);
+      const other = members.find((m) => m.userId !== user.id);
+      if (other && (await isBlocked(user.id, other.userId))) {
+        res.status(403).json({ error: "Je kunt deze gebruiker geen bericht meer sturen." });
+        return;
+      }
+    }
 
     const message = await insertMessage(token, params.data.conversationId, user.id, "user", input.data.body, {
       photoUrl: input.data.photoUrl,

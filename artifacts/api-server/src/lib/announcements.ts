@@ -59,26 +59,42 @@ export async function deleteAnnouncement(id: string): Promise<void> {
 export async function listAnnouncementFeed(): Promise<FeedItem[]> {
   const [announcements, changelogEntries] = await Promise.all([
     restService<Row[]>("announcements?select=*&order=created_at.desc"),
-    restService<Row[]>("changelog_entries?select=*&order=released_at.desc"),
+    restService<Row[]>("changelog_entries?select=*&order=released_at.desc,created_at.desc"),
   ]);
 
-  const announcementItems: FeedItem[] = announcements.map((row) => ({
-    id: row.id as string,
-    kind: "announcement",
-    title: row.title as string,
-    body: row.body as string,
-    createdAt: row.created_at as string,
+  type Entry = { item: FeedItem; sortDate: string; sortTiebreak: string };
+
+  const announcementEntries: Entry[] = announcements.map((row) => ({
+    item: {
+      id: row.id as string,
+      kind: "announcement",
+      title: row.title as string,
+      body: row.body as string,
+      createdAt: row.created_at as string,
+    },
+    sortDate: row.created_at as string,
+    sortTiebreak: row.created_at as string,
   }));
 
-  const changelogItems: FeedItem[] = changelogEntries.map((row) => ({
-    id: row.id as string,
-    kind: "changelog",
-    title: `${row.version as string} — ${row.summary as string}`,
-    body: ((row.bullets as string[] | null) ?? []).join("\n"),
-    createdAt: new Date(row.released_at as string).toISOString(),
+  const changelogEntryItems: Entry[] = changelogEntries.map((row) => ({
+    item: {
+      id: row.id as string,
+      kind: "changelog",
+      title: `${row.version as string} — ${row.summary as string}`,
+      body: ((row.bullets as string[] | null) ?? []).join("\n"),
+      createdAt: new Date(row.released_at as string).toISOString(),
+    },
+    sortDate: row.released_at as string,
+    // released_at is a bare date with no time-of-day, so two entries
+    // released the same day tie on sortDate alone — created_at (true
+    // insertion order) breaks that tie deterministically.
+    sortTiebreak: row.created_at as string,
   }));
 
-  return [...announcementItems, ...changelogItems].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  return [...announcementEntries, ...changelogEntryItems]
+    .sort((a, b) => {
+      const dateDiff = new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime();
+      return dateDiff !== 0 ? dateDiff : new Date(b.sortTiebreak).getTime() - new Date(a.sortTiebreak).getTime();
+    })
+    .map((entry) => entry.item);
 }

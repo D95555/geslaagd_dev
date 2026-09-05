@@ -48,8 +48,8 @@ export default function ConversationPage({ conversationId }: { conversationId: s
 
   const { messages, sendTyping, typingUserIds, reactions, dismissReaction } = useConversationChannel(conversationId);
 
-  const load = async () => {
-    setState('loading');
+  const load = async (options: { silent?: boolean } = {}) => {
+    if (!options.silent) setState('loading');
     try {
       const [conv, memberList] = await Promise.all([
         getConversationRoute(conversationId),
@@ -179,7 +179,11 @@ export default function ConversationPage({ conversationId }: { conversationId: s
             />
           </div>
 
-          <MessageComposer conversationId={conversationId} onSent={load} onTyping={sendTyping} />
+          <MessageComposer
+            conversationId={conversationId}
+            onSent={() => void load({ silent: true })}
+            onTyping={sendTyping}
+          />
           <FloatingReactions reactions={reactions} onDone={dismissReaction} />
         </div>
       </PageSections>
