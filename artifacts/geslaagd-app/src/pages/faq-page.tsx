@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/accordion';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import { PublicHeader } from '@/components/shell/public-header';
 
 /**
  * Static, hand-written answers to the questions that come up most often. This
@@ -79,11 +80,36 @@ const SECTIONS: FaqSection[] = [
     ],
   },
   {
+    title: 'Credits & pakketten',
+    items: [
+      {
+        q: 'Wat zijn credits en waarvoor betaal ik ze?',
+        a: 'Een nieuw vak aanmaken kost 10 credits (dat zet een hele zoek- en schrijfpijplijn in gang), en een bestaand vak voor het eerst gebruiken kost 5 credits. Daarna is dat vak voorgoed van jou — geen herhaalde kosten om het opnieuw te openen.',
+      },
+      {
+        q: 'Welke pakketten zijn er?',
+        a: 'Trial (10 credits om te proeven, geen nieuwe vakken aan te maken), Basis (30 credits om te beginnen, +10 per maand), en Plus (60 om te beginnen, +25 per maand). Beheerders hebben onbeperkt.',
+      },
+      {
+        q: 'Ik zit op Trial. Hoe kom ik op Basis of Plus?',
+        a: 'Open een supportticket en laat weten dat je studeert (welke instelling, welke studie). Een beheerder kan je dan een activatiecode geven voor Basis of Plus.',
+      },
+      {
+        q: 'Ik heb al een activatiecode. Hoe upgrade ik daarmee?',
+        a: 'Ga naar "Mijn account" en vul de code in bij "Upgrade-code". Dit kan alleen naar een hoger pakket dan je huidige — niet naar hetzelfde of een lager pakket.',
+      },
+      {
+        q: 'Kan ik maar een beperkt aantal nieuwe vakken per maand aanmaken?',
+        a: 'Ja, maximaal 3 nieuwe vakken per rollende maand (niet per kalendermaand) voor niet-beheerders. Bestaande vakken gebruiken telt hier niet in mee.',
+      },
+    ],
+  },
+  {
     title: 'Bijdrage',
     items: [
       {
         q: 'Kost geslaagd.app geld?',
-        a: 'geslaagd.app is een project, geen bedrijf — gemaakt voor en door studenten. Een eenmalige bijdrage helpt de kosten voor hosting te dekken. Er zit geen abonnement, reclame of winstoogmerk achter.',
+        a: 'geslaagd.app is een project, geen bedrijf — gemaakt voor en door studenten. Er zit geen winstoogmerk achter; het creditsysteem bestaat om misbruik en te hoge serverkosten te voorkomen, niet om winst te maken.',
       },
     ],
   },
@@ -93,36 +119,41 @@ export default function FaqPage() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="admin-content faq-page">
-      <div className="admin-content-head">
-        <div>
-          <h1>Veelgestelde vragen</h1>
-          <p>De vragen die het vaakst voorbijkomen. Staat je vraag er niet bij? Open dan een ticket.</p>
-        </div>
-      </div>
+    <div className="site-shell">
+      <PublicHeader />
+      <main>
+        <section className="admin-content faq-page section-wrap">
+          <div className="admin-content-head">
+            <div>
+              <h1>Veelgestelde vragen</h1>
+              <p>De vragen die het vaakst voorbijkomen. Staat je vraag er niet bij? Open dan een ticket.</p>
+            </div>
+          </div>
 
-      {SECTIONS.map((section) => (
-        <div key={section.title} className="faq-section">
-          <h2>{section.title}</h2>
-          <Accordion type="single" collapsible className="faq-accordion">
-            {section.items.map((item, index) => (
-              <AccordionItem key={item.q} value={`${section.title}-${index}`}>
-                <AccordionTrigger>{item.q}</AccordionTrigger>
-                <AccordionContent>{item.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      ))}
+          {SECTIONS.map((section) => (
+            <div key={section.title} className="faq-section">
+              <h2>{section.title}</h2>
+              <Accordion type="single" collapsible className="faq-accordion">
+                {section.items.map((item, index) => (
+                  <AccordionItem key={item.q} value={`${section.title}-${index}`}>
+                    <AccordionTrigger>{item.q}</AccordionTrigger>
+                    <AccordionContent>{item.a}</AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          ))}
 
-      <div className="faq-cta">
-        <LifeBuoy size={20} aria-hidden="true" />
-        <div>
-          <strong>Vraag er niet bij?</strong>
-          <span>Open een ticket, dan kijkt een beheerder ernaar.</span>
-        </div>
-        <Button onClick={() => setLocation('/support')}>Naar support</Button>
-      </div>
-    </section>
+          <div className="faq-cta">
+            <LifeBuoy size={20} aria-hidden="true" />
+            <div>
+              <strong>Vraag er niet bij?</strong>
+              <span>Open een ticket, dan kijkt een beheerder ernaar.</span>
+            </div>
+            <Button onClick={() => setLocation('/support')}>Naar support</Button>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

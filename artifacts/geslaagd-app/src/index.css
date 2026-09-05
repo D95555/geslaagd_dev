@@ -1469,7 +1469,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .support-faq-hint:hover { background: hsl(var(--muted)); }
 .support-faq-hint svg { flex-shrink: 0; color: hsl(var(--primary)); }
 
-.faq-page { max-width: 760px; }
+.faq-page, .announcements-page { max-width: 760px; padding-block: 48px; }
 .faq-section { margin-top: 28px; }
 .faq-section h2 { margin: 0 0 8px; font: 600 1.05rem var(--app-font-serif); letter-spacing: -.02em; }
 .faq-accordion { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 0 14px; background: hsl(var(--card)); }

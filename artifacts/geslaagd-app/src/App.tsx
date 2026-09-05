@@ -22,8 +22,10 @@ import SubjectCatalogPage from '@/pages/subject-catalog-page';
 import SupportPage from '@/pages/support-page';
 import FaqPage from '@/pages/faq-page';
 import ChangelogPage from '@/pages/changelog-page';
+import AnnouncementsPage from '@/pages/announcements-page';
 import AccountPage from '@/pages/account-page';
 import AdminChangelogPage from '@/pages/admin-changelog-page';
+import AdminAnnouncementsPage from '@/pages/admin-announcements-page';
 import AdminSupportPage from '@/pages/admin-support-page';
 import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
@@ -51,6 +53,7 @@ function Router() {
           <Route path="/support" component={SupportPage} />
           <Route path="/faq" component={FaqPage} />
           <Route path="/changelog" component={ChangelogPage} />
+          <Route path="/announcements" component={AnnouncementsPage} />
           <Route path="/account" component={AccountPage} />
           <Route path="/vakken">{() => <SubjectCatalogPage />}</Route>
           <Route path="/vakken/:subjectId/hoofdstuk/:chapterId">
@@ -68,6 +71,7 @@ function Router() {
           <Route path="/beheer/activatiecodes" component={AdminActivationKeysPage} />
           <Route path="/beheer/support" component={AdminSupportPage} />
           <Route path="/beheer/changelog" component={AdminChangelogPage} />
+          <Route path="/beheer/aankondigingen" component={AdminAnnouncementsPage} />
           <Route path="/beheer" component={AdminOverviewPage} />
           <Route path="/beheer/crawl" component={AdminCrawlPage} />
           <Route path="/beheer/beslissingen" component={AdminAiDecisionsPage} />

@@ -7,6 +7,7 @@ import {
   History,
   KeyRound,
   LayoutDashboard,
+  Megaphone,
   MessageCircleQuestion,
   Sparkles,
   Terminal,
@@ -43,6 +44,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken of te upgraden', icon: KeyRound },
   { href: '/beheer/support', label: 'Support', hint: 'Tickets van studenten', icon: MessageCircleQuestion },
   { href: '/beheer/changelog', label: 'Changelog', hint: 'Wat is er veranderd', icon: History },
+  { href: '/beheer/aankondigingen', label: 'Aankondigingen', hint: 'Berichten voor alle bezoekers', icon: Megaphone },
 ];
 
 function isActive(current: string, href: string): boolean {
