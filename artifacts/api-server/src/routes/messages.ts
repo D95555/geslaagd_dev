@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
 import { ListConversationMessagesParams, SendConversationMessageBody, SendConversationMessageParams } from "@workspace/api-zod";
-import { getAuthenticatedUser } from "../lib/supabase";
+import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { getConversation, isMember } from "../lib/conversations";
 import { insertMessage, listMessages } from "../lib/messages";
 import { checkPhotoQuota, QuotaExceededError, uploadConversationPhoto } from "../lib/social-storage";
@@ -40,9 +40,45 @@ router.post("/conversations/:conversationId/messages", async (req, res): Promise
       references: input.data.references,
     });
 
-    // Task 10 (/ai) and Task 11 (@mentions) hook in here, after the human
-    // message is stored, using `message`/`conversation`/`token` already in
-    // scope — see those tasks for the exact code inserted at this point.
+    if (input.data.body.trim().toLowerCase().startsWith("/ai ")) {
+      const question = input.data.body.trim().slice(4).trim();
+      const subjectRef = (input.data.references ?? [])[0];
+      if (!subjectRef) {
+        await insertMessage(
+          token,
+          params.data.conversationId,
+          null,
+          "ai",
+          "Vermeld eerst een vak met # zodat ik weet waarover je het hebt — bijvoorbeeld: /ai #Scheikunde wat is een redoxreactie?",
+        );
+      } else {
+        const allowed = await restService<boolean>("rpc/claim_study_ai_request", {
+          method: "POST",
+          body: JSON.stringify({ p_user_id: user.id }),
+        });
+        if (!allowed) {
+          await insertMessage(
+            token,
+            params.data.conversationId,
+            null,
+            "ai",
+            "Je hebt net veel AI-verzoeken gedaan. Probeer het over een kwartier opnieuw.",
+          );
+        } else {
+          const { handleChatMessage } = await import("../lib/study-handler");
+          const reply = await handleChatMessage({
+            userId: user.id,
+            subjectId: subjectRef.subjectId,
+            chapterId: subjectRef.chapterId ?? null,
+            message: question,
+          });
+          await insertMessage(token, params.data.conversationId, null, "ai", reply.content);
+        }
+      }
+    }
+
+    // Task 11 (@mentions) hooks in here too, after the /ai handling above,
+    // using `message`/`conversation`/`token` already in scope.
 
     res.status(201).json(message);
   } catch (error) {
