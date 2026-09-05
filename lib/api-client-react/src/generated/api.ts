@@ -48,6 +48,7 @@ import type {
   CreateActivationKeysInput,
   CreateAnnouncementInput,
   CreateChangelogEntryInput,
+  CreateProfileInput,
   CreateSupportTicketInput,
   DeclineSourceInput,
   DiagnosticQuestionnaire,
@@ -56,6 +57,7 @@ import type {
   GetStudyCatalogParams,
   GradeResult,
   GrantPackageInput,
+  HasProfileResponse,
   HealthStatus,
   ListActivationKeysParams,
   ListActivationKeysResponse,
@@ -65,6 +67,8 @@ import type {
   ListAnnouncementsResponse,
   ListChangelogResponse,
   ListChatMessagesParams,
+  ListDirectoryParams,
+  ListDirectoryResponse,
   ListNotificationsResponse,
   ListPipelineLogsParams,
   ListPipelineTasksParams,
@@ -79,6 +83,7 @@ import type {
   PipelineLogEntry,
   PipelineTask,
   PipelineTaskDetail,
+  Profile,
   QuestionnaireSubmissionInput,
   ReconsiderSourceInput,
   RefreshSubjectResult,
@@ -119,6 +124,7 @@ import type {
   SupportTicketDetail,
   TrackedSession,
   UpdateCrawlMemoryInput,
+  UpdateProfileInput,
   UpdateVerkennerChapterTitleInput,
   UpdateVerkennerSubjectTitleInput,
   VerkennerLookupResponse,
@@ -8532,5 +8538,527 @@ export const usePublishSubject = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getPublishSubjectMutationOptions(options));
+    }
+
+export const getGetMyProfileStatusUrl = () => {
+
+
+
+
+  return `/api/profiles/me`
+}
+
+/**
+ * @summary Whether the signed-in user has completed onboarding, and their own profile if so
+ */
+export const getMyProfileStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<HasProfileResponse | Profile> => {
+
+  return customFetch<HasProfileResponse | Profile>(getGetMyProfileStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyProfileStatusQueryKey = () => {
+    return [
+    `/api/profiles/me`
+    ] as const;
+    }
+
+
+export const getGetMyProfileStatusQueryOptions = <TData = Awaited<ReturnType<typeof getMyProfileStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyProfileStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyProfileStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyProfileStatus>>> = ({ signal }) => getMyProfileStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyProfileStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyProfileStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getMyProfileStatus>>>
+export type GetMyProfileStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Whether the signed-in user has completed onboarding, and their own profile if so
+ */
+
+export function useGetMyProfileStatus<TData = Awaited<ReturnType<typeof getMyProfileStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyProfileStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyProfileStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMyProfileUrl = () => {
+
+
+
+
+  return `/api/profiles/me`
+}
+
+/**
+ * @summary Complete the mandatory onboarding profile
+ */
+export const createMyProfile = async (createProfileInput: CreateProfileInput, options?: Parameters<typeof customFetch>[1]): Promise<Profile> => {
+
+  return customFetch<Profile>(getCreateMyProfileUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createProfileInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMyProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyProfile>>, TError,{data: BodyType<CreateProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMyProfile>>, TError,{data: BodyType<CreateProfileInput>}, TContext> => {
+
+const mutationKey = ['createMyProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMyProfile>>, {data: BodyType<CreateProfileInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMyProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof createMyProfile>>>
+    export type CreateMyProfileMutationBody = BodyType<CreateProfileInput>
+    export type CreateMyProfileMutationError = ErrorType<void>
+
+    /**
+ * @summary Complete the mandatory onboarding profile
+ */
+export const useCreateMyProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMyProfile>>, TError,{data: BodyType<CreateProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMyProfile>>,
+        TError,
+        {data: BodyType<CreateProfileInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMyProfileMutationOptions(options));
+    }
+
+export const getUpdateMyProfileUrl = () => {
+
+
+
+
+  return `/api/profiles/me`
+}
+
+/**
+ * @summary Edit the signed-in user's own profile
+ */
+export const updateMyProfile = async (updateProfileInput: UpdateProfileInput, options?: Parameters<typeof customFetch>[1]): Promise<Profile> => {
+
+  return customFetch<Profile>(getUpdateMyProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateProfileInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateMyProfileMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileInput>}, TContext> => {
+
+const mutationKey = ['updateMyProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyProfile>>, {data: BodyType<UpdateProfileInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyProfile>>>
+    export type UpdateMyProfileMutationBody = BodyType<UpdateProfileInput>
+    export type UpdateMyProfileMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit the signed-in user's own profile
+ */
+export const useUpdateMyProfile = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError,{data: BodyType<UpdateProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyProfile>>,
+        TError,
+        {data: BodyType<UpdateProfileInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyProfileMutationOptions(options));
+    }
+
+export const getGetProfileByIdUrl = (userId: string,) => {
+
+
+
+
+  return `/api/profiles/${userId}`
+}
+
+/**
+ * @summary View another user's profile (block-aware)
+ */
+export const getProfileById = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<Profile> => {
+
+  return customFetch<Profile>(getGetProfileByIdUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProfileByIdQueryKey = (userId: string,) => {
+    return [
+    `/api/profiles/${userId}`
+    ] as const;
+    }
+
+
+export const getGetProfileByIdQueryOptions = <TData = Awaited<ReturnType<typeof getProfileById>>, TError = ErrorType<void>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfileById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProfileByIdQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfileById>>> = ({ signal }) => getProfileById(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfileById>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProfileByIdQueryResult = NonNullable<Awaited<ReturnType<typeof getProfileById>>>
+export type GetProfileByIdQueryError = ErrorType<void>
+
+
+/**
+ * @summary View another user's profile (block-aware)
+ */
+
+export function useGetProfileById<TData = Awaited<ReturnType<typeof getProfileById>>, TError = ErrorType<void>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProfileById>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProfileByIdQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListDirectoryUrl = (params?: ListDirectoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/social/directory?${stringifiedParams}` : `/api/social/directory`
+}
+
+/**
+ * @summary Search all profiles
+ */
+export const listDirectory = async (params?: ListDirectoryParams, options?: Parameters<typeof customFetch>[1]): Promise<ListDirectoryResponse> => {
+
+  return customFetch<ListDirectoryResponse>(getListDirectoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDirectoryQueryKey = (params?: ListDirectoryParams,) => {
+    return [
+    `/api/social/directory`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListDirectoryQueryOptions = <TData = Awaited<ReturnType<typeof listDirectory>>, TError = ErrorType<unknown>>(params?: ListDirectoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDirectory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDirectoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDirectory>>> = ({ signal }) => listDirectory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDirectory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDirectoryQueryResult = NonNullable<Awaited<ReturnType<typeof listDirectory>>>
+export type ListDirectoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search all profiles
+ */
+
+export function useListDirectory<TData = Awaited<ReturnType<typeof listDirectory>>, TError = ErrorType<unknown>>(
+ params?: ListDirectoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDirectory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDirectoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBlockUserRouteUrl = (userId: string,) => {
+
+
+
+
+  return `/api/blocks/${userId}`
+}
+
+/**
+ * @summary Block another user (symmetric)
+ */
+export const blockUserRoute = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getBlockUserRouteUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getBlockUserRouteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUserRoute>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockUserRoute>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['blockUserRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockUserRoute>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  blockUserRoute(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockUserRouteMutationResult = NonNullable<Awaited<ReturnType<typeof blockUserRoute>>>
+
+    export type BlockUserRouteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Block another user (symmetric)
+ */
+export const useBlockUserRoute = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUserRoute>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockUserRoute>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getBlockUserRouteMutationOptions(options));
+    }
+
+export const getUnblockUserRouteUrl = (userId: string,) => {
+
+
+
+
+  return `/api/blocks/${userId}`
+}
+
+/**
+ * @summary Remove a block you placed
+ */
+export const unblockUserRoute = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUnblockUserRouteUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnblockUserRouteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUserRoute>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockUserRoute>>, TError,{userId: string}, TContext> => {
+
+const mutationKey = ['unblockUserRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockUserRoute>>, {userId: string}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  unblockUserRoute(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockUserRouteMutationResult = NonNullable<Awaited<ReturnType<typeof unblockUserRoute>>>
+
+    export type UnblockUserRouteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a block you placed
+ */
+export const useUnblockUserRoute = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUserRoute>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockUserRoute>>,
+        TError,
+        {userId: string},
+        TContext
+      > => {
+      return useMutation(getUnblockUserRouteMutationOptions(options));
     }
 

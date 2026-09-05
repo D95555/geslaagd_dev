@@ -5,6 +5,77 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type ProfileVakkenItem = {
+  subjectId: string;
+  name: string;
+};
+
+export interface Profile {
+  userId: string;
+  username: string;
+  displayName: string;
+  /** @nullable */
+  avatarUrl: string | null;
+  /** @nullable */
+  institution: string | null;
+  /** @nullable */
+  studyProgram: string | null;
+  /** @nullable */
+  description: string | null;
+  vakken: ProfileVakkenItem[];
+  /** True if the viewer and this profile's owner have blocked each other in either direction. When true, every other field above is omitted/blank by the server. */
+  isBlocked?: boolean;
+}
+
+export interface CreateProfileInput {
+  /** @pattern ^[a-z0-9_]{3,24}$ */
+  username: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  displayName: string;
+  /** @maxLength 120 */
+  institution?: string;
+  /** @maxLength 120 */
+  studyProgram?: string;
+  /** @maxLength 500 */
+  description?: string;
+}
+
+export interface UpdateProfileInput {
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  displayName?: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  institution?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  studyProgram?: string | null;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  description?: string | null;
+}
+
+export interface ListDirectoryResponse {
+  profiles: Profile[];
+}
+
+export interface HasProfileResponse {
+  hasProfile: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -2111,5 +2182,9 @@ export type RetryPipelineTaskBodyConfig = { [key: string]: unknown };
 
 export type RetryPipelineTaskBody = {
   config?: RetryPipelineTaskBodyConfig;
+};
+
+export type ListDirectoryParams = {
+query?: string;
 };
 

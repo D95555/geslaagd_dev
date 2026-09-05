@@ -38,6 +38,8 @@ tags:
     description: Persistent global and per-account notifications
   - name: changelog
     description: Changelog entries
+  - name: social
+    description: Profiles, directory, blocking and conversations
 paths:
   /healthz:
     get:
@@ -2191,8 +2193,175 @@ paths:
         "409":
           description: Subject is not ready to publish
 
+  /profiles/me:
+    get:
+      operationId: getMyProfileStatus
+      tags: [social]
+      summary: Whether the signed-in user has completed onboarding, and their own profile if so
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/HasProfileResponse"
+                  - $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createMyProfile
+      tags: [social]
+      summary: Complete the mandatory onboarding profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProfileInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "409":
+          description: Username taken, or a profile already exists
+    patch:
+      operationId: updateMyProfile
+      tags: [social]
+      summary: Edit the signed-in user's own profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProfileInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+
+  /profiles/{userId}:
+    get:
+      operationId: getProfileById
+      tags: [social]
+      summary: View another user's profile (block-aware)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "404":
+          description: Not found
+
+  /social/directory:
+    get:
+      operationId: listDirectory
+      tags: [social]
+      summary: Search all profiles
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListDirectoryResponse" }
+
+  /blocks/{userId}:
+    post:
+      operationId: blockUserRoute
+      tags: [social]
+      summary: Block another user (symmetric)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Blocked
+    delete:
+      operationId: unblockUserRoute
+      tags: [social]
+      summary: Remove a block you placed
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Unblocked
+
 components:
   schemas:
+    Profile:
+      type: object
+      required: [userId, username, displayName, avatarUrl, institution, studyProgram, description, vakken]
+      properties:
+        userId: { type: string, format: uuid }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        institution: { type: ["string", "null"] }
+        studyProgram: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        vakken:
+          type: array
+          items:
+            type: object
+            required: [subjectId, name]
+            properties:
+              subjectId: { type: string }
+              name: { type: string }
+        isBlocked:
+          type: boolean
+          description: True if the viewer and this profile's owner have blocked each other in either direction. When true, every other field above is omitted/blank by the server.
+
+    CreateProfileInput:
+      type: object
+      required: [username, displayName]
+      properties:
+        username: { type: string, pattern: "^[a-z0-9_]{3,24}$" }
+        displayName: { type: string, minLength: 1, maxLength: 60 }
+        institution: { type: string, maxLength: 120 }
+        studyProgram: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 500 }
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 60 }
+        avatarUrl: { type: ["string", "null"] }
+        institution: { type: ["string", "null"], maxLength: 120 }
+        studyProgram: { type: ["string", "null"], maxLength: 120 }
+        description: { type: ["string", "null"], maxLength: 500 }
+
+    ListDirectoryResponse:
+      type: object
+      required: [profiles]
+      properties:
+        profiles:
+          type: array
+          items: { $ref: "#/components/schemas/Profile" }
+
+    HasProfileResponse:
+      type: object
+      required: [hasProfile]
+      properties:
+        hasProfile: { type: boolean }
+
     HealthStatus:
       type: object
       properties:

@@ -2831,3 +2831,167 @@ export const PublishSubjectResponse = zod.object({
 })
 
 
+/**
+ * @summary Whether the signed-in user has completed onboarding, and their own profile if so
+ */
+export const GetMyProfileStatusResponse = zod.union([zod.object({
+  "hasProfile": zod.boolean()
+}),zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+})])
+
+
+/**
+ * @summary Complete the mandatory onboarding profile
+ */
+export const createMyProfileBodyUsernameRegExp = new RegExp('^[a-z0-9_]{3,24}$');
+export const createMyProfileBodyDisplayNameMax = 60;
+
+export const createMyProfileBodyInstitutionMax = 120;
+
+export const createMyProfileBodyStudyProgramMax = 120;
+
+export const createMyProfileBodyDescriptionMax = 500;
+
+
+
+export const CreateMyProfileBody = zod.object({
+  "username": zod.string().regex(createMyProfileBodyUsernameRegExp),
+  "displayName": zod.string().min(1).max(createMyProfileBodyDisplayNameMax),
+  "institution": zod.string().max(createMyProfileBodyInstitutionMax).optional(),
+  "studyProgram": zod.string().max(createMyProfileBodyStudyProgramMax).optional(),
+  "description": zod.string().max(createMyProfileBodyDescriptionMax).optional()
+})
+
+export const CreateMyProfileResponse = zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+})
+
+
+/**
+ * @summary Edit the signed-in user's own profile
+ */
+export const updateMyProfileBodyDisplayNameMax = 60;
+
+export const updateMyProfileBodyInstitutionMax = 120;
+
+export const updateMyProfileBodyStudyProgramMax = 120;
+
+export const updateMyProfileBodyDescriptionMax = 500;
+
+
+
+export const UpdateMyProfileBody = zod.object({
+  "displayName": zod.string().min(1).max(updateMyProfileBodyDisplayNameMax).optional(),
+  "avatarUrl": zod.string().nullish(),
+  "institution": zod.string().max(updateMyProfileBodyInstitutionMax).nullish(),
+  "studyProgram": zod.string().max(updateMyProfileBodyStudyProgramMax).nullish(),
+  "description": zod.string().max(updateMyProfileBodyDescriptionMax).nullish()
+})
+
+export const UpdateMyProfileResponse = zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+})
+
+
+/**
+ * @summary View another user's profile (block-aware)
+ */
+export const GetProfileByIdParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const GetProfileByIdResponse = zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+})
+
+
+/**
+ * @summary Search all profiles
+ */
+export const ListDirectoryQueryParams = zod.object({
+  "query": zod.coerce.string().optional()
+})
+
+export const ListDirectoryResponse = zod.object({
+  "profiles": zod.array(zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+}))
+})
+
+
+/**
+ * @summary Block another user (symmetric)
+ */
+export const BlockUserRouteParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const BlockUserRouteResponse = zod.void()
+
+
+/**
+ * @summary Remove a block you placed
+ */
+export const UnblockUserRouteParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const UnblockUserRouteResponse = zod.void()
+
+
