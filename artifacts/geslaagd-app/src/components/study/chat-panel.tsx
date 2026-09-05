@@ -1,15 +1,35 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   listChatMessages,
   sendChatMessage,
   type ChatMessage,
+  type Message,
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
-import { Loader2, MessageCircle, Send, X } from 'lucide-react';
+import { MessageCircle, Send, X } from 'lucide-react';
 import { CitedText } from './citation-tag';
+import { MessageList } from '@/components/chat/message-list';
 
 const SIMPLER_PROMPT = 'Kun je dat simpeler uitleggen?';
+
+/** Maps the study chat's own ChatMessage shape onto the shared social
+ * Message shape at the render boundary, rather than changing either
+ * backend type: 'me' as senderId is fine since MessageList only ever
+ * compares it against the `currentUserId` prop passed alongside it. */
+function asSocialMessage(message: ChatMessage): Message {
+  return {
+    id: message.id,
+    conversationId: '',
+    senderId: message.role === 'student' ? 'me' : null,
+    kind: message.role === 'assistant' ? 'ai' : 'user',
+    body: message.content,
+    photoUrl: null,
+    references: [],
+    createdAt: message.createdAt,
+    deletedAt: null,
+  };
+}
 
 export function ChatPanel({
   subjectId,
@@ -26,7 +46,6 @@ export function ChatPanel({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState('');
-  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -38,10 +57,6 @@ export function ChatPanel({
       }
     })();
   }, [open, subjectId]);
-
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [messages, sending]);
 
   const send = async (text: string) => {
     const trimmed = text.trim();
@@ -96,25 +111,26 @@ export function ChatPanel({
         </button>
       </header>
 
-      <div className="chat-panel-messages" ref={listRef}>
-        {messages.length === 0 && !sending && (
+      <div className="chat-panel-messages">
+        {messages.length === 0 && !sending ? (
           <p className="chat-panel-empty">
             Stel gerust een vraag over dit vak. Ik leg het stap voor stap uit.
           </p>
-        )}
-        {messages.map((message) => (
-          <div key={message.id} className={`chat-message chat-message-${message.role}`}>
-            {message.role === 'assistant' ? (
-              <CitedText content={message.content} citations={message.citations ?? []} />
-            ) : (
-              <p>{message.content}</p>
-            )}
-          </div>
-        ))}
-        {sending && (
-          <div className="chat-message chat-message-assistant">
-            <Loader2 className="spin" size={16} aria-hidden="true" /> Aan het nadenken…
-          </div>
+        ) : (
+          <MessageList
+            messages={messages.map(asSocialMessage)}
+            currentUserId="me"
+            senderLabel={(senderId) => (senderId ? 'Jij' : 'Studieassistent')}
+            typingLabel={sending ? 'Aan het nadenken…' : null}
+            renderBody={(m) => {
+              const original = messages.find((msg) => msg.id === m.id)!;
+              return original.role === 'assistant' ? (
+                <CitedText content={original.content} citations={original.citations ?? []} />
+              ) : (
+                <p>{original.content}</p>
+              );
+            }}
+          />
         )}
       </div>
 
