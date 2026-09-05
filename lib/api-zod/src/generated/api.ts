@@ -2893,6 +2893,7 @@ export const CreateMyProfileResponse = zod.object({
 /**
  * @summary Edit the signed-in user's own profile
  */
+export const updateMyProfileBodyUsernameRegExp = new RegExp('^[a-z0-9_]{3,24}$');
 export const updateMyProfileBodyDisplayNameMax = 60;
 
 export const updateMyProfileBodyInstitutionMax = 120;
@@ -2904,6 +2905,7 @@ export const updateMyProfileBodyDescriptionMax = 500;
 
 
 export const UpdateMyProfileBody = zod.object({
+  "username": zod.string().regex(updateMyProfileBodyUsernameRegExp).optional(),
   "displayName": zod.string().min(1).max(updateMyProfileBodyDisplayNameMax).optional(),
   "avatarUrl": zod.string().nullish(),
   "institution": zod.string().max(updateMyProfileBodyInstitutionMax).nullish(),
@@ -2912,6 +2914,29 @@ export const UpdateMyProfileBody = zod.object({
 })
 
 export const UpdateMyProfileResponse = zod.object({
+  "userId": zod.string().uuid(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "institution": zod.string().nullable(),
+  "studyProgram": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "vakken": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "name": zod.string()
+})),
+  "isBlocked": zod.boolean().optional().describe('True if the viewer and this profile\'s owner have blocked each other in either direction. When true, every other field above is omitted\/blank by the server.')
+})
+
+
+/**
+ * @summary Upload a new profile avatar (multipart/form-data, field "avatar")
+ */
+export const UploadMyAvatarBody = zod.object({
+  "avatar": zod.instanceof(File)
+})
+
+export const UploadMyAvatarResponse = zod.object({
   "userId": zod.string().uuid(),
   "username": zod.string(),
   "displayName": zod.string(),

@@ -2241,6 +2241,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Profile" }
+        "409":
+          description: Username taken
+
+  /profiles/me/avatar:
+    post:
+      operationId: uploadMyAvatar
+      tags: [social]
+      summary: Upload a new profile avatar (multipart/form-data, field "avatar")
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar: { type: string, format: binary }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Profile" }
+        "401":
+          description: Unauthorized
 
   /profiles/{userId}:
     get:
@@ -2677,6 +2702,7 @@ components:
     UpdateProfileInput:
       type: object
       properties:
+        username: { type: string, pattern: "^[a-z0-9_]{3,24}$" }
         displayName: { type: string, minLength: 1, maxLength: 60 }
         avatarUrl: { type: ["string", "null"] }
         institution: { type: ["string", "null"], maxLength: 120 }

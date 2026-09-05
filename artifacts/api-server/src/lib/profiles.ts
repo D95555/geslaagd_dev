@@ -70,6 +70,7 @@ export async function createProfile(userId: string, input: ProfileInput): Promis
 
 export async function updateProfile(userId: string, input: Partial<ProfileInput>): Promise<Profile> {
   const patch: Row = { updated_at: new Date().toISOString() };
+  if (input.username !== undefined) patch.username = input.username;
   if (input.displayName !== undefined) patch.display_name = input.displayName;
   if (input.avatarUrl !== undefined) patch.avatar_url = input.avatarUrl;
   if (input.institution !== undefined) patch.institution = input.institution;

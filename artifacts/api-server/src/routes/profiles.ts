@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import multer from "multer";
 import {
   CreateMyProfileBody,
   GetProfileByIdParams,
@@ -7,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { getAuthenticatedUser } from "../lib/supabase";
 import { isBlocked } from "../lib/blocks";
+import { uploadProfileAvatar } from "../lib/profile-avatar";
 import {
   createProfile,
   getProfile,
@@ -19,6 +21,7 @@ import {
 } from "../lib/profiles";
 
 const router: IRouter = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 async function toProfileResponse(profile: Profile) {
   const vakken = await loadVakkenFor(profile.userId);
@@ -63,11 +66,29 @@ router.patch("/profiles/me", async (req, res): Promise<void> => {
   const input = UpdateMyProfileBody.safeParse(req.body);
   if (!input.success) { res.status(400).json({ error: "Ongeldige wijziging." }); return; }
   try {
+    if (input.data.username !== undefined && (await isUsernameTaken(input.data.username, user.id))) {
+      res.status(409).json({ error: "Deze gebruikersnaam is al in gebruik." });
+      return;
+    }
     const profile = await updateProfile(user.id, input.data);
     res.json(await toProfileResponse(profile));
   } catch (error) {
     req.log.warn({ error }, "Could not update profile");
     res.status(500).json({ error: "Profiel kon niet worden aangepast." });
+  }
+});
+
+router.post("/profiles/me/avatar", upload.single("avatar"), async (req, res): Promise<void> => {
+  const user = await getAuthenticatedUser(req.header("authorization"));
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  if (!req.file) { res.status(400).json({ error: "Geen afbeelding meegestuurd." }); return; }
+  try {
+    const avatarUrl = await uploadProfileAvatar(user.id, req.file.buffer);
+    const profile = await updateProfile(user.id, { avatarUrl });
+    res.json(await toProfileResponse(profile));
+  } catch (error) {
+    req.log.warn({ error }, "Could not upload avatar");
+    res.status(500).json({ error: "Avatar uploaden is mislukt." });
   }
 });
 

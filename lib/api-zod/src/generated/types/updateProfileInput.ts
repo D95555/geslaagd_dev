@@ -7,6 +7,8 @@
  */
 
 export interface UpdateProfileInput {
+  /** @pattern ^[a-z0-9_]{3,24}$ */
+  username?: string;
   /**
      * @minLength 1
      * @maxLength 60

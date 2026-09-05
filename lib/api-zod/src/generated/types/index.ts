@@ -232,6 +232,7 @@ export * from './updateVerkennerChapterTitleInput';
 export * from './updateVerkennerSubjectTitleInput';
 export * from './uploadConversationPhoto201';
 export * from './uploadConversationPhotoBody';
+export * from './uploadMyAvatarBody';
 export * from './verkennerChapterSummary';
 export * from './verkennerContentSummary';
 export * from './verkennerContentSummaryStatus';
