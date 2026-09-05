@@ -3010,7 +3010,9 @@ export const ListConversationsResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date().nullable(),
   "unread": zod.boolean()
-}))
+}).and(zod.object({
+  "displayTitle": zod.string().nullable()
+})).describe('A Conversation plus the viewer-perspective display title used in an inbox list (a DM has no title column of its own — this resolves to the other member\'s display name).'))
 })
 
 
@@ -3112,6 +3114,25 @@ export const UpdateGroupRouteResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "lastMessageAt": zod.coerce.date().nullable(),
   "unread": zod.boolean()
+})
+
+
+/**
+ * @summary List a conversation's members with basic profile info (member-only)
+ */
+export const ListConversationMembersParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const ListConversationMembersResponse = zod.object({
+  "members": zod.array(zod.object({
+  "userId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "muted": zod.boolean(),
+  "joinedAt": zod.coerce.date()
+}))
 })
 
 

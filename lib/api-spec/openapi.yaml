@@ -2393,6 +2393,25 @@ paths:
         "403":
           description: Not the groepseigenaar
 
+  /conversations/{conversationId}/members:
+    get:
+      operationId: listConversationMembers
+      tags: [social]
+      summary: List a conversation's members with basic profile info (member-only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListConversationMembersResponse" }
+        "403":
+          description: Not a member
+
   /conversations/{conversationId}/members/{userId}:
     post:
       operationId: addConversationMember
@@ -2717,13 +2736,22 @@ components:
         lastMessageAt: { type: ["string", "null"], format: date-time }
         unread: { type: boolean }
 
+    ConversationSummary:
+      description: A Conversation plus the viewer-perspective display title used in an inbox list (a DM has no title column of its own — this resolves to the other member's display name).
+      allOf:
+        - $ref: "#/components/schemas/Conversation"
+        - type: object
+          required: [displayTitle]
+          properties:
+            displayTitle: { type: ["string", "null"] }
+
     ListConversationsResponse:
       type: object
       required: [conversations]
       properties:
         conversations:
           type: array
-          items: { $ref: "#/components/schemas/Conversation" }
+          items: { $ref: "#/components/schemas/ConversationSummary" }
 
     CreateGroupInput:
       type: object
@@ -2783,6 +2811,25 @@ components:
         lastMessageAt: { type: ["string", "null"], format: date-time }
         status: { type: string, enum: [active, closed, deleted] }
         createdAt: { type: string, format: date-time }
+
+    ConversationMember:
+      type: object
+      required: [userId, displayName, username, avatarUrl, muted, joinedAt]
+      properties:
+        userId: { type: string, format: uuid }
+        displayName: { type: string }
+        username: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        muted: { type: boolean }
+        joinedAt: { type: string, format: date-time }
+
+    ListConversationMembersResponse:
+      type: object
+      required: [members]
+      properties:
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/ConversationMember" }
 
     ListAdminGroupsResponse:
       type: object

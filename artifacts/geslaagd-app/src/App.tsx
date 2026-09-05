@@ -32,6 +32,10 @@ import ChapterPage from '@/pages/chapter-page';
 import StudyPlanPage from '@/pages/study-plan-page';
 import NotFound from '@/pages/not-found';
 import OnboardingProfilePage from '@/pages/onboarding-profile-page';
+import SocialDirectoryPage from '@/pages/social-directory-page';
+import ProfilePage from '@/pages/profile-page';
+import InboxPage from '@/pages/inbox-page';
+import ConversationPage from '@/pages/conversation-page';
 import { NotificationsStack } from '@/components/shell/notifications-stack';
 import {
   Route,
@@ -83,6 +87,12 @@ function Router() {
             {(params) => <StudyPlanPage subjectId={params.subjectId} />}
           </Route>
           <Route path="/vakken/:subjectId">{(params) => <SubjectStudyPage subjectId={params.subjectId} />}</Route>
+          <Route path="/social" component={SocialDirectoryPage} />
+          <Route path="/profielen/:userId">{(params) => <ProfilePage userId={params.userId} />}</Route>
+          <Route path="/gesprekken" component={InboxPage} />
+          <Route path="/gesprekken/:conversationId">
+            {(params) => <ConversationPage conversationId={params.conversationId} />}
+          </Route>
           <Route path="/beheer/verkenner" component={AdminVerkennerPage} />
           <Route path="/beheer/pipeline" component={AdminPipelinePage} />
           <Route path="/beheer/console" component={AdminConsolePage} />

@@ -10,7 +10,14 @@ export function useConversationChannel(conversationId: string) {
   const typingTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const reload = () => void listConversationMessages(conversationId).then((r) => setMessages(r.messages));
-  useEffect(reload, [conversationId]);
+  // Gated on `session`: on a fresh page load (not a client-side navigation
+  // from an already-authenticated app state) this effect can otherwise fire
+  // before Supabase has restored the session from storage, sending an
+  // unauthenticated request that 401s and is never retried.
+  useEffect(() => {
+    if (!session) return;
+    reload();
+  }, [conversationId, session]);
 
   useEffect(() => {
     if (!session) return;

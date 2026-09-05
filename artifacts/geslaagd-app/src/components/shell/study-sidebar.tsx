@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useLocation } from 'wouter';
-import { BookOpen, CircleDashed, CircleUserRound, HelpCircle, LayoutDashboard, Lock, Megaphone, MessageCircleQuestion, type LucideIcon } from 'lucide-react';
+import { BookOpen, CircleDashed, CircleUserRound, HelpCircle, LayoutDashboard, Lock, Megaphone, MessageCircleQuestion, MessageSquare, Users2, type LucideIcon } from 'lucide-react';
 import { getGetSubjectDetailQueryKey, useGetSubjectDetail } from '@workspace/api-client-react';
 import {
   SidebarGroup,
@@ -20,6 +20,8 @@ export type StudyNavItem = { href: string; label: string; icon: LucideIcon };
 export const STUDY_NAV: StudyNavItem[] = [
   { href: '/mijn-leeromgeving', label: 'Mijn leeromgeving', icon: LayoutDashboard },
   { href: '/vakken', label: 'Vakken', icon: BookOpen },
+  { href: '/social', label: 'Studenten', icon: Users2 },
+  { href: '/gesprekken', label: 'Gesprekken', icon: MessageSquare },
   { href: '/faq', label: 'Veelgestelde vragen', icon: HelpCircle },
   { href: '/announcements', label: 'Aankondigingen', icon: Megaphone },
   { href: '/support', label: 'Support', icon: MessageCircleQuestion },

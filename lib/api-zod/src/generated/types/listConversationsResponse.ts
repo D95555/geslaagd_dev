@@ -5,8 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Conversation } from './conversation';
+import type { ConversationSummary } from './conversationSummary';
 
 export interface ListConversationsResponse {
-  conversations: Conversation[];
+  conversations: ConversationSummary[];
 }

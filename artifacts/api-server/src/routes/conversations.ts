@@ -3,6 +3,7 @@ import {
   AddConversationMemberParams,
   CreateGroupRouteBody,
   GetConversationRouteParams,
+  ListConversationMembersParams,
   RemoveConversationMemberParams,
   SetConversationMutedBody,
   SetConversationMutedParams,
@@ -12,7 +13,7 @@ import {
   UpdateGroupRouteBody,
   UpdateGroupRouteParams,
 } from "@workspace/api-zod";
-import { getAuthenticatedUser } from "../lib/supabase";
+import { getAuthenticatedUser, restService } from "../lib/supabase";
 import {
   addMember,
   BlockedError,
@@ -21,6 +22,7 @@ import {
   getConversation,
   isMember,
   listConversationsFor,
+  listMembers,
   markRead,
   removeMember,
   setMuted,
@@ -85,6 +87,40 @@ router.get("/conversations/:conversationId", async (req, res): Promise<void> => 
   } catch (error) {
     req.log.warn({ error }, "Could not load conversation");
     res.status(500).json({ error: "Gesprek kon niet worden geladen." });
+  }
+});
+
+// Not part of the original 18-task plan's OpenAPI rounds — added here
+// because Task 15's group-settings UI (member list, remove-member, transfer-
+// ownership picker) has no way to know who's in a group without it.
+router.get("/conversations/:conversationId/members", async (req, res): Promise<void> => {
+  const user = await requireUser(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const params = ListConversationMembersParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: "Ongeldig verzoek." }); return; }
+  try {
+    if (!(await isMember(params.data.conversationId, user.id))) { res.status(403).json({ error: "Forbidden" }); return; }
+    const rows = await listMembers(params.data.conversationId);
+    const members = await Promise.all(
+      rows.map(async (row) => {
+        const profiles = await restService<Record<string, unknown>[]>(
+          `profiles?user_id=eq.${row.userId}&select=display_name,username,avatar_url`,
+        );
+        const profile = profiles[0];
+        return {
+          userId: row.userId,
+          displayName: (profile?.display_name as string | undefined) ?? "Onbekend lid",
+          username: (profile?.username as string | undefined) ?? "",
+          avatarUrl: (profile?.avatar_url as string | null | undefined) ?? null,
+          muted: row.muted,
+          joinedAt: row.joinedAt,
+        };
+      }),
+    );
+    res.json({ members });
+  } catch (error) {
+    req.log.warn({ error }, "Could not list conversation members");
+    res.status(500).json({ error: "Leden konden niet worden geladen." });
   }
 });
 

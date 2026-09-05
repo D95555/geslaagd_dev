@@ -70,6 +70,7 @@ import type {
   ListAnnouncementsResponse,
   ListChangelogResponse,
   ListChatMessagesParams,
+  ListConversationMembersResponse,
   ListConversationsResponse,
   ListDirectoryParams,
   ListDirectoryResponse,
@@ -9441,6 +9442,83 @@ export const useUpdateGroupRoute = <TError = ErrorType<void>,
       > => {
       return useMutation(getUpdateGroupRouteMutationOptions(options));
     }
+
+export const getListConversationMembersUrl = (conversationId: string,) => {
+
+
+
+
+  return `/api/conversations/${conversationId}/members`
+}
+
+/**
+ * @summary List a conversation's members with basic profile info (member-only)
+ */
+export const listConversationMembers = async (conversationId: string, options?: Parameters<typeof customFetch>[1]): Promise<ListConversationMembersResponse> => {
+
+  return customFetch<ListConversationMembersResponse>(getListConversationMembersUrl(conversationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListConversationMembersQueryKey = (conversationId: string,) => {
+    return [
+    `/api/conversations/${conversationId}/members`
+    ] as const;
+    }
+
+
+export const getListConversationMembersQueryOptions = <TData = Awaited<ReturnType<typeof listConversationMembers>>, TError = ErrorType<void>>(conversationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConversationMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListConversationMembersQueryKey(conversationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listConversationMembers>>> = ({ signal }) => listConversationMembers(conversationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: conversationId !== null && conversationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listConversationMembers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListConversationMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listConversationMembers>>>
+export type ListConversationMembersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List a conversation's members with basic profile info (member-only)
+ */
+
+export function useListConversationMembers<TData = Awaited<ReturnType<typeof listConversationMembers>>, TError = ErrorType<void>>(
+ conversationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConversationMembers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListConversationMembersQueryOptions(conversationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getAddConversationMemberUrl = (conversationId: string,
     userId: string,) => {

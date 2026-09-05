@@ -26,7 +26,7 @@ type Section = 'public' | 'study' | 'admin';
 
 function sectionFor(path: string): Section {
   if (path.startsWith('/beheer')) return 'admin';
-  if (path === '/mijn-leeromgeving' || path.startsWith('/vakken') || path.startsWith('/support') || path.startsWith('/changelog') || path.startsWith('/account')) return 'study';
+  if (path === '/mijn-leeromgeving' || path.startsWith('/vakken') || path.startsWith('/support') || path.startsWith('/changelog') || path.startsWith('/account') || path.startsWith('/social') || path.startsWith('/profielen') || path.startsWith('/gesprekken')) return 'study';
   return 'public';
 }
 

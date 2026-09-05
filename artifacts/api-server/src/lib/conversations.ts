@@ -109,7 +109,7 @@ export async function createGroup(ownerId: string, title: string, memberIds: str
 
 export async function listConversationsFor(
   userId: string,
-): Promise<(Conversation & { lastMessageAt: string | null; unread: boolean })[]> {
+): Promise<(Conversation & { displayTitle: string | null; lastMessageAt: string | null; unread: boolean })[]> {
   const memberships = await restService<Row[]>(
     `conversation_members?user_id=eq.${userId}&select=conversation_id,last_read_at`,
   );
@@ -122,8 +122,26 @@ export async function listConversationsFor(
       );
       const lastMessageAt = (latest[0]?.created_at as string | undefined) ?? null;
       const lastReadAt = membership.last_read_at as string | null;
+      // The spec is explicit that a DM's displayed title is always the other
+      // member's display name (a DM row itself has no title column) — this
+      // is the only place in the plan that actually needed to resolve it,
+      // since conversation-page.tsx separately fetches full member profiles.
+      let displayTitle = conversation.title;
+      if (conversation.kind === "dm") {
+        const otherMembers = await restService<Row[]>(
+          `conversation_members?conversation_id=eq.${conversation.id}&user_id=neq.${userId}&select=user_id`,
+        );
+        const otherUserId = otherMembers[0]?.user_id as string | undefined;
+        if (otherUserId) {
+          const profiles = await restService<Row[]>(
+            `profiles?user_id=eq.${otherUserId}&select=display_name`,
+          );
+          displayTitle = (profiles[0]?.display_name as string | undefined) ?? null;
+        }
+      }
       return {
         ...conversation,
+        displayTitle,
         lastMessageAt,
         unread: lastMessageAt !== null && (!lastReadAt || lastReadAt < lastMessageAt),
       };

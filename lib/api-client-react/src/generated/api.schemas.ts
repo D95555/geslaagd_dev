@@ -140,8 +140,16 @@ export interface Conversation {
   unread: boolean;
 }
 
+/**
+ * A Conversation plus the viewer-perspective display title used in an inbox list (a DM has no title column of its own — this resolves to the other member's display name).
+ */
+export type ConversationSummary = Conversation & ({
+  /** @nullable */
+  displayTitle: string | null;
+});
+
 export interface ListConversationsResponse {
-  conversations: Conversation[];
+  conversations: ConversationSummary[];
 }
 
 export interface CreateGroupInput {
@@ -212,6 +220,20 @@ export interface AdminGroupSummary {
   lastMessageAt: string | null;
   status: AdminGroupSummaryStatus;
   createdAt: string;
+}
+
+export interface ConversationMember {
+  userId: string;
+  displayName: string;
+  username: string;
+  /** @nullable */
+  avatarUrl: string | null;
+  muted: boolean;
+  joinedAt: string;
+}
+
+export interface ListConversationMembersResponse {
+  members: ConversationMember[];
 }
 
 export interface ListAdminGroupsResponse {
