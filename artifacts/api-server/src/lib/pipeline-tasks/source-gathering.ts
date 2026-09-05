@@ -4,7 +4,7 @@ import {
   firecrawlScrapeUrls,
   type CrawlConfig,
 } from "../firecrawl";
-import { exaContents } from "../exa";
+import { exaContents, exaFindSimilar } from "../exa";
 import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
 import { discoverCandidates, type Candidate } from "../crawl-brain/discovery";
 import { prefilterCandidates } from "../crawl-brain/prefilter";
@@ -18,6 +18,9 @@ import { createTask, type PipelineTask } from "./task-store";
 import { taskLog } from "./task-log";
 
 type Row = Record<string, unknown>;
+
+const FIND_SIMILAR_SEED_CAP = 3;
+const FIND_SIMILAR_RESULTS = 5;
 
 function batch<T>(items: T[], size: number): T[][] {
   const batches: T[][] = [];
@@ -327,6 +330,83 @@ export async function runSourceGathering(
           }
         }
       }
+    }
+
+    // Find-similar — betaalde tegenhanger van het gratis link-following: geaccepteerde
+    // bronnen als zaad, Exa vindt semantisch vergelijkbare pagina's.
+    const acceptedSeeds = scoredList
+      .filter((entry) => entry.status === "accepted")
+      .slice(0, FIND_SIMILAR_SEED_CAP)
+      .map((entry) => entry.source.url);
+
+    const similarCandidates: Candidate[] = [];
+    for (const seed of acceptedSeeds) {
+      const { results, costCredits } = await exaFindSimilar(seed, budgetCtx, FIND_SIMILAR_RESULTS);
+      creditsUsed += costCredits;
+      for (const r of results) {
+        if (!r.url || seenUrls.has(r.url)) continue;
+        seenUrls.add(r.url);
+        similarCandidates.push({ url: r.url, title: r.title, description: r.snippet, provider: "exa", exaText: r.text });
+      }
+    }
+
+    const similarFiltered = await prefilterCandidates(similarCandidates, seenUrls);
+    if (similarFiltered.length > 0) {
+      // Content ophalen: cache → Exa-tekst → Firecrawl (zelfde volgorde als fase B).
+      const similarCached = await getStoredContentByUrl(similarFiltered.map((c) => c.url));
+      const similarContent = new Map<string, string>(similarCached);
+      const similarNeedFirecrawl: string[] = [];
+      for (const candidate of similarFiltered) {
+        if (similarContent.has(candidate.url)) continue;
+        if (candidate.exaText) { similarContent.set(candidate.url, candidate.exaText); continue; }
+        const { text, costCredits } = await exaContents(candidate.url, budgetCtx);
+        creditsUsed += costCredits;
+        if (text) { similarContent.set(candidate.url, text); continue; }
+        similarNeedFirecrawl.push(candidate.url);
+      }
+      const { markdownByUrl: simFcMd, creditsUsed: simFcCredits } = await firecrawlScrapeUrls(similarNeedFirecrawl, budgetCtx);
+      creditsUsed += simFcCredits;
+      for (const [url, md] of simFcMd) similarContent.set(url, md);
+
+      const withContent = similarFiltered
+        .filter((c) => similarContent.has(c.url))
+        .map((c) => ({ url: c.url, title: c.title, description: c.description, markdown: similarContent.get(c.url) }));
+
+      const similarScored = await scoreBatch(
+        { id: subject.id, name: subject.name, yearLevel: subject.yearLevel },
+        withContent,
+      );
+      for (const source of similarScored) {
+        const status = determineAcceptance(source.quality_score, source.confidence, accepted);
+        if (status === "accepted") accepted += 1;
+        const markdown = similarContent.get(source.url) ?? null;
+        const sourceId = await upsertSource({
+          url: source.url,
+          title: source.title,
+          type: source.type,
+          language: source.language,
+          qualityScore: source.quality_score,
+          confidenceScore: source.confidence,
+          aiSummary: source.ai_summary,
+          status,
+          declineReason: status === "declined" ? source.decline_reason : null,
+          contentPreview: markdown?.slice(0, 500) ?? null,
+          fullContent: markdown,
+          firstCrawlId: crawlId,
+        });
+        if (!sourceId) continue;
+        if (status === "accepted" || status === "declined") await recordDomainOutcome(source.url, status);
+        await linkSourceToSubject(sourceId, task.subjectId);
+        await linkSourceToChapter(sourceId, task.chapterId);
+        stored += 1;
+        if (status === "accepted") await enrichAcceptedPdfSource(sourceId, source.url, task.subjectId);
+      }
+
+      await log.info(
+        "vergelijkbare-bronnen",
+        `${acceptedSeeds.length} geaccepteerde zaden leverden ${similarFiltered.length} vergelijkbare kandidaten, ${withContent.length} met content.`,
+        { zaden: acceptedSeeds },
+      );
     }
 
     for (const paper of papers) {
