@@ -49,6 +49,8 @@ export async function recordDomainOutcome(
   }
 }
 
+export const TRUSTED_DOMAIN_CAP = 5;
+
 /**
  * Domains worth a dedicated Firecrawl map call (flat 1 credit regardless of
  * result count) instead of relying on search to rediscover them each time.
@@ -57,7 +59,7 @@ export async function recordDomainOutcome(
  * is a resource-allocation decision, so it does use a minimum bar: at least
  * 3 prior accepts, and no more than a third as many declines.
  */
-export async function getTrustedDomains(limit = 2): Promise<string[]> {
+export async function getTrustedDomains(limit = TRUSTED_DOMAIN_CAP): Promise<string[]> {
   try {
     const rows = await restService<Row[]>(
       "domain_reputation?accepted_count=gte.3&select=domain,accepted_count,declined_count" +
