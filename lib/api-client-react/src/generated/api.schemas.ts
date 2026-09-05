@@ -230,6 +230,51 @@ export interface GrantPackageInput {
   package: GrantPackageInputPackage;
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListAnnouncementsResponse {
+  announcements: Announcement[];
+}
+
+export interface CreateAnnouncementInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  body: string;
+}
+
+export type AnnouncementFeedItemKind = typeof AnnouncementFeedItemKind[keyof typeof AnnouncementFeedItemKind];
+
+
+export const AnnouncementFeedItemKind = {
+  announcement: 'announcement',
+  changelog: 'changelog',
+} as const;
+
+export interface AnnouncementFeedItem {
+  id: string;
+  kind: AnnouncementFeedItemKind;
+  title: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ListAnnouncementFeedResponse {
+  items: AnnouncementFeedItem[];
+}
+
 export type SupportMessageSender = typeof SupportMessageSender[keyof typeof SupportMessageSender];
 
 

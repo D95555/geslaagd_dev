@@ -28,6 +28,7 @@ import type {
   AdminNoteInput,
   AdminSubjectContentPreview,
   AdminTrackedSession,
+  Announcement,
   ApplyUpgradeKeyInput,
   AuthEventInput,
   BillingSummary,
@@ -45,6 +46,7 @@ import type {
   CrawlSubjectRequest,
   CrawlSummary,
   CreateActivationKeysInput,
+  CreateAnnouncementInput,
   CreateChangelogEntryInput,
   CreateSupportTicketInput,
   DeclineSourceInput,
@@ -59,6 +61,8 @@ import type {
   ListActivationKeysResponse,
   ListAdminAccountsParams,
   ListAdminSupportTicketsParams,
+  ListAnnouncementFeedResponse,
+  ListAnnouncementsResponse,
   ListChangelogResponse,
   ListChatMessagesParams,
   ListNotificationsResponse,
@@ -1246,6 +1250,374 @@ export const useUpdateChangelogEntry = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateChangelogEntryMutationOptions(options));
+    }
+
+export const getListAnnouncementFeedUrl = () => {
+
+
+
+
+  return `/api/announcements`
+}
+
+/**
+ * @summary Public feed of announcements merged with changelog entries, newest first
+ */
+export const listAnnouncementFeed = async ( options?: Parameters<typeof customFetch>[1]): Promise<ListAnnouncementFeedResponse> => {
+
+  return customFetch<ListAnnouncementFeedResponse>(getListAnnouncementFeedUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAnnouncementFeedQueryKey = () => {
+    return [
+    `/api/announcements`
+    ] as const;
+    }
+
+
+export const getListAnnouncementFeedQueryOptions = <TData = Awaited<ReturnType<typeof listAnnouncementFeed>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAnnouncementFeedQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAnnouncementFeed>>> = ({ signal }) => listAnnouncementFeed({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementFeed>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAnnouncementFeedQueryResult = NonNullable<Awaited<ReturnType<typeof listAnnouncementFeed>>>
+export type ListAnnouncementFeedQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public feed of announcements merged with changelog entries, newest first
+ */
+
+export function useListAnnouncementFeed<TData = Awaited<ReturnType<typeof listAnnouncementFeed>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAnnouncementFeedQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAnnouncementsAdminUrl = () => {
+
+
+
+
+  return `/api/admin/announcements`
+}
+
+/**
+ * @summary List announcements for editing
+ */
+export const listAnnouncementsAdmin = async ( options?: Parameters<typeof customFetch>[1]): Promise<ListAnnouncementsResponse> => {
+
+  return customFetch<ListAnnouncementsResponse>(getListAnnouncementsAdminUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAnnouncementsAdminQueryKey = () => {
+    return [
+    `/api/admin/announcements`
+    ] as const;
+    }
+
+
+export const getListAnnouncementsAdminQueryOptions = <TData = Awaited<ReturnType<typeof listAnnouncementsAdmin>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementsAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAnnouncementsAdminQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAnnouncementsAdmin>>> = ({ signal }) => listAnnouncementsAdmin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementsAdmin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAnnouncementsAdminQueryResult = NonNullable<Awaited<ReturnType<typeof listAnnouncementsAdmin>>>
+export type ListAnnouncementsAdminQueryError = ErrorType<void>
+
+
+/**
+ * @summary List announcements for editing
+ */
+
+export function useListAnnouncementsAdmin<TData = Awaited<ReturnType<typeof listAnnouncementsAdmin>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnnouncementsAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAnnouncementsAdminQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAnnouncementUrl = () => {
+
+
+
+
+  return `/api/admin/announcements`
+}
+
+/**
+ * @summary Add an announcement
+ */
+export const createAnnouncement = async (createAnnouncementInput: CreateAnnouncementInput, options?: Parameters<typeof customFetch>[1]): Promise<Announcement> => {
+
+  return customFetch<Announcement>(getCreateAnnouncementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createAnnouncementInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAnnouncementMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<CreateAnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<CreateAnnouncementInput>}, TContext> => {
+
+const mutationKey = ['createAnnouncement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAnnouncement>>, {data: BodyType<CreateAnnouncementInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAnnouncement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof createAnnouncement>>>
+    export type CreateAnnouncementMutationBody = BodyType<CreateAnnouncementInput>
+    export type CreateAnnouncementMutationError = ErrorType<void>
+
+    /**
+ * @summary Add an announcement
+ */
+export const useCreateAnnouncement = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAnnouncement>>, TError,{data: BodyType<CreateAnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAnnouncement>>,
+        TError,
+        {data: BodyType<CreateAnnouncementInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAnnouncementMutationOptions(options));
+    }
+
+export const getUpdateAnnouncementUrl = (announcementId: string,) => {
+
+
+
+
+  return `/api/admin/announcements/${announcementId}`
+}
+
+/**
+ * @summary Edit an announcement
+ */
+export const updateAnnouncement = async (announcementId: string,
+    createAnnouncementInput: CreateAnnouncementInput, options?: Parameters<typeof customFetch>[1]): Promise<Announcement> => {
+
+  return customFetch<Announcement>(getUpdateAnnouncementUrl(announcementId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createAnnouncementInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAnnouncementMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{announcementId: string;data: BodyType<CreateAnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{announcementId: string;data: BodyType<CreateAnnouncementInput>}, TContext> => {
+
+const mutationKey = ['updateAnnouncement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAnnouncement>>, {announcementId: string;data: BodyType<CreateAnnouncementInput>}> = (props) => {
+          const {announcementId,data} = props ?? {};
+
+          return  updateAnnouncement(announcementId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof updateAnnouncement>>>
+    export type UpdateAnnouncementMutationBody = BodyType<CreateAnnouncementInput>
+    export type UpdateAnnouncementMutationError = ErrorType<void>
+
+    /**
+ * @summary Edit an announcement
+ */
+export const useUpdateAnnouncement = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnnouncement>>, TError,{announcementId: string;data: BodyType<CreateAnnouncementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAnnouncement>>,
+        TError,
+        {announcementId: string;data: BodyType<CreateAnnouncementInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAnnouncementMutationOptions(options));
+    }
+
+export const getDeleteAnnouncementUrl = (announcementId: string,) => {
+
+
+
+
+  return `/api/admin/announcements/${announcementId}`
+}
+
+/**
+ * @summary Delete an announcement
+ */
+export const deleteAnnouncement = async (announcementId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAnnouncementUrl(announcementId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAnnouncementMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{announcementId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{announcementId: string}, TContext> => {
+
+const mutationKey = ['deleteAnnouncement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAnnouncement>>, {announcementId: string}> = (props) => {
+          const {announcementId} = props ?? {};
+
+          return  deleteAnnouncement(announcementId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAnnouncementMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAnnouncement>>>
+
+    export type DeleteAnnouncementMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete an announcement
+ */
+export const useDeleteAnnouncement = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAnnouncement>>, TError,{announcementId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAnnouncement>>,
+        TError,
+        {announcementId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAnnouncementMutationOptions(options));
     }
 
 export const getListActivationKeysUrl = (params?: ListActivationKeysParams,) => {

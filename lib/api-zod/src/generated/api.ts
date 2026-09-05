@@ -261,6 +261,94 @@ export const UpdateChangelogEntryResponse = zod.object({
 
 
 /**
+ * @summary Public feed of announcements merged with changelog entries, newest first
+ */
+export const ListAnnouncementFeedResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['announcement', 'changelog']),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List announcements for editing
+ */
+export const ListAnnouncementsAdminResponse = zod.object({
+  "announcements": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Add an announcement
+ */
+export const createAnnouncementBodyTitleMax = 160;
+
+export const createAnnouncementBodyBodyMax = 2000;
+
+
+
+export const CreateAnnouncementBody = zod.object({
+  "title": zod.string().min(1).max(createAnnouncementBodyTitleMax),
+  "body": zod.string().min(1).max(createAnnouncementBodyBodyMax)
+})
+
+export const CreateAnnouncementResponse = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Edit an announcement
+ */
+export const UpdateAnnouncementParams = zod.object({
+  "announcementId": zod.string().uuid()
+})
+
+export const updateAnnouncementBodyTitleMax = 160;
+
+export const updateAnnouncementBodyBodyMax = 2000;
+
+
+
+export const UpdateAnnouncementBody = zod.object({
+  "title": zod.string().min(1).max(updateAnnouncementBodyTitleMax),
+  "body": zod.string().min(1).max(updateAnnouncementBodyBodyMax)
+})
+
+export const UpdateAnnouncementResponse = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete an announcement
+ */
+export const DeleteAnnouncementParams = zod.object({
+  "announcementId": zod.string().uuid()
+})
+
+export const DeleteAnnouncementResponse = zod.void()
+
+
+/**
  * @summary List activation keys
  */
 export const ListActivationKeysQueryParams = zod.object({

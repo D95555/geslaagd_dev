@@ -295,6 +295,88 @@ paths:
           description: Forbidden
         "404":
           description: Not found
+  /announcements:
+    get:
+      operationId: listAnnouncementFeed
+      tags: [changelog]
+      summary: Public feed of announcements merged with changelog entries, newest first
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListAnnouncementFeedResponse" }
+  /admin/announcements:
+    get:
+      operationId: listAnnouncementsAdmin
+      tags: [admin]
+      summary: List announcements for editing
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListAnnouncementsResponse" }
+        "403":
+          description: Forbidden
+    post:
+      operationId: createAnnouncement
+      tags: [admin]
+      summary: Add an announcement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAnnouncementInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Announcement" }
+        "403":
+          description: Forbidden
+  /admin/announcements/{announcementId}:
+    patch:
+      operationId: updateAnnouncement
+      tags: [admin]
+      summary: Edit an announcement
+      parameters:
+        - name: announcementId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAnnouncementInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Announcement" }
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteAnnouncement
+      tags: [admin]
+      summary: Delete an announcement
+      parameters:
+        - name: announcementId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
   /admin/activation-keys:
     get:
       operationId: listActivationKeys
@@ -2291,6 +2373,44 @@ components:
       required: [package]
       properties:
         package: { type: string, enum: [basis, plus] }
+    Announcement:
+      type: object
+      required: [id, title, body, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ListAnnouncementsResponse:
+      type: object
+      required: [announcements]
+      properties:
+        announcements:
+          type: array
+          items: { $ref: "#/components/schemas/Announcement" }
+    CreateAnnouncementInput:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        body: { type: string, minLength: 1, maxLength: 2000 }
+    AnnouncementFeedItem:
+      type: object
+      required: [id, kind, title, body, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [announcement, changelog] }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+    ListAnnouncementFeedResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AnnouncementFeedItem" }
     SupportMessage:
       type: object
       required: [id, sender, senderUserId, senderEmail, body, createdAt]
