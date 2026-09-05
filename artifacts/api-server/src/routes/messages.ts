@@ -3,7 +3,7 @@ import multer from "multer";
 import { ListConversationMessagesParams, SendConversationMessageBody, SendConversationMessageParams } from "@workspace/api-zod";
 import { getAuthenticatedUser, restService } from "../lib/supabase";
 import { getConversation, isMember } from "../lib/conversations";
-import { insertMessage, listMessages } from "../lib/messages";
+import { extractMentionedUsernames, insertMessage, listMessages } from "../lib/messages";
 import { checkPhotoQuota, QuotaExceededError, uploadConversationPhoto } from "../lib/social-storage";
 
 const router: IRouter = Router();
@@ -77,8 +77,34 @@ router.post("/conversations/:conversationId/messages", async (req, res): Promise
       }
     }
 
-    // Task 11 (@mentions) hooks in here too, after the /ai handling above,
-    // using `message`/`conversation`/`token` already in scope.
+    const mentionedUsernames = extractMentionedUsernames(input.data.body);
+    if (mentionedUsernames.length > 0) {
+      const mentioned = await restService<Record<string, unknown>[]>(
+        `profiles?username=in.(${mentionedUsernames.map((u) => encodeURIComponent(u)).join(",")})&select=user_id,username`,
+      );
+      const senderProfile = await restService<Record<string, unknown>[]>(
+        `profiles?user_id=eq.${user.id}&select=display_name`,
+      );
+      const senderName = (senderProfile[0]?.display_name as string | undefined) ?? "Iemand";
+      const conversationLabel = conversation.kind === "group" ? conversation.title ?? "een groepsapp" : "een gesprek";
+      for (const row of mentioned) {
+        const mentionedUserId = row.user_id as string;
+        if (mentionedUserId === user.id) continue; // no self-notification
+        if (!(await isMember(params.data.conversationId, mentionedUserId))) continue; // only notify actual members
+        const muted = (await restService<Record<string, unknown>[]>(
+          `conversation_members?conversation_id=eq.${params.data.conversationId}&user_id=eq.${mentionedUserId}&select=muted`,
+        ))[0]?.muted;
+        if (muted) continue;
+        await restService("notifications", {
+          method: "POST",
+          body: JSON.stringify({
+            account_id: mentionedUserId,
+            title: `${senderName} vermeldde je`,
+            body: `In ${conversationLabel}: "${input.data.body.slice(0, 120)}"`,
+          }),
+        });
+      }
+    }
 
     res.status(201).json(message);
   } catch (error) {
