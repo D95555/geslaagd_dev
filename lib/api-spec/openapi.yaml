@@ -2554,6 +2554,72 @@ paths:
         "413":
           description: Quota exceeded
 
+  /admin/groepsapps:
+    get:
+      operationId: listAdminGroups
+      tags: [admin]
+      summary: All group chats, for abuse review (sitebeheerder only, hidden from regular users)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListAdminGroupsResponse" }
+        "403":
+          description: Forbidden
+
+  /admin/groepsapps/{conversationId}/close:
+    post:
+      operationId: closeAdminGroup
+      tags: [admin]
+      summary: Close a group (read-only, reversible)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Closed
+        "403":
+          description: Forbidden
+
+  /admin/groepsapps/{conversationId}/delete:
+    post:
+      operationId: deleteAdminGroup
+      tags: [admin]
+      summary: Permanently delete a group
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
+  /admin/groepsapps/{conversationId}/messages/{messageId}:
+    delete:
+      operationId: deleteAdminGroupMessage
+      tags: [admin]
+      summary: Soft-delete one message
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: messageId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
 components:
   schemas:
     Profile:
@@ -2704,6 +2770,27 @@ components:
         references:
           type: array
           items: { $ref: "#/components/schemas/MessageReference" }
+
+    AdminGroupSummary:
+      type: object
+      required: [id, title, ownerId, ownerEmail, memberCount, lastMessageAt, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: ["string", "null"] }
+        ownerId: { type: ["string", "null"], format: uuid }
+        ownerEmail: { type: ["string", "null"] }
+        memberCount: { type: integer }
+        lastMessageAt: { type: ["string", "null"], format: date-time }
+        status: { type: string, enum: [active, closed, deleted] }
+        createdAt: { type: string, format: date-time }
+
+    ListAdminGroupsResponse:
+      type: object
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGroupSummary" }
 
     HealthStatus:
       type: object

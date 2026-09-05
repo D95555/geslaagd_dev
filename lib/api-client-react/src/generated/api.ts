@@ -64,6 +64,7 @@ import type {
   ListActivationKeysParams,
   ListActivationKeysResponse,
   ListAdminAccountsParams,
+  ListAdminGroupsResponse,
   ListAdminSupportTicketsParams,
   ListAnnouncementFeedResponse,
   ListAnnouncementsResponse,
@@ -10023,5 +10024,297 @@ export const useUploadConversationPhoto = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUploadConversationPhotoMutationOptions(options));
+    }
+
+export const getListAdminGroupsUrl = () => {
+
+
+
+
+  return `/api/admin/groepsapps`
+}
+
+/**
+ * @summary All group chats, for abuse review (sitebeheerder only, hidden from regular users)
+ */
+export const listAdminGroups = async ( options?: Parameters<typeof customFetch>[1]): Promise<ListAdminGroupsResponse> => {
+
+  return customFetch<ListAdminGroupsResponse>(getListAdminGroupsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminGroupsQueryKey = () => {
+    return [
+    `/api/admin/groepsapps`
+    ] as const;
+    }
+
+
+export const getListAdminGroupsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminGroups>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminGroupsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminGroups>>> = ({ signal }) => listAdminGroups({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminGroups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminGroups>>>
+export type ListAdminGroupsQueryError = ErrorType<void>
+
+
+/**
+ * @summary All group chats, for abuse review (sitebeheerder only, hidden from regular users)
+ */
+
+export function useListAdminGroups<TData = Awaited<ReturnType<typeof listAdminGroups>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminGroupsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCloseAdminGroupUrl = (conversationId: string,) => {
+
+
+
+
+  return `/api/admin/groepsapps/${conversationId}/close`
+}
+
+/**
+ * @summary Close a group (read-only, reversible)
+ */
+export const closeAdminGroup = async (conversationId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getCloseAdminGroupUrl(conversationId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCloseAdminGroupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeAdminGroup>>, TError,{conversationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof closeAdminGroup>>, TError,{conversationId: string}, TContext> => {
+
+const mutationKey = ['closeAdminGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closeAdminGroup>>, {conversationId: string}> = (props) => {
+          const {conversationId} = props ?? {};
+
+          return  closeAdminGroup(conversationId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloseAdminGroupMutationResult = NonNullable<Awaited<ReturnType<typeof closeAdminGroup>>>
+
+    export type CloseAdminGroupMutationError = ErrorType<void>
+
+    /**
+ * @summary Close a group (read-only, reversible)
+ */
+export const useCloseAdminGroup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeAdminGroup>>, TError,{conversationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof closeAdminGroup>>,
+        TError,
+        {conversationId: string},
+        TContext
+      > => {
+      return useMutation(getCloseAdminGroupMutationOptions(options));
+    }
+
+export const getDeleteAdminGroupUrl = (conversationId: string,) => {
+
+
+
+
+  return `/api/admin/groepsapps/${conversationId}/delete`
+}
+
+/**
+ * @summary Permanently delete a group
+ */
+export const deleteAdminGroup = async (conversationId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminGroupUrl(conversationId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminGroupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroup>>, TError,{conversationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroup>>, TError,{conversationId: string}, TContext> => {
+
+const mutationKey = ['deleteAdminGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminGroup>>, {conversationId: string}> = (props) => {
+          const {conversationId} = props ?? {};
+
+          return  deleteAdminGroup(conversationId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminGroupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminGroup>>>
+
+    export type DeleteAdminGroupMutationError = ErrorType<void>
+
+    /**
+ * @summary Permanently delete a group
+ */
+export const useDeleteAdminGroup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroup>>, TError,{conversationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminGroup>>,
+        TError,
+        {conversationId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminGroupMutationOptions(options));
+    }
+
+export const getDeleteAdminGroupMessageUrl = (conversationId: string,
+    messageId: string,) => {
+
+
+
+
+  return `/api/admin/groepsapps/${conversationId}/messages/${messageId}`
+}
+
+/**
+ * @summary Soft-delete one message
+ */
+export const deleteAdminGroupMessage = async (conversationId: string,
+    messageId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminGroupMessageUrl(conversationId,messageId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminGroupMessageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroupMessage>>, TError,{conversationId: string;messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroupMessage>>, TError,{conversationId: string;messageId: string}, TContext> => {
+
+const mutationKey = ['deleteAdminGroupMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminGroupMessage>>, {conversationId: string;messageId: string}> = (props) => {
+          const {conversationId,messageId} = props ?? {};
+
+          return  deleteAdminGroupMessage(conversationId,messageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminGroupMessageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminGroupMessage>>>
+
+    export type DeleteAdminGroupMessageMutationError = ErrorType<void>
+
+    /**
+ * @summary Soft-delete one message
+ */
+export const useDeleteAdminGroupMessage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminGroupMessage>>, TError,{conversationId: string;messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminGroupMessage>>,
+        TError,
+        {conversationId: string;messageId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminGroupMessageMutationOptions(options));
     }
 

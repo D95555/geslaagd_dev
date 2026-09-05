@@ -190,6 +190,34 @@ export interface SendMessageInput {
   references?: MessageReference[];
 }
 
+export type AdminGroupSummaryStatus = typeof AdminGroupSummaryStatus[keyof typeof AdminGroupSummaryStatus];
+
+
+export const AdminGroupSummaryStatus = {
+  active: 'active',
+  closed: 'closed',
+  deleted: 'deleted',
+} as const;
+
+export interface AdminGroupSummary {
+  id: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  ownerId: string | null;
+  /** @nullable */
+  ownerEmail: string | null;
+  memberCount: number;
+  /** @nullable */
+  lastMessageAt: string | null;
+  status: AdminGroupSummaryStatus;
+  createdAt: string;
+}
+
+export interface ListAdminGroupsResponse {
+  groups: AdminGroupSummary[];
+}
+
 export interface HealthStatus {
   status: string;
 }

@@ -22,6 +22,7 @@ import profilesRouter from "./profiles";
 import blocksRouter from "./blocks";
 import conversationsRouter from "./conversations";
 import messagesRouter from "./messages";
+import adminSocialRouter from "./admin-social";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(profilesRouter);
 router.use(blocksRouter);
 router.use(conversationsRouter);
 router.use(messagesRouter);
+router.use(adminSocialRouter);
 
 export default router;

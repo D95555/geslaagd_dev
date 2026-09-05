@@ -3255,3 +3255,51 @@ export const UploadConversationPhotoResponse = zod.object({
 })
 
 
+/**
+ * @summary All group chats, for abuse review (sitebeheerder only, hidden from regular users)
+ */
+export const ListAdminGroupsResponse = zod.object({
+  "groups": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "ownerEmail": zod.string().nullable(),
+  "memberCount": zod.number().int(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Close a group (read-only, reversible)
+ */
+export const CloseAdminGroupParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const CloseAdminGroupResponse = zod.void()
+
+
+/**
+ * @summary Permanently delete a group
+ */
+export const DeleteAdminGroupParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const DeleteAdminGroupResponse = zod.void()
+
+
+/**
+ * @summary Soft-delete one message
+ */
+export const DeleteAdminGroupMessageParams = zod.object({
+  "conversationId": zod.string().uuid(),
+  "messageId": zod.string().uuid()
+})
+
+export const DeleteAdminGroupMessageResponse = zod.void()
+
+
