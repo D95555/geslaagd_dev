@@ -1,13 +1,12 @@
 import {
-  firecrawlDiscover,
   firecrawlMap,
   firecrawlResearchSearch,
   firecrawlScrapeUrls,
   type CrawlConfig,
-  type FirecrawlSearchResult,
 } from "../firecrawl";
 import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
-import { looksLikeProgrammePage } from "../crawl-brain/prefilter";
+import { discoverCandidates, type Candidate } from "../crawl-brain/discovery";
+import { prefilterCandidates } from "../crawl-brain/prefilter";
 import { getTrustedDomains, recordDomainOutcome } from "../domain-reputation";
 import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
@@ -64,8 +63,12 @@ export async function runSourceGathering(
   const budgetCtx = { subjectId: task.subjectId, crawlId };
 
   try {
-    // Phase A — discover snippets only (no scrape), so declined pages cost nothing.
-    const { results, creditsUsed: discoverCredits } = await firecrawlDiscover(config, budgetCtx);
+    // Phase A — samengevoegde discovery (Firecrawl + Exa), snippets/highlights only.
+    const {
+      candidates: discovered,
+      firecrawlCredits: discoverCredits,
+      exaCredits,
+    } = await discoverCandidates(config, budgetCtx);
     let mapCreditsUsed = 0;
 
     // Phase A2 — trusted-domain fast-track: a Firecrawl map call is a flat 1
@@ -80,8 +83,13 @@ export async function runSourceGathering(
       );
       mapCreditsUsed += mapCredits;
       for (const mapResult of mapResults) {
-        if (!mapResult.url || results.some((existing) => existing.url === mapResult.url)) continue;
-        results.push({ url: mapResult.url, title: mapResult.title, description: mapResult.description });
+        if (!mapResult.url || discovered.some((existing) => existing.url === mapResult.url)) continue;
+        discovered.push({
+          url: mapResult.url,
+          title: mapResult.title,
+          description: mapResult.description,
+          provider: "firecrawl",
+        });
       }
     }
     if (trustedDomains.length > 0) {
@@ -112,19 +120,17 @@ export async function runSourceGathering(
       if (source?.url) knownUrls.add(source.url as string);
     }
 
-    const fresh = results.filter((result) => result.url && !knownUrls.has(result.url));
-    const candidates = fresh.filter(
-      (result) => !looksLikeProgrammePage(result.url, result.title ?? ""),
-    );
-    const skippedProgramme = fresh.length - candidates.length;
+    const beforeFilter = discovered.length;
+    const candidates = await prefilterCandidates(discovered, knownUrls);
+    const skippedByFilter = beforeFilter - candidates.length;
 
     await log.info(
       "gevonden",
-      `${results.length} resultaten, waarvan ${candidates.length} nieuw en bruikbaar voor dit hoofdstuk.`,
+      `${beforeFilter} resultaten, waarvan ${candidates.length} nieuw en bruikbaar voor dit hoofdstuk.`,
       {
-        alBekend: results.length - fresh.length,
-        opleidingspaginaOvergeslagen: skippedProgramme,
+        weggefilterd: skippedByFilter,
         zoekcredits: discoverCredits,
+        exacredits: exaCredits,
         papers: papers.length,
       },
     );
@@ -134,7 +140,7 @@ export async function runSourceGathering(
     type Scored = {
       status: "accepted" | "pending" | "declined";
       source: Awaited<ReturnType<typeof scoreBatch>>[number];
-      snippet: FirecrawlSearchResult | undefined;
+      snippet: Candidate | undefined;
     };
     const scoredList: Scored[] = [];
     let accepted = 0;
@@ -164,7 +170,7 @@ export async function runSourceGathering(
       winnerUrls,
       budgetCtx,
     );
-    let creditsUsed = discoverCredits + mapCreditsUsed + scrapeCredits;
+    let creditsUsed = discoverCredits + exaCredits + mapCreditsUsed + scrapeCredits;
 
     await log.info(
       "gescraped",
