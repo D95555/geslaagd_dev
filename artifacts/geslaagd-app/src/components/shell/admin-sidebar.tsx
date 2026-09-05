@@ -12,6 +12,7 @@ import {
   Sparkles,
   Terminal,
   Users,
+  Users2,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: '/beheer/pipeline', label: 'Contentpijplijn', hint: 'Taken van aanvraag tot publicatie', icon: Workflow },
   { href: '/beheer/console', label: 'Console', hint: 'Live logboek van de pijplijn', icon: Terminal },
   { href: '/beheer/sessies', label: 'Sessies', hint: 'Wie is online, meldingen en privé-berichten', icon: Activity },
+  { href: '/beheer/groepsapps', label: 'Groepsapps', hint: 'Alle groepen, voor misbruikdetectie', icon: Users2 },
   { href: '/beheer/accounts', label: 'Accounts', hint: 'Gebruikers, pakketten en credits', icon: Users },
   { href: '/beheer/activatiecodes', label: 'Activatiecodes', hint: 'Codes om een account aan te maken of te upgraden', icon: KeyRound },
   { href: '/beheer/support', label: 'Support', hint: 'Tickets van studenten', icon: MessageCircleQuestion },

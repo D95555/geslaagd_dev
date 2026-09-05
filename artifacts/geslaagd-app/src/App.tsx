@@ -36,6 +36,7 @@ import SocialDirectoryPage from '@/pages/social-directory-page';
 import ProfilePage from '@/pages/profile-page';
 import InboxPage from '@/pages/inbox-page';
 import ConversationPage from '@/pages/conversation-page';
+import AdminGroepsappsPage from '@/pages/admin-groepsapps-page';
 import { NotificationsStack } from '@/components/shell/notifications-stack';
 import {
   Route,
@@ -93,6 +94,7 @@ function Router() {
           <Route path="/gesprekken/:conversationId">
             {(params) => <ConversationPage conversationId={params.conversationId} />}
           </Route>
+          <Route path="/beheer/groepsapps" component={AdminGroepsappsPage} />
           <Route path="/beheer/verkenner" component={AdminVerkennerPage} />
           <Route path="/beheer/pipeline" component={AdminPipelinePage} />
           <Route path="/beheer/console" component={AdminConsolePage} />

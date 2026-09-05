@@ -590,6 +590,7 @@ button.account-row:hover, .account-row:has(.request-row-summary:hover) { backgro
 .account-row strong, .account-row span { display: block; overflow-wrap: anywhere; }
 .account-row strong { font-size: var(--text-body-size); font-weight: 600; }
 .account-row span { margin-top: 4px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
+.admin-groepsapp-actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
 .account-sheet { display: flex; flex-direction: column; width: min(92vw, 460px); max-width: min(92vw, 460px); overflow-y: auto; }
 .account-detail { display: grid; gap: 22px; margin-top: 18px; }
 .account-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
