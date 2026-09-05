@@ -1,10 +1,10 @@
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@workspace/geslaagd-momentum/components/ui/toaster';
 import { TooltipProvider } from '@workspace/geslaagd-momentum/components/ui/tooltip';
 import { ThemeProvider } from '@workspace/geslaagd-momentum/hooks/use-theme';
-import { AuthProvider } from '@/auth/auth-context';
+import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { AppShell } from '@/components/shell/app-shell';
 import HomePage from '@/pages/home-page';
 import AuthPage, { PasswordRecoveryPage } from '@/pages/auth-page';
@@ -31,6 +31,7 @@ import SubjectStudyPage from '@/pages/subject-study-page';
 import ChapterPage from '@/pages/chapter-page';
 import StudyPlanPage from '@/pages/study-plan-page';
 import NotFound from '@/pages/not-found';
+import OnboardingProfilePage from '@/pages/onboarding-profile-page';
 import { NotificationsStack } from '@/components/shell/notifications-stack';
 import {
   Route,
@@ -42,11 +43,30 @@ import {
 const queryClient = new QueryClient();
 
 function Router() {
+  const [location, setLocation] = useLocation();
+  const { user, needsProfile } = useAuth();
+
+  // A mandatory gate: a signed-in user without a profile is redirected here
+  // regardless of what they navigated to, except the pages they'd need to
+  // reach that gate in the first place (auth) or the gate itself.
+  useEffect(() => {
+    if (
+      user &&
+      needsProfile === true &&
+      location !== '/onboarding/profiel' &&
+      location !== '/auth' &&
+      location !== '/auth/herstel-wachtwoord'
+    ) {
+      setLocation('/onboarding/profiel');
+    }
+  }, [user, needsProfile, location, setLocation]);
+
   return (
     <AppShell>
       <RoutedErrorBoundary>
         <NotificationsStack />
         <Switch>
+          <Route path="/onboarding/profiel" component={OnboardingProfilePage} />
           <Route path="/auth/herstel-wachtwoord" component={PasswordRecoveryPage} />
           <Route path="/auth" component={AuthPage} />
           <Route path="/mijn-leeromgeving" component={DashboardPage} />

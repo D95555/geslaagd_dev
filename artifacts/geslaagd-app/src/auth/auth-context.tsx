@@ -11,6 +11,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useLocation } from "wouter";
 import {
   dismissNotification as dismissNotificationRequest,
+  getMyProfileStatus,
   heartbeatSession,
   listNotifications,
   logAuthEvent,
@@ -26,9 +27,14 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  /** null = not yet checked. Drives the mandatory onboarding redirect. */
+  needsProfile: boolean | null;
   notifications: Notification[];
   dismissNotification: (id: string) => void;
   signOut: () => Promise<void>;
+  /** Re-checks profile status — call right after onboarding completes so the
+   * mandatory-gate redirect in App.tsx doesn't immediately bounce back. */
+  refreshProfileStatus: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -51,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [needsProfile, setNeedsProfile] = useState<boolean | null>(null);
+  const refreshProfileStatus = async () => {
+    await getMyProfileStatus()
+      .then((status) => setNeedsProfile("hasProfile" in status))
+      .catch(() => undefined);
+  };
   const [location] = useLocation();
   const locationRef = useRef(location);
   useEffect(() => {
@@ -139,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((result) => setNotifications(result.notifications))
         .catch(() => undefined);
     refreshNotifications();
+    void refreshProfileStatus();
 
     let commandChannel: ReturnType<typeof supabase.channel> | null = null;
     let globalNotificationsChannel: ReturnType<typeof supabase.channel> | null = null;
@@ -180,6 +193,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       isAdmin: isAdminUser(user),
+      needsProfile,
+      refreshProfileStatus,
       notifications,
       dismissNotification: (id: string) => {
         void dismissNotificationRequest(id).catch(() => undefined);
@@ -208,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [notifications, isLoading, session, user],
+    [notifications, needsProfile, isLoading, session, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
