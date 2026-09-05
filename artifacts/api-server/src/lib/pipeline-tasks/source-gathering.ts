@@ -4,6 +4,7 @@ import {
   firecrawlScrapeUrls,
   type CrawlConfig,
 } from "../firecrawl";
+import { exaContents } from "../exa";
 import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
 import { discoverCandidates, type Candidate } from "../crawl-brain/discovery";
 import { prefilterCandidates } from "../crawl-brain/prefilter";
@@ -12,7 +13,7 @@ import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
 import { restService } from "../supabase";
 import { loadChapter, loadSubject } from "./context";
-import { linkSourceToChapter, linkSourceToSubject, upsertSource } from "./source-store";
+import { getStoredContentByUrl, linkSourceToChapter, linkSourceToSubject, upsertSource } from "./source-store";
 import { createTask, type PipelineTask } from "./task-store";
 import { taskLog } from "./task-log";
 
@@ -161,15 +162,38 @@ export async function runSourceGathering(
       }
     }
 
-    // Phase B — scrape only the winners (accepted or pending). Declined pages
-    // keep their snippet text and never cost a scrape credit.
-    const winnerUrls = scoredList
-      .filter((entry) => entry.status !== "declined")
-      .map((entry) => entry.source.url);
-    const { markdownByUrl, linksByUrl, creditsUsed: scrapeCredits } = await firecrawlScrapeUrls(
-      winnerUrls,
-      budgetCtx,
-    );
+    // Phase B — content voor winnaars: cache eerst (gratis), dan Exa-tekst, dan Firecrawl-scrape.
+    const winners = scoredList.filter((entry) => entry.status !== "declined");
+    const winnerUrls = winners.map((entry) => entry.source.url);
+
+    const cached = await getStoredContentByUrl(winnerUrls);
+    const markdownByUrl = new Map<string, string>(cached);
+    const linksByUrl = new Map<string, string[]>();
+    let scrapeCredits = 0;
+
+    // URL's die niet uit de cache komen: probeer Exa-tekst (voor Exa-kandidaten), anders Firecrawl.
+    const needFirecrawl: string[] = [];
+    for (const entry of winners) {
+      const url = entry.source.url;
+      if (markdownByUrl.has(url)) continue;
+      const candidate = entry.snippet;
+      if (candidate?.provider === "exa") {
+        const { text, costCredits } = await exaContents(url, budgetCtx);
+        scrapeCredits += costCredits;
+        if (text) { markdownByUrl.set(url, text); continue; }
+      }
+      needFirecrawl.push(url);
+    }
+
+    const {
+      markdownByUrl: fcMarkdown,
+      linksByUrl: fcLinks,
+      creditsUsed: fcScrapeCredits,
+    } = await firecrawlScrapeUrls(needFirecrawl, budgetCtx);
+    scrapeCredits += fcScrapeCredits;
+    for (const [url, md] of fcMarkdown) markdownByUrl.set(url, md);
+    for (const [url, links] of fcLinks) linksByUrl.set(url, links);
+
     let creditsUsed = discoverCredits + exaCredits + mapCreditsUsed + scrapeCredits;
 
     await log.info(
