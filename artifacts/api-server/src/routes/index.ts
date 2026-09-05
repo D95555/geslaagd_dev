@@ -19,6 +19,7 @@ import notificationsRouter from "./notifications";
 import changelogRouter from "./changelog";
 import announcementsRouter from "./announcements";
 import profilesRouter from "./profiles";
+import blocksRouter from "./blocks";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(notificationsRouter);
 router.use(changelogRouter);
 router.use(announcementsRouter);
 router.use(profilesRouter);
+router.use(blocksRouter);
 
 export default router;

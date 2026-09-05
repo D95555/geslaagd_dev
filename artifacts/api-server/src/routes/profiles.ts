@@ -6,6 +6,7 @@ import {
   UpdateMyProfileBody,
 } from "@workspace/api-zod";
 import { getAuthenticatedUser } from "../lib/supabase";
+import { isBlocked } from "../lib/blocks";
 import {
   createProfile,
   getProfile,
@@ -18,15 +19,6 @@ import {
 } from "../lib/profiles";
 
 const router: IRouter = Router();
-
-// Minimal inline check — replaced by lib/blocks.ts's isBlocked in Task 5.
-async function isBlockedBetween(a: string, b: string): Promise<boolean> {
-  const { restService } = await import("../lib/supabase");
-  const rows = await restService<Record<string, unknown>[]>(
-    `blocks?or=(and(blocker_id.eq.${a},blocked_id.eq.${b}),and(blocker_id.eq.${b},blocked_id.eq.${a}))&select=blocker_id`,
-  );
-  return rows.length > 0;
-}
 
 async function toProfileResponse(profile: Profile) {
   const vakken = await loadVakkenFor(profile.userId);
@@ -85,7 +77,7 @@ router.get("/profiles/:userId", async (req, res): Promise<void> => {
   const params = GetProfileByIdParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Ongeldig profiel." }); return; }
   try {
-    if (await isBlockedBetween(user.id, params.data.userId)) {
+    if (await isBlocked(user.id, params.data.userId)) {
       res.json({
         userId: params.data.userId, username: "", displayName: "", avatarUrl: null,
         institution: null, studyProgram: null, description: null, vakken: [], isBlocked: true,
