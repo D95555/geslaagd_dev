@@ -2995,3 +2995,247 @@ export const UnblockUserRouteParams = zod.object({
 export const UnblockUserRouteResponse = zod.void()
 
 
+/**
+ * @summary The signed-in user's DMs and group chats
+ */
+export const ListConversationsResponse = zod.object({
+  "conversations": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['dm', 'group']),
+  "title": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "photoUrl": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unread": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Find or create the DM with another user
+ */
+export const StartDmParams = zod.object({
+  "userId": zod.string().uuid()
+})
+
+export const StartDmResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['dm', 'group']),
+  "title": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "photoUrl": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unread": zod.boolean()
+})
+
+
+/**
+ * @summary Create a group chat
+ */
+export const createGroupRouteBodyTitleMax = 100;
+
+
+
+export const CreateGroupRouteBody = zod.object({
+  "title": zod.string().min(1).max(createGroupRouteBodyTitleMax),
+  "memberIds": zod.array(zod.string().uuid())
+})
+
+export const CreateGroupRouteResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['dm', 'group']),
+  "title": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "photoUrl": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unread": zod.boolean()
+})
+
+
+/**
+ * @summary One conversation's metadata (member-only)
+ */
+export const GetConversationRouteParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const GetConversationRouteResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['dm', 'group']),
+  "title": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "photoUrl": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unread": zod.boolean()
+})
+
+
+/**
+ * @summary Edit group metadata (groepseigenaar only)
+ */
+export const UpdateGroupRouteParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const updateGroupRouteBodyTitleMax = 100;
+
+export const updateGroupRouteBodyDescriptionMax = 500;
+
+
+
+export const UpdateGroupRouteBody = zod.object({
+  "title": zod.string().min(1).max(updateGroupRouteBodyTitleMax).optional(),
+  "description": zod.string().max(updateGroupRouteBodyDescriptionMax).nullish(),
+  "photoUrl": zod.string().nullish()
+})
+
+export const UpdateGroupRouteResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['dm', 'group']),
+  "title": zod.string().nullable(),
+  "description": zod.string().nullable(),
+  "photoUrl": zod.string().nullable(),
+  "ownerId": zod.string().uuid().nullable(),
+  "status": zod.enum(['active', 'closed', 'deleted']),
+  "createdAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unread": zod.boolean()
+})
+
+
+/**
+ * @summary Add a member (groepseigenaar only)
+ */
+export const AddConversationMemberParams = zod.object({
+  "conversationId": zod.string().uuid(),
+  "userId": zod.string().uuid()
+})
+
+export const AddConversationMemberResponse = zod.void()
+
+
+/**
+ * @summary Remove a member (groepseigenaar only)
+ */
+export const RemoveConversationMemberParams = zod.object({
+  "conversationId": zod.string().uuid(),
+  "userId": zod.string().uuid()
+})
+
+export const RemoveConversationMemberResponse = zod.void()
+
+
+/**
+ * @summary Transfer groepseigenaar to another member
+ */
+export const TransferOwnershipRouteParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const TransferOwnershipRouteBody = zod.object({
+  "newOwnerId": zod.string().uuid()
+})
+
+export const TransferOwnershipRouteResponse = zod.void()
+
+
+/**
+ * @summary Mute/unmute a conversation for the signed-in user
+ */
+export const SetConversationMutedParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const SetConversationMutedBody = zod.object({
+  "muted": zod.boolean()
+})
+
+export const SetConversationMutedResponse = zod.void()
+
+
+/**
+ * @summary Mark a conversation read up to now
+ */
+export const MarkConversationReadParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const MarkConversationReadResponse = zod.void()
+
+
+/**
+ * @summary Message history for one conversation (member-only)
+ */
+export const ListConversationMessagesParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const ListConversationMessagesResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "conversationId": zod.string().uuid(),
+  "senderId": zod.string().uuid().nullable(),
+  "kind": zod.enum(['user', 'ai']),
+  "body": zod.string(),
+  "photoUrl": zod.string().nullable(),
+  "references": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "chapterId": zod.string().optional(),
+  "label": zod.string()
+})),
+  "createdAt": zod.coerce.date(),
+  "deletedAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
+ * @summary Send a message (member-only); a body starting with "/ai " triggers an assistant reply
+ */
+export const SendConversationMessageParams = zod.object({
+  "conversationId": zod.string().uuid()
+})
+
+export const sendConversationMessageBodyBodyMax = 4000;
+
+
+
+export const SendConversationMessageBody = zod.object({
+  "body": zod.string().min(1).max(sendConversationMessageBodyBodyMax),
+  "photoUrl": zod.string().optional(),
+  "references": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "chapterId": zod.string().optional(),
+  "label": zod.string()
+})).optional()
+})
+
+export const SendConversationMessageResponse = zod.object({
+  "id": zod.string().uuid(),
+  "conversationId": zod.string().uuid(),
+  "senderId": zod.string().uuid().nullable(),
+  "kind": zod.enum(['user', 'ai']),
+  "body": zod.string(),
+  "photoUrl": zod.string().nullable(),
+  "references": zod.array(zod.object({
+  "subjectId": zod.string(),
+  "chapterId": zod.string().optional(),
+  "label": zod.string()
+})),
+  "createdAt": zod.coerce.date(),
+  "deletedAt": zod.coerce.date().nullable()
+})
+
+

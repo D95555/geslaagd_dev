@@ -20,6 +20,8 @@ import changelogRouter from "./changelog";
 import announcementsRouter from "./announcements";
 import profilesRouter from "./profiles";
 import blocksRouter from "./blocks";
+import conversationsRouter from "./conversations";
+import messagesRouter from "./messages";
 
 const router: IRouter = Router();
 
@@ -46,5 +48,7 @@ router.use(changelogRouter);
 router.use(announcementsRouter);
 router.use(profilesRouter);
 router.use(blocksRouter);
+router.use(conversationsRouter);
+router.use(messagesRouter);
 
 export default router;

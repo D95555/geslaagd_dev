@@ -76,6 +76,120 @@ export interface HasProfileResponse {
   hasProfile: boolean;
 }
 
+export interface MessageReference {
+  subjectId: string;
+  chapterId?: string;
+  label: string;
+}
+
+export type MessageKind = typeof MessageKind[keyof typeof MessageKind];
+
+
+export const MessageKind = {
+  user: 'user',
+  ai: 'ai',
+} as const;
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  /** @nullable */
+  senderId: string | null;
+  kind: MessageKind;
+  body: string;
+  /** @nullable */
+  photoUrl: string | null;
+  references: MessageReference[];
+  createdAt: string;
+  /** @nullable */
+  deletedAt: string | null;
+}
+
+export type ConversationKind = typeof ConversationKind[keyof typeof ConversationKind];
+
+
+export const ConversationKind = {
+  dm: 'dm',
+  group: 'group',
+} as const;
+
+export type ConversationStatus = typeof ConversationStatus[keyof typeof ConversationStatus];
+
+
+export const ConversationStatus = {
+  active: 'active',
+  closed: 'closed',
+  deleted: 'deleted',
+} as const;
+
+export interface Conversation {
+  id: string;
+  kind: ConversationKind;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  photoUrl: string | null;
+  /** @nullable */
+  ownerId: string | null;
+  status: ConversationStatus;
+  createdAt: string;
+  /** @nullable */
+  lastMessageAt: string | null;
+  unread: boolean;
+}
+
+export interface ListConversationsResponse {
+  conversations: Conversation[];
+}
+
+export interface CreateGroupInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  title: string;
+  memberIds: string[];
+}
+
+export interface UpdateGroupInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  title?: string;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  description?: string | null;
+  /** @nullable */
+  photoUrl?: string | null;
+}
+
+export interface TransferOwnershipInput {
+  newOwnerId: string;
+}
+
+export interface SetMutedInput {
+  muted: boolean;
+}
+
+export interface ListMessagesResponse {
+  messages: Message[];
+}
+
+export interface SendMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  body: string;
+  photoUrl?: string;
+  references?: MessageReference[];
+}
+
 export interface HealthStatus {
   status: string;
 }

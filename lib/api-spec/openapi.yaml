@@ -2304,6 +2304,222 @@ paths:
         "204":
           description: Unblocked
 
+  /conversations:
+    get:
+      operationId: listConversations
+      tags: [social]
+      summary: The signed-in user's DMs and group chats
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListConversationsResponse" }
+
+  /conversations/dm/{userId}:
+    post:
+      operationId: startDm
+      tags: [social]
+      summary: Find or create the DM with another user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "403":
+          description: Blocked
+
+  /conversations/group:
+    post:
+      operationId: createGroupRoute
+      tags: [social]
+      summary: Create a group chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateGroupInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+
+  /conversations/{conversationId}:
+    get:
+      operationId: getConversationRoute
+      tags: [social]
+      summary: One conversation's metadata (member-only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "403":
+          description: Not a member
+    patch:
+      operationId: updateGroupRoute
+      tags: [social]
+      summary: Edit group metadata (groepseigenaar only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateGroupInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conversation" }
+        "403":
+          description: Not the groepseigenaar
+
+  /conversations/{conversationId}/members/{userId}:
+    post:
+      operationId: addConversationMember
+      tags: [social]
+      summary: Add a member (groepseigenaar only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Added
+    delete:
+      operationId: removeConversationMember
+      tags: [social]
+      summary: Remove a member (groepseigenaar only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Removed
+
+  /conversations/{conversationId}/transfer-ownership:
+    post:
+      operationId: transferOwnershipRoute
+      tags: [social]
+      summary: Transfer groepseigenaar to another member
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransferOwnershipInput" }
+      responses:
+        "204":
+          description: Transferred
+
+  /conversations/{conversationId}/mute:
+    post:
+      operationId: setConversationMuted
+      tags: [social]
+      summary: Mute/unmute a conversation for the signed-in user
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetMutedInput" }
+      responses:
+        "204":
+          description: OK
+
+  /conversations/{conversationId}/read:
+    post:
+      operationId: markConversationRead
+      tags: [social]
+      summary: Mark a conversation read up to now
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: OK
+
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: listConversationMessages
+      tags: [social]
+      summary: Message history for one conversation (member-only)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListMessagesResponse" }
+        "403":
+          description: Not a member
+    post:
+      operationId: sendConversationMessage
+      tags: [social]
+      summary: Send a message (member-only); a body starting with "/ai " triggers an assistant reply
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SendMessageInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "403":
+          description: Not a member, or the conversation is closed/deleted
+
 components:
   schemas:
     Profile:
@@ -2361,6 +2577,99 @@ components:
       required: [hasProfile]
       properties:
         hasProfile: { type: boolean }
+
+    MessageReference:
+      type: object
+      required: [subjectId, label]
+      properties:
+        subjectId: { type: string }
+        chapterId: { type: string }
+        label: { type: string }
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, kind, body, photoUrl, references, createdAt, deletedAt]
+      properties:
+        id: { type: string, format: uuid }
+        conversationId: { type: string, format: uuid }
+        senderId: { type: ["string", "null"], format: uuid }
+        kind: { type: string, enum: [user, ai] }
+        body: { type: string }
+        photoUrl: { type: ["string", "null"] }
+        references:
+          type: array
+          items: { $ref: "#/components/schemas/MessageReference" }
+        createdAt: { type: string, format: date-time }
+        deletedAt: { type: ["string", "null"], format: date-time }
+
+    Conversation:
+      type: object
+      required: [id, kind, title, description, photoUrl, ownerId, status, createdAt, lastMessageAt, unread]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [dm, group] }
+        title: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        photoUrl: { type: ["string", "null"] }
+        ownerId: { type: ["string", "null"], format: uuid }
+        status: { type: string, enum: [active, closed, deleted] }
+        createdAt: { type: string, format: date-time }
+        lastMessageAt: { type: ["string", "null"], format: date-time }
+        unread: { type: boolean }
+
+    ListConversationsResponse:
+      type: object
+      required: [conversations]
+      properties:
+        conversations:
+          type: array
+          items: { $ref: "#/components/schemas/Conversation" }
+
+    CreateGroupInput:
+      type: object
+      required: [title, memberIds]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 100 }
+        memberIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    UpdateGroupInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: ["string", "null"], maxLength: 500 }
+        photoUrl: { type: ["string", "null"] }
+
+    TransferOwnershipInput:
+      type: object
+      required: [newOwnerId]
+      properties:
+        newOwnerId: { type: string, format: uuid }
+
+    SetMutedInput:
+      type: object
+      required: [muted]
+      properties:
+        muted: { type: boolean }
+
+    ListMessagesResponse:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/Message" }
+
+    SendMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 4000 }
+        photoUrl: { type: string }
+        references:
+          type: array
+          items: { $ref: "#/components/schemas/MessageReference" }
 
     HealthStatus:
       type: object
