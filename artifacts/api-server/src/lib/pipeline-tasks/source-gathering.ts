@@ -7,6 +7,7 @@ import {
   type FirecrawlSearchResult,
 } from "../firecrawl";
 import { determineAcceptance, filterCandidateLinks, scoreBatch } from "../crawl-brain";
+import { looksLikeProgrammePage } from "../crawl-brain/prefilter";
 import { getTrustedDomains, recordDomainOutcome } from "../domain-reputation";
 import { logger } from "../logger";
 import { enrichAcceptedPdfSource } from "../pdf-fetch";
@@ -24,34 +25,6 @@ function batch<T>(items: T[], size: number): T[][] {
     batches.push(items.slice(index, index + size));
   }
   return batches;
-}
-
-/**
- * Programme/admissions catalog pages (studiekeuze, opleiding, toelating, …) look
- * plausible to a keyword search but never contain study theory. They are already
- * scraped-and-billed by the time we see them, so this only spares the scorer and
- * keeps the review clean — the credit saving lives in the domain blocklist and
- * two-phase search, not here.
- */
-function looksLikeProgrammePage(url: string, title: string): boolean {
-  const haystack = `${url} ${title}`.toLowerCase();
-  const markers = [
-    "studiekeuze",
-    "studiekiezer",
-    "opleidingen",
-    "/opleiding/",
-    "toelatingseisen",
-    "toelating",
-    "inschrijven",
-    "aanmelden",
-    "open dag",
-    "opendag",
-    "studieprogramma",
-    "onderwijsaanbod",
-    "vakkenoverzicht",
-    "programme-finder",
-  ];
-  return markers.some((marker) => haystack.includes(marker));
 }
 
 /**
