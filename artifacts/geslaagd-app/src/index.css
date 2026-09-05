@@ -22,6 +22,20 @@
   button:disabled { cursor: not-allowed; }
 }
 
+/* Every nav item across the whole app -- student sidebar and beheer sidebar
+   alike, since both are built on the same SidebarMenuButton -- gets its icon
+   in a soft colored badge instead of a bare glyph. One rule, both surfaces. */
+[data-sidebar="menu-button"] > svg:first-child {
+  box-sizing: content-box;
+  padding: 5px;
+  border-radius: 8px;
+  background: hsl(var(--sidebar-primary) / .12);
+  color: hsl(var(--sidebar-primary));
+}
+[data-sidebar="menu-button"][data-active="true"] > svg:first-child {
+  background: hsl(var(--sidebar-primary) / .22);
+}
+
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -526,8 +540,8 @@
 .detail-placeholder div { display: grid; gap: 5px; color: hsl(var(--foreground)); }
 .detail-placeholder span { color: hsl(var(--muted-foreground)); font-size: .8rem; line-height: 1.55; }
 .admin-stats { display: flex; gap: 10px; margin: 34px 0; }
-.admin-stats > div { display: grid; min-width: 145px; gap: 4px; padding: 15px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); }
-.admin-stats svg { color: hsl(var(--muted-foreground)); }
+.admin-stats > div { display: grid; min-width: 145px; gap: 4px; padding: 15px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); box-shadow: var(--momentum-shadow-soft); }
+.admin-stats svg { display: inline-flex; padding: 5px; box-sizing: content-box; border-radius: 8px; background: hsl(var(--primary) / .12); color: hsl(var(--primary)); }
 .admin-stats strong { font: 600 1.65rem var(--app-font-serif); }
 .admin-stats span { color: hsl(var(--muted-foreground)); font: .64rem var(--app-font-mono); text-transform: uppercase; }
 .admin-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 13px; }
@@ -979,10 +993,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
   background: hsl(var(--card));
+  box-shadow: var(--momentum-shadow-soft);
   color: inherit; text-align: left; cursor: pointer;
-  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
+  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard),
+              box-shadow var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
-.subject-tile:hover { border-color: hsl(var(--primary)); }
+.subject-tile:hover { border-color: hsl(var(--primary)); box-shadow: var(--momentum-shadow-lift); }
 .subject-tile-index { color: hsl(var(--primary)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 .subject-tile-body { min-width: 0; }
 .subject-tile-body strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); }
@@ -998,11 +1014,28 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
   background: hsl(var(--card));
-  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
+  box-shadow: var(--momentum-shadow-soft);
+  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard),
+              box-shadow var(--momentum-motion-fast) var(--momentum-ease-standard),
+              transform var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
-.subject-card:hover { border-color: hsl(var(--primary)); }
+.subject-card:hover { border-color: hsl(var(--primary)); box-shadow: var(--momentum-shadow-lift); transform: translateY(-2px); }
 .subject-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.subject-card-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .subject-card-head h2 { margin: 0; font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); }
+/* A small rotating set of soft tints so the catalog reads as varied and
+   lively rather than one flat color repeated on every card -- primary green
+   included as one of the rotation rather than the only option. */
+.subject-card-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; }
+/* Overrides a stale, unused-by-any-component .subject-card svg rule further
+   up this file (position: absolute + muted color) that would otherwise hijack
+   this icon -- see the note left for the user about deleting that dead rule. */
+.subject-card .subject-card-icon svg { position: static; color: inherit; }
+.subject-tint-0 .subject-card-icon { background: hsl(var(--primary) / .14); color: hsl(var(--primary)); }
+.subject-tint-1 .subject-card-icon { background: hsl(210 85% 94%); color: hsl(210 70% 40%); }
+.subject-tint-2 .subject-card-icon { background: hsl(38 92% 92%); color: hsl(30 80% 36%); }
+.subject-tint-3 .subject-card-icon { background: hsl(350 78% 95%); color: hsl(350 55% 45%); }
+.subject-tint-4 .subject-card-icon { background: hsl(265 70% 95%); color: hsl(265 45% 50%); }
 .subject-level { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); text-transform: uppercase; }
 .subject-description { margin: 0; flex: 1; color: hsl(var(--muted-foreground)); font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
 .subject-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: var(--density-row-padding-y); border-top: 1px solid hsl(var(--border)); }
@@ -1059,9 +1092,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .exam-countdown span { display: block; margin-top: 2px; color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 
 /* Chapter list -- one continuous, hairline-divided list rather than a stack
-   of separately bordered cards, per the Linear/Firecrawl reference: depth
-   and separation come from a 1px rule between rows, not a box around each
-   one. Mobile-first: a chapter's index, title and description form one
+   of separately bordered cards: depth and separation come from a 1px rule
+   between rows, not a box around each one. The list itself floats as one
+   card. Mobile-first: a chapter's index, title and description form one
    column that never has to compete for width with anything, and the status
    (icon + percentage) is a second grid row on narrow screens instead of a
    third column squeezed in beside it. */
@@ -1069,6 +1102,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   margin: 0; padding: 0; list-style: none;
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
   background: hsl(var(--card)); overflow: hidden;
+  box-shadow: var(--momentum-shadow-soft);
 }
 .chapter-list li + li { border-top: 1px solid hsl(var(--border)); }
 .chapter-row {
@@ -1108,6 +1142,17 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .chapter-row:not(:disabled) .chapter-status { color: hsl(var(--primary)); }
 .chapter-percentage { font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); white-space: nowrap; }
 
+/* A small ring fill instead of a flat status icon -- reads as "how far am I"
+   at a glance, the way a study app's progress dial does, rather than a
+   binary done/not-done glyph. --pct is set inline per chapter. */
+.progress-ring {
+  --pct: 0;
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  background: conic-gradient(hsl(var(--primary)) calc(var(--pct) * 3.6deg), hsl(var(--muted)) 0);
+  display: grid; place-items: center;
+}
+.progress-ring::after { content: ""; width: 15px; height: 15px; border-radius: 50%; background: hsl(var(--card)); }
+
 @media (max-width: 30rem) {
   .chapter-row { grid-template-columns: auto 1fr; }
   .chapter-status { grid-column: 2; grid-row: 2; justify-self: start; padding-top: 0; }
@@ -1136,14 +1181,22 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .chapter-actions { display: flex; gap: 10px; }
 .chapter-practice { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 24vw, 260px), 1fr)); gap: var(--density-block-gap); }
 .practice-card {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; align-items: center; gap: 12px;
   padding: var(--density-card-padding-y) var(--density-card-padding-x);
   border: 1px solid hsl(var(--border)); border-radius: var(--radius);
   background: hsl(var(--card));
+  box-shadow: var(--momentum-shadow-soft);
   color: inherit; text-align: left; cursor: pointer;
-  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard);
+  transition: border-color var(--momentum-motion-fast) var(--momentum-ease-standard),
+              box-shadow var(--momentum-motion-fast) var(--momentum-ease-standard),
+              transform var(--momentum-motion-fast) var(--momentum-ease-standard);
 }
-.practice-card:hover { border-color: hsl(var(--primary)); }
+.practice-card:hover { border-color: hsl(var(--primary)); box-shadow: var(--momentum-shadow-lift); transform: translateY(-2px); }
+.practice-card-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: hsl(var(--primary) / .14); }
+/* Beats the existing .practice-card span rule further up (meta-style muted
+   text meant for the score caption, not this icon). */
+.practice-card .practice-card-icon, .practice-card .practice-card-icon svg { color: hsl(var(--primary)); }
+.practice-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .practice-card strong { font-family: var(--text-heading3-font); font-size: var(--text-heading3-size); font-weight: var(--text-heading3-weight); letter-spacing: var(--text-heading3-tracking); }
 .practice-card span { color: hsl(var(--muted-foreground)); font-family: var(--text-meta-font); font-size: var(--text-meta-size); letter-spacing: var(--text-meta-tracking); }
 

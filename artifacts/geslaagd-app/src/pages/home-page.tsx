@@ -93,7 +93,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
 
   const openAuth = () => {
     setIsMenuOpen(false);

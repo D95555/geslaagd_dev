@@ -438,7 +438,7 @@ export function PasswordRecoveryPage() {
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
 
   return (
     <main className="auth-page">
@@ -455,7 +455,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
 }
 
 function AuthLoading() {
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
   return (
     <main className="auth-page auth-loading-page">
       <div className="auth-brand" aria-label="geslaagd.app">

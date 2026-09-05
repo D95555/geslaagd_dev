@@ -177,10 +177,13 @@ export default function SubjectCatalogPage() {
 
       {state === 'ready' && subjects.length > 0 && (
         <ul className="subject-grid" data-testid="subject-grid">
-          {subjects.map((subject) => (
-            <li key={subject.id} className="subject-card">
+          {subjects.map((subject, index) => (
+            <li key={subject.id} className={`subject-card subject-tint-${index % 5}`}>
               <div className="subject-card-head">
-                <h2>{subject.name}</h2>
+                <div className="subject-card-title">
+                  <span className="subject-card-icon" aria-hidden="true"><BookOpen size={16} /></span>
+                  <h2>{subject.name}</h2>
+                </div>
                 <Badge variant="secondary">
                   {subject.yearLevel === 'havo_vwo_bovenbouw' ? 'HAVO/VWO Bovenbouw' : 'Universitair'}
                 </Badge>

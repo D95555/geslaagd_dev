@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/collapsible';
-import { BookCheck, ChevronDown, MessageCircle, TriangleAlert } from 'lucide-react';
+import { BookCheck, ChevronDown, GraduationCap, MessageCircle, PencilLine, TriangleAlert } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { useContextRail } from '@/components/shell/rail-context';
@@ -234,11 +234,14 @@ export default function ChapterPage({
           onClick={() => setActivity('exercise')}
           data-testid="button-start-exercises"
         >
-          <strong>Oefenvragen</strong>
-          <span>
-            {progress?.exerciseBestScore
-              ? `Beste cijfer: ${progress.exerciseBestScore.toFixed(1)}`
-              : 'Nog niet gemaakt'}
+          <span className="practice-card-icon" aria-hidden="true"><PencilLine size={17} /></span>
+          <span className="practice-card-body">
+            <strong>Oefenvragen</strong>
+            <span>
+              {progress?.exerciseBestScore
+                ? `Beste cijfer: ${progress.exerciseBestScore.toFixed(1)}`
+                : 'Nog niet gemaakt'}
+            </span>
           </span>
         </button>
         {chapter.isImportant && (
@@ -248,11 +251,14 @@ export default function ChapterPage({
             onClick={() => setActivity('exam')}
             data-testid="button-start-exam"
           >
-            <strong>Tentamen</strong>
-            <span>
-              {progress?.examBestScore
-                ? `Beste cijfer: ${progress.examBestScore.toFixed(1)}`
-                : 'Nog niet gemaakt'}
+            <span className="practice-card-icon" aria-hidden="true"><GraduationCap size={17} /></span>
+            <span className="practice-card-body">
+              <strong>Tentamen</strong>
+              <span>
+                {progress?.examBestScore
+                  ? `Beste cijfer: ${progress.examBestScore.toFixed(1)}`
+                  : 'Nog niet gemaakt'}
+              </span>
             </span>
           </button>
         )}

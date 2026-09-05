@@ -37,7 +37,7 @@ export function AdminShell({
 /** Shared refusal screen so every admin page fails the same way. */
 export function AdminDenied() {
   const [, setLocation] = useLocation();
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
   return (
     <main className="admin-denied">
       <ShieldAlert size={22} aria-hidden="true" />

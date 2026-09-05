@@ -6,7 +6,7 @@ import { useLocation } from 'wouter';
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
-  useSurfaceTheme('dark');
+  useSurfaceTheme('light');
   return (
     <main className="not-found-page">
       <Card className="not-found-card">

@@ -1,6 +1,7 @@
+import type { CSSProperties } from 'react';
 import type { Chapter, ChapterProgress } from '@workspace/api-client-react';
 import { Badge } from '@workspace/geslaagd-momentum/components/ui/badge';
-import { CircleCheck, CircleDashed, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export function ChapterList({
   chapters,
@@ -43,13 +44,15 @@ export function ChapterList({
               <span className="chapter-status">
                 {!ready ? (
                   <Lock size={14} aria-hidden="true" />
-                ) : done ? (
-                  <CircleCheck size={14} aria-hidden="true" />
                 ) : (
-                  <CircleDashed size={14} aria-hidden="true" />
+                  <span
+                    className="progress-ring"
+                    style={{ '--pct': percentage } as CSSProperties}
+                    aria-hidden="true"
+                  />
                 )}
                 <span className="chapter-percentage">
-                  {ready ? `${percentage}%` : 'In voorbereiding'}
+                  {ready ? (done ? 'Klaar' : `${percentage}%`) : 'In voorbereiding'}
                 </span>
               </span>
             </button>
