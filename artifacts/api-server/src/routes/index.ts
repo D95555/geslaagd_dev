@@ -18,6 +18,7 @@ import billingRouter from "./billing";
 import notificationsRouter from "./notifications";
 import changelogRouter from "./changelog";
 import announcementsRouter from "./announcements";
+import profilesRouter from "./profiles";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(billingRouter);
 router.use(notificationsRouter);
 router.use(changelogRouter);
 router.use(announcementsRouter);
+router.use(profilesRouter);
 
 export default router;
