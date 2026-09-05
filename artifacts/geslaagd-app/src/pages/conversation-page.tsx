@@ -46,10 +46,10 @@ export default function ConversationPage({ conversationId }: { conversationId: s
   const [memberQuery, setMemberQuery] = useState('');
   const [candidates, setCandidates] = useState<Profile[]>([]);
 
-  const { messages, sendTyping, typingUserIds, reactions, dismissReaction } = useConversationChannel(conversationId);
+  const { messages, refresh: refreshMessages, sendTyping, typingUserIds, reactions, dismissReaction } = useConversationChannel(conversationId);
 
-  const load = async (options: { silent?: boolean } = {}) => {
-    if (!options.silent) setState('loading');
+  const load = async () => {
+    setState('loading');
     try {
       const [conv, memberList] = await Promise.all([
         getConversationRoute(conversationId),
@@ -182,7 +182,7 @@ export default function ConversationPage({ conversationId }: { conversationId: s
 
           <MessageComposer
             conversationId={conversationId}
-            onSent={() => void load({ silent: true })}
+            onSent={refreshMessages}
             onTyping={sendTyping}
           />
           <FloatingReactions reactions={reactions} onDone={dismissReaction} />

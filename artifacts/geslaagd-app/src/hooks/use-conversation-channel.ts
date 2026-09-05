@@ -86,5 +86,5 @@ export function useConversationChannel(conversationId: string) {
     });
   };
 
-  return { messages, sendTyping, typingUserIds, reactions, dismissReaction };
+  return { messages, refresh: reload, sendTyping, typingUserIds, reactions, dismissReaction };
 }
