@@ -5,6 +5,7 @@ import {
   useId,
   useMemo,
   useState,
+  type DependencyList,
   type ReactNode,
 } from 'react';
 
@@ -41,9 +42,10 @@ export function RailProvider({ children }: { children: ReactNode }) {
 
   const ids = Object.keys(entries);
   const content = ids.length > 0 ? entries[ids[ids.length - 1]] : null;
+  const contextValue = useMemo(() => ({ setContent }), [setContent]);
 
   return (
-    <RailContext.Provider value={{ setContent }}>
+    <RailContext.Provider value={contextValue}>
       <RailSlotContext.Provider value={content}>{children}</RailSlotContext.Provider>
     </RailContext.Provider>
   );
@@ -61,7 +63,7 @@ export function useRailSlotContent(): ReactNode {
  * mounted. Pass `null` to contribute nothing (the column then collapses if no
  * other page is contributing either).
  */
-export function useContextRail(node: ReactNode | null): void {
+export function useContextRail(node: ReactNode | null, dependencies: DependencyList = [node]): void {
   const ctx = useContext(RailContext);
   const id = useId();
 
@@ -69,5 +71,5 @@ export function useContextRail(node: ReactNode | null): void {
     if (!ctx) return;
     ctx.setContent(id, node);
     return () => ctx.setContent(id, null);
-  }, [ctx, id, node]);
+  }, [ctx, id, ...dependencies]);
 }

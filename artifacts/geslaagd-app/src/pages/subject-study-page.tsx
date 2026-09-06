@@ -139,6 +139,7 @@ export default function SubjectStudyPage({ subjectId }: { subjectId: string }) {
         </Button>
       </>
     ) : null,
+    [state, subject, progress, plan],
   );
 
   if (state === 'unauthorized') {

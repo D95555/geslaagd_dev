@@ -112,7 +112,7 @@ export default function ConversationPage({ conversationId }: { conversationId: s
         </Button>
       )}
     </div>
-  ) : null);
+  ) : null, [state, conversation, members, user?.id, railIsOwner]);
 
   if (state === 'unauthorized') {
     return (

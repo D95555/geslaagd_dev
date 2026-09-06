@@ -37,6 +37,8 @@ import { LiveTaskTicker } from '@/components/admin/live-task-ticker';
 import { CommandPalette } from '@/components/shell/command-palette';
 import { ShortcutsDialog } from '@/components/shell/shortcuts-dialog';
 import { useSuppressSidebarHotkeyInEditable } from '@/hooks/use-hotkeys';
+import { StudentWorkspaceShell } from '@/components/shell/student-workspace-shell';
+import { AdminWorkspaceShell } from '@/components/shell/admin-workspace-shell';
 
 type Section = 'public' | 'study' | 'admin';
 
@@ -217,6 +219,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const section = sectionFor(location);
 
   if (section === 'public') return <>{children}</>;
+  if (section === 'study') return <StudentWorkspaceShell>{children}</StudentWorkspaceShell>;
+  if (section === 'admin') return <AdminWorkspaceShell>{children}</AdminWorkspaceShell>;
 
   return (
     <RailProvider>

@@ -10,14 +10,8 @@ import {
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@workspace/geslaagd-momentum/components/ui/collapsible';
-import {
   BookCheck,
   BookOpen,
-  ChevronDown,
   GraduationCap,
   MessageCircle,
   PencilLine,
@@ -31,6 +25,7 @@ import { useContextRail } from '@/components/shell/rail-context';
 import { ChatPanel } from '@/components/study/chat-panel';
 import { CitedText } from '@/components/study/citation-tag';
 import { ExerciseView } from '@/components/study/exercise-view';
+import { GlossaryPanel } from '@/components/study/glossary-panel';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
 import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-header';
 import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
@@ -128,30 +123,9 @@ export default function ChapterPage({
         </Button>
       </section>
 
-      {content.keyNotes && content.keyNotes.sections.length > 0 && (
-        <Collapsible className="key-notes" defaultOpen>
-          <CollapsibleTrigger className="key-notes-trigger">
-            Kernpunten en formules <ChevronDown size={15} aria-hidden="true" />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {content.keyNotes.sections.map((section) => (
-              <section key={section.heading}>
-                <h3>{section.heading}</h3>
-                <dl>
-                  {section.items.map((item) => (
-                    <div key={`${section.heading}-${item.label}`}>
-                      <dt>{item.label}</dt>
-                      <dd>{item.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+      {content.keyNotes && content.keyNotes.sections.length > 0 && <GlossaryPanel notes={content.keyNotes}/>}
     </div>
-  ) : null);
+  ) : null, [content]);
 
   if (state === 'unauthorized') {
     return (
@@ -268,6 +242,10 @@ export default function ChapterPage({
           data-testid="chapter-summary"
           onMouseUp={captureSelection}
         >
+          <header className="summary-reader-head">
+            <div><span>Hoofdstuksamenvatting</span><strong>{content.summary.title || chapter.title}</strong></div>
+            <div><span>{Math.max(1, Math.ceil((content.summary.wordCount || content.summary.body.trim().split(/\s+/).length) / 220))} min lezen</span><span>{content.summary.citations.length} bronnen</span></div>
+          </header>
           {selectedText && (
             <div className="selection-assistant" role="status">
               <span>{selectedText.length < 58 ? `“${selectedText}”` : 'Passage geselecteerd'}</span>
