@@ -15,7 +15,7 @@ import { PageHeader } from '@workspace/geslaagd-momentum/components/layout/page-
 import { PageSections } from '@workspace/geslaagd-momentum/components/layout/section';
 import { EmptyState } from '@workspace/geslaagd-momentum/components/layout/empty-state';
 import { ListSkeleton } from '@workspace/geslaagd-momentum/components/layout/page-skeleton';
-import { MessageSquare, Plus, Users2 } from 'lucide-react';
+import { MessageSquare, Plus, Search, Users2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { StudyPageShell, StudyPageMessage } from '@/components/study/study-page-shell';
@@ -30,7 +30,7 @@ function fmtRelative(value: string | null): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} uur geleden`;
   const days = Math.floor(hours / 24);
-  return `${days} dagen geleden`;
+  return days === 1 ? '1 dag geleden' : `${days} dagen geleden`;
 }
 
 export default function InboxPage() {
@@ -45,6 +45,7 @@ export default function InboxPage() {
   const [candidates, setCandidates] = useState<Profile[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<Profile[]>([]);
   const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState('');
 
   const load = async () => {
     setState('loading');
@@ -99,6 +100,11 @@ export default function InboxPage() {
     }
   };
 
+  const filteredConversations = conversations.filter((conversation) => {
+    const label = conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp');
+    return label.toLocaleLowerCase('nl-NL').includes(query.trim().toLocaleLowerCase('nl-NL'));
+  });
+
   if (state === 'unauthorized') {
     return (
       <StudyPageShell>
@@ -113,15 +119,15 @@ export default function InboxPage() {
 
   return (
     <StudyPageShell>
-      <PageSections>
+      <PageSections className="inbox-page">
         <PageHeader
           kicker={
             <>
               <MessageSquare size={13} aria-hidden="true" /> gesprekken
             </>
           }
-          title="Je berichten."
-          description="Directe berichten en groepsapps."
+          title="Samen kom je verder."
+          description="Vraag iets aan een medestudent, deel uitleg of leer samen in een groep."
           actions={
             <Button onClick={openGroupDialog}>
               <Plus size={15} /> Nieuwe groep
@@ -153,28 +159,54 @@ export default function InboxPage() {
         )}
 
         {state === 'ready' && conversations.length > 0 && (
-          <ul className="inbox-list" data-testid="inbox-list">
-            {conversations.map((conversation) => (
-              <li key={conversation.id}>
-                <button
-                  type="button"
-                  className={`inbox-row ${conversation.unread ? 'is-unread' : ''}`}
-                  onClick={() => setLocation(`/gesprekken/${conversation.id}`)}
-                >
-                  <PersonAvatar
-                    id={conversation.id}
-                    label={conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}
-                    icon={conversation.kind === 'group' ? <Users2 size={16} /> : undefined}
-                  />
-                  <span className="inbox-row-title">
-                    {conversation.unread && <span className="inbox-unread-dot" aria-hidden="true" />}
-                    <strong>{conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}</strong>
-                  </span>
-                  <span className="inbox-row-meta">{fmtRelative(conversation.lastMessageAt)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="inbox-workspace">
+            <section className="inbox-sidebar" aria-label="Gesprekken">
+              <label className="inbox-search">
+                <span className="sr-only">Zoek in gesprekken</span>
+                <Search size={16} aria-hidden="true" />
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Zoek een gesprek"
+                />
+              </label>
+              {filteredConversations.length > 0 ? (
+                <ul className="inbox-list" data-testid="inbox-list">
+                  {filteredConversations.map((conversation) => (
+                    <li key={conversation.id}>
+                      <button
+                        type="button"
+                        className={`inbox-row ${conversation.unread ? 'is-unread' : ''}`}
+                        onClick={() => setLocation(`/gesprekken/${conversation.id}`)}
+                      >
+                        <PersonAvatar
+                          id={conversation.id}
+                          label={conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}
+                          icon={conversation.kind === 'group' ? <Users2 size={16} /> : undefined}
+                        />
+                        <span className="inbox-row-title">
+                          <strong>{conversation.displayTitle ?? (conversation.kind === 'dm' ? 'Direct bericht' : 'Groepsapp')}</strong>
+                          <small>{conversation.kind === 'group' ? 'Groepsapp' : 'Direct bericht'}</small>
+                        </span>
+                        <span className="inbox-row-meta">
+                          {fmtRelative(conversation.lastMessageAt)}
+                          {conversation.unread && <span className="inbox-unread-dot" aria-label="Ongelezen" />}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="inbox-no-results">Geen gesprek gevonden voor “{query}”.</p>
+              )}
+            </section>
+            <section className="inbox-welcome" aria-label="Gesprek kiezen">
+              <span className="inbox-welcome-icon"><MessageSquare size={23} aria-hidden="true" /></span>
+              <p>jouw studienetwerk</p>
+              <h2>Kies een gesprek</h2>
+              <span>Je berichten openen hier in een rustige chatwerkruimte.</span>
+            </section>
+          </div>
         )}
       </PageSections>
 

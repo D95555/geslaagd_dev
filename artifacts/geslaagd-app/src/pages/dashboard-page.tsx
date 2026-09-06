@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronRight, Clock3, Play, Plus, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { listSelectedSubjects, type SelectedSubject } from '@workspace/api-client-react';
 import { useLocation } from 'wouter';
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const { isLoading, user } = useAuth();
   const [subjects, setSubjects] = useState<SelectedSubject[] | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [focusMinutes, setFocusMinutes] = useState(20);
 
   const load = async () => {
     setState('loading');
@@ -40,6 +41,8 @@ export default function DashboardPage() {
     );
   }
 
+  const focusSubject = subjects?.[0] ?? null;
+
   return (
     <StudyPageShell>
       <PageSections>
@@ -49,11 +52,62 @@ export default function DashboardPage() {
               <Sparkles size={13} aria-hidden="true" /> jouw leeromgeving
             </>
           }
-          title="Waar wil je vandaag grip op krijgen?"
-          description="Kies een van je vakken, of blader door de volledige catalogus."
+          title="Klaar voor je volgende stap?"
+          description="Kies een korte focusronde of ga direct verder waar je was gebleven."
         />
 
-        <Section title="Jouw vakken">
+        {state === 'ready' && focusSubject && (
+          <section className="today-focus" aria-labelledby="today-focus-title">
+            <div className="today-focus-main">
+              <span className="today-focus-kicker">
+                <Sparkles size={14} aria-hidden="true" /> aanbevolen voor nu
+              </span>
+              <h2 id="today-focus-title">Ga verder met {focusSubject.name}</h2>
+              <p>
+                {focusSubject.subjectProgress > 0
+                  ? `Je bent al ${Math.round(focusSubject.subjectProgress)}% op weg.`
+                  : 'Begin met het eerste hoofdstuk en bouw vanaf daar verder.'}
+              </p>
+              <div className="today-focus-meta" aria-label="Vakinformatie">
+                <span>
+                  <BookOpen size={15} aria-hidden="true" /> {focusSubject.chapterCount ?? 0}{' '}
+                  {focusSubject.chapterCount === 1 ? 'hoofdstuk' : 'hoofdstukken'}
+                </span>
+                <span><Clock3 size={15} aria-hidden="true" /> {focusMinutes} minuten focus</span>
+              </div>
+              <ProgressBar value={focusSubject.subjectProgress} />
+            </div>
+
+            <div className="today-focus-actions">
+              <div className="focus-duration" aria-label="Duur van je focusronde">
+                {[10, 20, 30].map((minutes) => (
+                  <button
+                    key={minutes}
+                    type="button"
+                    className={focusMinutes === minutes ? 'is-active' : undefined}
+                    aria-pressed={focusMinutes === minutes}
+                    onClick={() => setFocusMinutes(minutes)}
+                  >
+                    {minutes} min
+                  </button>
+                ))}
+              </div>
+              <Button size="lg" onClick={() => setLocation(`/vakken/${focusSubject.id}`)}>
+                <Play size={16} fill="currentColor" /> Start focusronde
+              </Button>
+            </div>
+          </section>
+        )}
+
+        <Section
+          title="Jouw vakken"
+          description={subjects?.length ? `${subjects.length} ${subjects.length === 1 ? 'vak' : 'vakken'} in je leeromgeving` : undefined}
+          actions={state === 'ready' && subjects && subjects.length > 0 ? (
+            <Button variant="ghost" size="sm" onClick={() => setLocation('/vakken')}>
+              Beheren <ArrowRight size={15} />
+            </Button>
+          ) : undefined}
+        >
           {state === 'loading' && <CardGridSkeleton cards={3} />}
 
           {state === 'error' && (

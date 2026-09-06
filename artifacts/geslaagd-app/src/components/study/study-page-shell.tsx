@@ -11,15 +11,17 @@ export function StudyPageShell({
   children,
   backTo,
   backLabel,
+  className,
 }: {
   children: ReactNode;
   backTo?: string;
   backLabel?: string;
+  className?: string;
 }) {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="study-shell">
+    <section className={`study-shell${className ? ` ${className}` : ''}`}>
       {backTo && (
         <button className="dashboard-back" type="button" onClick={() => setLocation(backTo)}>
           <ArrowLeft size={15} /> {backLabel ?? 'Terug'}

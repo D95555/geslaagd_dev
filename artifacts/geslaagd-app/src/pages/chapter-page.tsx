@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import {
   getChapterContent,
   getSubjectDetail,
@@ -14,7 +14,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/collapsible';
-import { BookCheck, ChevronDown, GraduationCap, MessageCircle, PencilLine, TriangleAlert } from 'lucide-react';
+import {
+  BookCheck,
+  BookOpen,
+  ChevronDown,
+  GraduationCap,
+  MessageCircle,
+  PencilLine,
+  Sparkles,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
 import { useContextRail } from '@/components/shell/rail-context';
@@ -51,6 +61,8 @@ export default function ChapterPage({
   const [state, setState] = useState<'loading' | 'ready' | 'unauthorized' | 'error'>('loading');
   const [activity, setActivity] = useState<Activity>('reading');
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatPrompt, setChatPrompt] = useState('');
+  const [selectedText, setSelectedText] = useState('');
   const [marking, setMarking] = useState(false);
 
   const load = async () => {
@@ -88,35 +100,58 @@ export default function ChapterPage({
     }
   };
 
+  const openChat = (prompt = '') => {
+    setChatPrompt(prompt);
+    setChatOpen(true);
+  };
+
+  const captureSelection = (event: ReactMouseEvent<HTMLElement>) => {
+    const selection = window.getSelection();
+    if (!selection?.anchorNode || !event.currentTarget.contains(selection.anchorNode)) return;
+    const text = selection.toString().trim().replace(/\s+/g, ' ');
+    if (text.length >= 3) setSelectedText(text.slice(0, 500));
+  };
+
   // Key notes and formulas are reference material for while you're reading
   // or practicing, not the reading itself, so they live in the context rail
   // instead of interrupting the summary as an inline collapsible. Registered
   // unconditionally (and regardless of `activity`) so it stays put across
   // the reading/exercise/exam views instead of flickering on navigation.
-  useContextRail(
-    content?.keyNotes && content.keyNotes.sections.length > 0 ? (
-      <Collapsible className="key-notes" defaultOpen>
-        <CollapsibleTrigger className="key-notes-trigger">
-          Kernpunten en formules <ChevronDown size={15} aria-hidden="true" />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          {content.keyNotes.sections.map((section) => (
-            <section key={section.heading}>
-              <h3>{section.heading}</h3>
-              <dl>
-                {section.items.map((item) => (
-                  <div key={`${section.heading}-${item.label}`}>
-                    <dt>{item.label}</dt>
-                    <dd>{item.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
-    ) : null,
-  );
+  useContextRail(content ? (
+    <div className="chapter-rail">
+      <section className="chapter-ai-card">
+        <span><Sparkles size={14} aria-hidden="true" /> AI met hoofdstukcontext</span>
+        <strong>Loop je ergens vast?</strong>
+        <p>Vraag om een andere uitleg, een voorbeeld of een korte overhoring.</p>
+        <Button size="sm" onClick={() => openChat()}>
+          <MessageCircle size={15} /> Vraag de studieassistent
+        </Button>
+      </section>
+
+      {content.keyNotes && content.keyNotes.sections.length > 0 && (
+        <Collapsible className="key-notes" defaultOpen>
+          <CollapsibleTrigger className="key-notes-trigger">
+            Kernpunten en formules <ChevronDown size={15} aria-hidden="true" />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {content.keyNotes.sections.map((section) => (
+              <section key={section.heading}>
+                <h3>{section.heading}</h3>
+                <dl>
+                  {section.items.map((item) => (
+                    <div key={`${section.heading}-${item.label}`}>
+                      <dt>{item.label}</dt>
+                      <dd>{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  ) : null);
 
   if (state === 'unauthorized') {
     return (
@@ -154,41 +189,61 @@ export default function ChapterPage({
     );
   }
 
-  if (activity !== 'reading') {
-    return (
-      <StudyPageShell>
-        <PageSections>
-          <PageHeader
-            kicker={subjectName ?? undefined}
-            title={`${chapter.position}. ${chapter.title}`}
-          />
-          <ExerciseView
-            subjectId={subjectId}
-            chapterId={chapterId}
-            mode={activity === 'exam' ? 'exam' : 'exercise'}
-            onBack={() => {
-              setActivity('reading');
-              void load();
-            }}
-          />
-        </PageSections>
-      </StudyPageShell>
-    );
-  }
-
   return (
     <StudyPageShell>
-      <PageSections>
+      <PageSections className="chapter-workspace">
       <PageHeader
         kicker={subjectName ?? undefined}
         title={`${chapter.position}. ${chapter.title}`}
         description={chapter.description ?? undefined}
         actions={
-          <Button variant="outline" onClick={() => setChatOpen(true)}>
+          <Button variant="outline" onClick={() => openChat()}>
             <MessageCircle size={15} /> Vraag hierover
           </Button>
         }
       />
+
+      <nav className="chapter-mode-switcher" aria-label="Hoofdstukonderdelen">
+        <button
+          type="button"
+          className={activity === 'reading' ? 'is-active' : undefined}
+          aria-current={activity === 'reading' ? 'page' : undefined}
+          onClick={() => setActivity('reading')}
+        >
+          <BookOpen size={16} aria-hidden="true" /> Lezen
+        </button>
+        <button
+          type="button"
+          className={activity === 'exercise' ? 'is-active' : undefined}
+          aria-current={activity === 'exercise' ? 'page' : undefined}
+          onClick={() => setActivity('exercise')}
+        >
+          <PencilLine size={16} aria-hidden="true" /> Oefenen
+        </button>
+        {chapter.isImportant && (
+          <button
+            type="button"
+            className={activity === 'exam' ? 'is-active' : undefined}
+            aria-current={activity === 'exam' ? 'page' : undefined}
+            onClick={() => setActivity('exam')}
+          >
+            <GraduationCap size={16} aria-hidden="true" /> Tentamen
+          </button>
+        )}
+      </nav>
+
+      {activity !== 'reading' ? (
+        <ExerciseView
+          subjectId={subjectId}
+          chapterId={chapterId}
+          mode={activity === 'exam' ? 'exam' : 'exercise'}
+          onBack={() => {
+            setActivity('reading');
+            void load();
+          }}
+        />
+      ) : (
+        <>
 
       {content && content.contradictions.length > 0 && (
         <section className="chapter-contradictions" aria-label="Tegenstrijdige bronnen">
@@ -208,7 +263,33 @@ export default function ChapterPage({
       )}
 
       {content?.summary ? (
-        <article className="chapter-summary" data-testid="chapter-summary">
+        <article
+          className="chapter-summary"
+          data-testid="chapter-summary"
+          onMouseUp={captureSelection}
+        >
+          {selectedText && (
+            <div className="selection-assistant" role="status">
+              <span>{selectedText.length < 58 ? `“${selectedText}”` : 'Passage geselecteerd'}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openChat(`Leg deze passage simpeler uit:\n\n“${selectedText}”`)}
+              >
+                <Sparkles size={14} /> Leg simpeler uit
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => openChat(`Maak één oefenvraag over deze passage:\n\n“${selectedText}”`)}
+              >
+                Maak oefenvraag
+              </Button>
+              <button type="button" onClick={() => setSelectedText('')} aria-label="Selectie sluiten">
+                <X size={15} />
+              </button>
+            </div>
+          )}
           <CitedText content={content.summary.body} citations={content.summary.citations} />
         </article>
       ) : (
@@ -264,6 +345,9 @@ export default function ChapterPage({
         )}
       </section>
 
+        </>
+      )}
+
       </PageSections>
 
       <ChatPanel
@@ -271,6 +355,8 @@ export default function ChapterPage({
         chapterId={chapterId}
         open={chatOpen}
         onClose={() => setChatOpen(false)}
+        initialPrompt={chatPrompt}
+        contextLabel={chapter.title}
       />
     </StudyPageShell>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   listChatMessages,
   sendChatMessage,
@@ -7,11 +7,12 @@ import {
 } from '@workspace/api-client-react';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
 import { Input } from '@workspace/geslaagd-momentum/components/ui/input';
-import { MessageCircle, Send, X } from 'lucide-react';
+import { Send, Sparkles, X } from 'lucide-react';
 import { CitedText } from './citation-tag';
 import { MessageList } from '@/components/chat/message-list';
 
 const SIMPLER_PROMPT = 'Kun je dat simpeler uitleggen?';
+const QUIZ_PROMPT = 'Overhoor me kort over dit hoofdstuk. Stel steeds één vraag.';
 
 /** Maps the study chat's own ChatMessage shape onto the shared social
  * Message shape at the render boundary, rather than changing either
@@ -36,16 +37,21 @@ export function ChatPanel({
   chapterId,
   open,
   onClose,
+  initialPrompt,
+  contextLabel,
 }: {
   subjectId: string;
   chapterId?: string | null;
   open: boolean;
   onClose: () => void;
+  initialPrompt?: string;
+  contextLabel?: string;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +63,20 @@ export function ChatPanel({
       }
     })();
   }, [open, subjectId]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialPrompt) setDraft(initialPrompt);
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 120);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [initialPrompt, onClose, open]);
 
   const send = async (text: string) => {
     const trimmed = text.trim();
@@ -103,9 +123,12 @@ export function ChatPanel({
   return (
     <aside className="chat-panel" role="dialog" aria-label="Studieassistent" data-testid="chat-panel">
       <header className="chat-panel-head">
-        <span>
-          <MessageCircle size={16} aria-hidden="true" /> Studieassistent
-        </span>
+        <div>
+          <span>
+            <Sparkles size={16} aria-hidden="true" /> Studieassistent
+          </span>
+          <small>{contextLabel ?? 'Antwoorden met context uit je vak'}</small>
+        </div>
         <button type="button" onClick={onClose} aria-label="Sluiten">
           <X size={16} />
         </button>
@@ -145,10 +168,19 @@ export function ChatPanel({
         >
           Simpeler uitleggen
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={sending}
+          onClick={() => void send(QUIZ_PROMPT)}
+        >
+          Overhoor me
+        </Button>
       </div>
 
       <form className="chat-panel-form" onSubmit={onSubmit}>
         <Input
+          ref={inputRef}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Stel je vraag"

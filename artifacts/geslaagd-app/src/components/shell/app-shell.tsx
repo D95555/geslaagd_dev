@@ -1,6 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import {
+  BookOpen,
+  Home,
+  LogOut,
+  MessageSquare,
+  PanelRightOpen,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +19,14 @@ import {
   SidebarTrigger,
 } from '@workspace/geslaagd-momentum/components/ui/sidebar';
 import { Button } from '@workspace/geslaagd-momentum/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@workspace/geslaagd-momentum/components/ui/sheet';
 import { useSurfaceTheme } from '@workspace/geslaagd-momentum/hooks/use-theme';
 import { useAuth } from '@/auth/auth-context';
 import { AdminSidebarNav } from '@/components/shell/admin-sidebar';
@@ -31,6 +47,48 @@ function sectionFor(path: string): Section {
 }
 
 const SIDEBAR_STATE_KEY = 'geslaagd:sidebar-open';
+
+const studyDestinations = [
+  { href: '/mijn-leeromgeving', label: 'Vandaag', icon: Home },
+  { href: '/vakken', label: 'Vakken', icon: BookOpen },
+  { href: '/gesprekken', label: 'Berichten', icon: MessageSquare },
+  { href: '/account', label: 'Profiel', icon: UserRound },
+] as const;
+
+function studyPageLabel(path: string): string {
+  if (path === '/mijn-leeromgeving') return 'Vandaag';
+  if (path.startsWith('/vakken')) return 'Studeren';
+  if (path.startsWith('/gesprekken')) return 'Berichten';
+  if (path.startsWith('/social') || path.startsWith('/profielen')) return 'Studenten';
+  if (path.startsWith('/account')) return 'Profiel';
+  if (path.startsWith('/support')) return 'Support';
+  if (path.startsWith('/changelog')) return 'Updates';
+  return 'Leeromgeving';
+}
+
+function StudyMobileNav({ location, navigate }: { location: string; navigate: (path: string) => void }) {
+  return (
+    <nav className="study-mobile-nav" aria-label="Primaire navigatie">
+      {studyDestinations.map(({ href, label, icon: Icon }) => {
+        const active = href === '/vakken' || href === '/gesprekken'
+          ? location.startsWith(href)
+          : location === href;
+        return (
+          <button
+            key={href}
+            type="button"
+            className={active ? 'is-active' : undefined}
+            aria-current={active ? 'page' : undefined}
+            onClick={() => navigate(href)}
+          >
+            <Icon size={19} aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 /** The sidebar primitive persists to a cookie only a Next.js server reads. */
 function useSidebarOpenState(): [boolean, (open: boolean) => void] {
@@ -58,9 +116,14 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
   const { user, isAdmin, signOut } = useAuth();
   const [open, setOpen] = useSidebarOpenState();
   const railContent = useRailSlotContent();
+  const mainRef = useRef<HTMLDivElement>(null);
 
   useSurfaceTheme('light');
   useSuppressSidebarHotkeyInEditable();
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [location]);
 
   const leave = async () => {
     await signOut();
@@ -109,14 +172,33 @@ function ShellSurface({ section, children }: { section: 'study' | 'admin'; child
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
+      <SidebarInset className={section === 'study' ? 'student-surface' : undefined}>
         <div className="shell-topbar">
           <SidebarTrigger />
+          <span className="shell-page-label">{section === 'study' ? studyPageLabel(location) : 'Beheer'}</span>
+          {railContent && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button className="shell-context-trigger" variant="ghost" size="sm" aria-label="Context openen">
+                  <PanelRightOpen size={17} aria-hidden="true" />
+                  <span>Context</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="shell-context-sheet">
+                <SheetHeader>
+                  <SheetTitle>Context</SheetTitle>
+                  <SheetDescription>Naslag en details voor wat je nu bekijkt.</SheetDescription>
+                </SheetHeader>
+                <div className="shell-context-sheet-body">{railContent}</div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
         <div className="shell-body">
-          <div className="shell-main">{children}</div>
+          <div className="shell-main" ref={mainRef}>{children}</div>
           {railContent && <aside className="shell-rail">{railContent}</aside>}
         </div>
+        {section === 'study' && <StudyMobileNav location={location} navigate={setLocation} />}
         {section === 'admin' && <LiveTaskTicker />}
       </SidebarInset>
     </SidebarProvider>

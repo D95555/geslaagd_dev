@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   addConversationMember,
   getConversationRoute,
@@ -35,6 +37,7 @@ import { MessageComposer } from '@/components/chat/message-composer';
 import { PersonAvatar } from '@/components/chat/person-avatar';
 import { FloatingReactions } from '@/components/chat/floating-reactions';
 import { useConversationChannel } from '@/hooks/use-conversation-channel';
+import { useContextRail } from '@/components/shell/rail-context';
 
 export default function ConversationPage({ conversationId }: { conversationId: string }) {
   const [, setLocation] = useLocation();
@@ -77,6 +80,39 @@ export default function ConversationPage({ conversationId }: { conversationId: s
     }, 350);
     return () => clearTimeout(timer);
   }, [settingsOpen, memberQuery]);
+
+  const railIsOwner = conversation?.kind === 'group' && conversation.ownerId === user?.id;
+  useContextRail(state === 'ready' && conversation ? (
+    <div className="conversation-rail">
+      <section>
+        <span className="conversation-rail-label">
+          {conversation.kind === 'group' ? 'Groepsgesprek' : 'Direct bericht'}
+        </span>
+        <h2>{conversation.kind === 'group' ? 'Deelnemers' : 'In dit gesprek'}</h2>
+        <p>{members.length} {members.length === 1 ? 'persoon' : 'personen'}</p>
+      </section>
+      <ul>
+        {members.map((member) => (
+          <li key={member.userId}>
+            <PersonAvatar
+              id={member.userId}
+              label={member.displayName}
+              imageUrl={member.avatarUrl}
+            />
+            <span>
+              <strong>{member.userId === user?.id ? 'Jij' : member.displayName}</strong>
+              <small>@{member.username}</small>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {railIsOwner && (
+        <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+          <Settings size={15} /> Groep beheren
+        </Button>
+      )}
+    </div>
+  ) : null);
 
   if (state === 'unauthorized') {
     return (
@@ -138,9 +174,9 @@ export default function ConversationPage({ conversationId }: { conversationId: s
   };
 
   return (
-    <StudyPageShell backTo="/gesprekken" backLabel="Terug naar gesprekken">
-      <PageSections>
-        <div className="profile-header-row">
+    <StudyPageShell className="conversation-shell" backTo="/gesprekken" backLabel="Terug naar gesprekken">
+      <PageSections className="conversation-page">
+        <div className="conversation-header">
           <PersonAvatar
             id={conversation.kind === 'dm' ? (otherMember?.userId ?? null) : conversation.id}
             label={title}
@@ -149,8 +185,11 @@ export default function ConversationPage({ conversationId }: { conversationId: s
           />
           <PageHeader
             className="flex-1"
+            kicker={conversation.kind === 'group' ? 'groepsgesprek' : 'direct bericht'}
             title={title}
-            description={conversation.kind === 'group' ? `${members.length} leden` : undefined}
+            description={conversation.kind === 'group'
+              ? `${members.length} leden, samen leren en vragen delen.`
+              : 'Een rustige plek voor vragen, uitleg en studietips.'}
             actions={
               <>
                 <Button variant="outline" onClick={() => void toggleMute()} aria-label="Dempen">
@@ -177,6 +216,11 @@ export default function ConversationPage({ conversationId }: { conversationId: s
                   : (members.find((m) => m.userId === senderId)?.displayName ?? 'Onbekend lid')
               }
               typingLabel={typingNames.length > 0 ? `${typingNames.join(', ')} is aan het typen…` : null}
+              renderBody={(message) => message.kind === 'ai' ? (
+                <div className="chat-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.body}</ReactMarkdown>
+                </div>
+              ) : <p>{message.body}</p>}
             />
           </div>
 
