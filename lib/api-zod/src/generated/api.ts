@@ -1801,14 +1801,14 @@ export const GetVerkennerObjectResponse = zod.object({
   "contentStatus": zod.union([zod.literal('generating'),zod.literal('ready'),zod.literal('failed'),zod.literal(null)]).nullish(),
   "content": zod.record(zod.string(), zod.unknown()).nullish(),
   "generatedByModel": zod.string().nullish(),
-  "generatingTask": zod.object({
+  "generatingTask": zod.union([zod.object({
   "id": zod.string().uuid(),
   "taskType": zod.string(),
   "status": zod.enum(['waiting', 'ready', 'running', 'done', 'failed']),
   "summary": zod.string().nullable(),
   "result": zod.record(zod.string(), zod.unknown()).nullable(),
   "lastError": zod.string().nullish()
-}).optional(),
+}),zod.null()]).optional(),
   "sourceUrl": zod.string().nullish(),
   "sourceTitle": zod.string().nullish(),
   "sourceType": zod.string().nullish(),

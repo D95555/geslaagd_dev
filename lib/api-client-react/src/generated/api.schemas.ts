@@ -2174,7 +2174,7 @@ export interface VerkennerObjectDetailResponse {
   content?: VerkennerObjectDetailResponseContent;
   /** @nullable */
   generatedByModel?: string | null;
-  generatingTask?: VerkennerTaskDetail;
+  generatingTask?: VerkennerTaskDetail | null;
   /** @nullable */
   sourceUrl?: string | null;
   /** @nullable */
