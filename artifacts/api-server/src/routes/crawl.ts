@@ -391,6 +391,10 @@ router.post("/admin/crawl/subject-requests/:requestId/approve", async (req, res)
       method: "PATCH",
       body: JSON.stringify({ status: "active", approved_by: identity.user.id }),
     });
+    // Kick off the build the same way triage does on auto-approval; without this
+    // a manually-approved (e.g. needs_refinement) subject goes active but the
+    // pipeline never starts.
+    await createTask({ subjectId: request.subject_id as string, taskType: "curriculum_design", status: "ready" });
     res.sendStatus(200);
   } catch (error) {
     req.log.warn({ error }, "Could not approve subject request");
