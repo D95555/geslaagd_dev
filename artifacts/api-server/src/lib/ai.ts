@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { logger } from "./logger";
 
 /** Deep reasoning: curriculum structure, the summaries students read, exams. */
 export const STRONG_MODEL = "gpt-5.6-sol";
@@ -53,6 +54,38 @@ export const openai = new OpenAI({
 });
 
 /**
+ * Wraps a chat completion with exponential backoff on transient throttling
+ * (429) and brief server errors (500/503). Free-token/quota throttling under a
+ * heavy build shows up as intermittent 429s; retrying with a short wait rides
+ * them out instead of failing the whole pipeline task. Honours a Retry-After
+ * header when present.
+ */
+async function createChatWithRetry(
+  body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+  attempts = 6,
+): Promise<OpenAI.Chat.Completions.ChatCompletion> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await openai.chat.completions.create(body);
+    } catch (error) {
+      lastError = error;
+      const status = (error as { status?: number }).status;
+      if (status !== 429 && status !== 500 && status !== 503) throw error;
+      if (attempt === attempts - 1) break;
+      const retryAfter = Number((error as { headers?: Record<string, string> }).headers?.["retry-after"]);
+      const delayMs =
+        Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : Math.min(1000 * 2 ** attempt, 30_000) + Math.floor(Math.random() * 500);
+      logger.warn({ status, attempt: attempt + 1, delayMs, model: body.model }, "OpenAI call throttled; backing off");
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+}
+
+/**
  * Some models on this integration wrap JSON in markdown fences or add a short
  * preamble despite instructions, so the object is extracted from the reply
  * rather than trusted verbatim.
@@ -79,7 +112,7 @@ export async function callStrongJson(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<unknown> {
-  const completion = await openai.chat.completions.create({
+  const completion = await createChatWithRetry({
     model: STRONG_MODEL,
     response_format: { type: "json_object" },
     ...(input.maxTokens ? { max_completion_tokens: input.maxTokens } : {}),
@@ -106,7 +139,7 @@ export async function callFastJson(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<unknown> {
-  const completion = await openai.chat.completions.create({
+  const completion = await createChatWithRetry({
     model: FAST_MODEL,
     response_format: { type: "json_object" },
     ...(input.maxTokens ? { max_completion_tokens: input.maxTokens } : {}),
@@ -141,7 +174,7 @@ export async function callStrongTextWithDocument(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<string> {
-  const completion = await openai.chat.completions.create({
+  const completion = await createChatWithRetry({
     model: STRONG_MODEL,
     max_completion_tokens: input.maxTokens ?? 8_000,
     messages: [
@@ -179,7 +212,7 @@ export async function callFastText(input: {
   maxTokens?: number;
   onUsage?: (usage: AiUsage) => void;
 }): Promise<string> {
-  const completion = await openai.chat.completions.create({
+  const completion = await createChatWithRetry({
     model: FAST_MODEL,
     ...(input.maxTokens ? { max_completion_tokens: input.maxTokens } : {}),
     messages: [{ role: "system", content: input.system }, ...input.messages],
